@@ -1,0 +1,30 @@
+---
+import '../styles/global.css';
+import { t } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+interface Props { locale: Locale; title: string; description: string; path: string; alternates?: Partial<Record<Locale, string>>; noindex?: boolean }
+const { locale, title, description, path, alternates = { en: path }, noindex = false } = Astro.props;
+const canonical = new URL(path, 'https://thetoolproject.com').href;
+const alternateEntries = Object.entries(alternates);
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical} />
+    {alternateEntries.map(([lang, alternate]) => <link rel="alternate" hreflang={lang} href={new URL(alternate!, 'https://thetoolproject.com').href} />)}
+    {alternates.en && <link rel="alternate" hreflang="x-default" href={new URL(alternates.en, 'https://thetoolproject.com').href} />}
+    <link rel="preload" href="/fonts/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <slot name="head" />
+  </head>
+  <body>
+    <header class="site-header"><div class="wrap"><a class="logo" href="/" aria-label={t('brand', locale)}>thetool<b>project</b></a></div></header>
+    <slot />
+    <footer><div class="wrap"><span>{t('footer.tagline', locale)}</span></div></footer>
+  </body>
+</html>

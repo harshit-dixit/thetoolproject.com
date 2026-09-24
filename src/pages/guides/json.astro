@@ -1,0 +1,121 @@
+---
+import Guide from '../../layouts/Guide.astro';
+
+const person = `{
+  "name": "Asha",
+  "active": true,
+  "skills": ["HTML", "CSS"],
+  "projects": 3,
+  "manager": null
+}`;
+const invalid = `{
+  name: 'Asha',
+  "skills": ["HTML", "CSS",],
+  // the last skill is new
+}`;
+const valid = `{
+  "name": "Asha",
+  "skills": ["HTML", "CSS"]
+}`;
+const xml = `<person>
+  <name>Asha</name>
+  <active>true</active>
+  <skills><skill>HTML</skill><skill>CSS</skill></skills>
+</person>`;
+const json = `{
+  "name": "Asha",
+  "active": true,
+  "skills": ["HTML", "CSS"]
+}`;
+---
+
+<Guide
+  title="What is JSON? Format, files, examples and how to open them | thetoolproject"
+  description="Learn what JSON stands for, how its format works, what .json files contain, how to open and create one, and how JSON compares with XML."
+  path="/guides/json/"
+  heading="What is JSON? A practical guide to the format and its files"
+  updated="2026-09-24"
+>
+  <p slot="intro" class="guide-intro">JSON is a plain-text way to represent data. If you can read a list of names and values, you can read the basics of JSON. This guide walks through a real example, the punctuation, and the everyday questions about .json files.</p>
+
+  <h2 id="what-is-json">What is JSON, and what does JSON stand for?</h2>
+  <p><strong>JSON stands for JavaScript Object Notation.</strong> It is a text format for exchanging structured data between programs. Its name comes from JavaScript, but JSON is language-independent: applications written in many languages can read and write it.</p>
+  <p>JSON stores values inside objects and arrays. An <strong>object</strong> gives values names, such as <code>"name"</code> or <code>"active"</code>. An <strong>array</strong> holds values in order, such as a list of skills. A complete JSON document can also be a single string, number, boolean, or <code>null</code>, though objects and arrays are the most common files you will encounter.</p>
+  <p class="example-label">A small JSON document</p>
+  <pre><code>{person}</code></pre>
+  <p>Here, <code>"name"</code> is a key and <code>"Asha"</code> is its string value. <code>true</code> is a boolean, <code>3</code> is a number, <code>null</code> means there is no value, and the values inside <code>[ ]</code> form an array.</p>
+
+  <h2 id="json-file">What is a JSON file?</h2>
+  <p>A <strong>JSON file</strong>, often called a <strong>.json file</strong>, is a text file containing JSON data. The <code>.json</code> extension identifies its format; it does not require a special program to read the text. A file named <code>person.json</code> might contain the example above.</p>
+  <p>JSON files are common in app settings, data exports, and information passed between a website and an API. The file is intended for programs to parse, but its text is usually readable by people too. Pretty printing adds line breaks and indentation for people; it does not change the data.</p>
+
+  <h2 id="json-format">What is JSON format?</h2>
+  <p>JSON format is a small set of rules for writing values. The marks carry meaning:</p>
+  <table class="guide-table"><thead><tr><th scope="col">Mark</th><th scope="col">Meaning</th><th scope="col">Example</th></tr></thead><tbody>
+    <tr><td><code>{'{ }'}</code></td><td>An object with named members</td><td><code>{'{"age": 3}'}</code></td></tr>
+    <tr><td><code>[ ]</code></td><td>An ordered array of values</td><td><code>["HTML", "CSS"]</code></td></tr>
+    <tr><td><code>:</code></td><td>Separates an object key from its value</td><td><code>"age": 3</code></td></tr>
+    <tr><td><code>,</code></td><td>Separates members or array items</td><td><code>[1, 2]</code></td></tr>
+    <tr><td><code>" "</code></td><td>Surrounds keys and string values</td><td><code>"name"</code></td></tr>
+  </tbody></table>
+  <p>Values can be strings, numbers, <code>true</code>, <code>false</code>, <code>null</code>, objects, or arrays. Object keys must be strings in double quotes. Strings also use double quotes. JSON permits spaces, tabs, and line breaks around structural marks, so both one-line and indented forms can be valid.</p>
+  <p>The square brackets in <code>"skills": ["HTML", "CSS"]</code> mean the <code>skills</code> value is a list. See the <a href="/guides/json-syntax-square-brackets/">square brackets guide</a> for empty, nested, and mixed arrays, plus common bracket errors.</p>
+
+  <h2 id="uses">What is JSON used for?</h2>
+  <p>Programs use JSON when they need to share data in a predictable shape. A website might receive a product list from an API, an app might save preferences in a <code>settings.json</code> file, or a service might export records for another tool. The same object-and-array structure can represent a single record or thousands of records.</p>
+  <p>JSON describes data rather than its visual presentation. If you want to show that data on a web page, you can <a href="/json-to-html/">convert JSON to an HTML table or list</a>.</p>
+
+  <aside class="guide-tool" aria-labelledby="try-json-tool">
+    <h2 id="try-json-tool">See your JSON as a table</h2>
+    <p>Paste a JSON object or array into our converter, choose Table or List, and preview the HTML in your browser.</p>
+    <a href="/json-to-html/">Open JSON to HTML converter</a>
+  </aside>
+
+  <h2 id="open-json">How to open a JSON file</h2>
+  <ol>
+    <li>Find the file ending in <code>.json</code>.</li>
+    <li>Open it with a text editor, such as Notepad on Windows, TextEdit in plain-text mode on macOS, or a code editor. You can usually right-click the file and choose <strong>Open with</strong>.</li>
+    <li>Read or edit the text. If it is all on one line, use a code editor’s Format Document command to indent it.</li>
+  </ol>
+  <p>You can also open many <code>.json</code> files in a web browser to read them. To work with the data as a table, choose the file in the <a href="/json-to-html/">JSON to HTML converter</a>. Treat JSON files from unknown sources as text; there is no reason to run a program just to inspect one.</p>
+
+  <h2 id="create-json">How to create a JSON file</h2>
+  <ol>
+    <li>Open a plain-text editor and type a valid JSON value. Start with <code>{'{ }'}</code> for named fields or <code>[ ]</code> for a list.</li>
+    <li>Put object keys and text values in double quotes. Add commas <em>between</em> items, never after the last item.</li>
+    <li>Save as UTF-8 text with a <code>.json</code> extension, such as <code>person.json</code>. In Notepad, choose <strong>All files</strong> if needed so the name does not become <code>person.json.txt</code>.</li>
+    <li>Check that a JSON parser or editor accepts it. Our converter will report common syntax errors with a line and column.</li>
+  </ol>
+  <p class="example-label">A common mistake, followed by valid JSON</p>
+  <pre><code>{invalid}</code></pre>
+  <pre><code>{valid}</code></pre>
+  <p>The first version has an unquoted key, single-quoted text, a trailing comma, and a comment. The second version fixes all four.</p>
+
+  <h2 id="comments">How to comment in JSON</h2>
+  <p><strong>Standard JSON has no comment syntax.</strong> Neither <code>//</code> nor <code>/* ... */</code> is allowed in a JSON document. If a file accepts those marks, the program may be using a JSON-like extension rather than standard JSON.</p>
+  <p>If you control the data format and need a note, you can add a normal field such as <code>"note": "Shown to editors only"</code>. That field is real data, so only do this when the receiving program allows it. Otherwise keep the explanation in a separate README or documentation file.</p>
+
+  <h2 id="xml-vs-json">What is the difference between XML and JSON?</h2>
+  <p>Both formats can exchange structured information. JSON uses objects, arrays, and typed values. XML uses nested elements marked with opening and closing tags, and it can also attach attributes to elements. The same simple record could look like this:</p>
+  <p class="example-label">JSON</p><pre><code>{json}</code></pre>
+  <p class="example-label">XML</p><pre><code>{xml}</code></pre>
+  <table class="guide-table"><thead><tr><th scope="col">Question</th><th scope="col">JSON</th><th scope="col">XML</th></tr></thead><tbody>
+    <tr><td>How is a list shown?</td><td>An array inside <code>[ ]</code></td><td>Repeated elements, such as multiple <code>&lt;skill&gt;</code> tags</td></tr>
+    <tr><td>How are values typed?</td><td>Strings, numbers, booleans, and <code>null</code> have JSON syntax</td><td>Element text is text unless an application or schema assigns a type</td></tr>
+    <tr><td>How is structure marked?</td><td>Braces, brackets, keys, and commas</td><td>Tags, attributes, and nesting</td></tr>
+  </tbody></table>
+  <p>Choose the format the receiving system expects. JSON is common for web APIs and app configuration; XML remains useful where a document or integration already relies on XML elements, attributes, or schema rules.</p>
+
+  <h2 id="quick-answers">Quick answers</h2>
+  <h3>What are JSON files?</h3>
+  <p>They are plain-text files containing data written in JSON format, typically named with the <code>.json</code> extension.</p>
+  <h3>Is a .json file the same as JSON?</h3>
+  <p>JSON is the format. A <code>.json</code> file is one way to store text in that format. JSON can also travel directly in an API response without a file.</p>
+  <h3>Can I open .json files without coding?</h3>
+  <p>Yes. Open the file in a text editor to read it, or use a viewer or converter to display its structure.</p>
+
+  <div class="guide-sources">
+    <h2>Sources</h2>
+    <p>The format rules above follow <a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259, The JavaScript Object Notation Data Interchange Format</a> and <a href="https://ecma-international.org/publications-and-standards/standards/ecma-404/">ECMA-404, The JSON data interchange syntax</a>. XML structure follows the <a href="https://www.w3.org/TR/xml/">W3C XML 1.0 specification</a>.</p>
+  </div>
+</Guide>

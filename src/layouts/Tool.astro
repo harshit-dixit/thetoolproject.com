@@ -1,0 +1,20 @@
+---
+import Base from './Base.astro';
+import { t } from '../i18n/utils';
+import type { Locale, Tool, ToolLocale } from '../data/tools';
+interface Props { locale: Locale; entry: ToolLocale; category: Tool['category']; alternates: Partial<Record<Locale, string>> }
+const { locale, entry, category, alternates } = Astro.props;
+const url = new URL(entry.path, 'https://thetoolproject.com').href;
+const application = { '@context': 'https://schema.org', '@type': 'WebApplication', name: entry.h1, url, description: entry.description, applicationCategory: category, operatingSystem: 'Any', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } };
+const breadcrumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: t('breadcrumb.home', locale), item: 'https://thetoolproject.com/' },
+  { '@type': 'ListItem', position: 2, name: entry.h1, item: url },
+] };
+---
+<Base {locale} title={entry.title} description={entry.description} path={entry.path} {alternates}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(application).replaceAll('<', '\\u003c')} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbs).replaceAll('<', '\\u003c')} />
+  </Fragment>
+  <slot />
+</Base>

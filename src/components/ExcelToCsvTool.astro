@@ -1,0 +1,55 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const clientKeys: TranslationKey[] = ['excel.dropTitleTouch','excel.dropHintTouch','excel.chooseAgain','excel.reading','excel.working','excel.zipping','excel.fileLoaded','excel.sheets.one','excel.sheets.other','excel.hiddenSheet','excel.summary','excel.rows.one','excel.rows.other','excel.columns.one','excel.columns.other','excel.previewCap','excel.columnsCap','excel.emptySheet','excel.download','excel.downloadTsv','excel.downloadZip','excel.wrongTypeTitle','excel.wrongType','excel.tooLargeTitle','excel.tooLarge','excel.passwordProtectedTitle','excel.passwordProtected','excel.unreadableTitle','excel.unreadable','excel.noSheetsTitle','excel.noSheets','excel.workerErrorTitle','excel.workerError','unit.bytes','unit.kb','unit.mb'];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const separator = t('excel.defaultSeparator', locale);
+const separators = [['comma', 'excel.comma'], ['semicolon', 'excel.semicolon'], ['tab', 'excel.tab']] as const;
+---
+<div class="drop excel-drop" id="excel-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <input class="visually-hidden" type="file" id="excel-file" accept=".xlsx,.xlsm,.xlsb,.xls,.ods,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet" tabindex="-1" aria-label={t('excel.fileInput', locale)} />
+  <div class="drop-empty" id="excel-empty">
+    <h2 class="drop-title" id="drop-title">{t('excel.dropTitle', locale)}</h2>
+    <p class="drop-hint" id="drop-hint">{t('excel.dropHint', locale)}</p>
+    <button class="btn" type="button" id="choose-file">{t('excel.choose', locale)}</button>
+  </div>
+  <div class="tool-frame excel-panel" id="excel-panel" hidden>
+    <div class="file-line" id="file-line"><span class="file-name" id="file-name"></span><span class="file-size" id="file-size"></span></div>
+    <h2 class="panel-title" id="panel-title" tabindex="-1">{t('excel.panelTitle', locale)}</h2>
+    <p class="panel-advice">{t('excel.advice', locale)}</p>
+    <div class="option-row">
+      <fieldset id="sheet-group"><legend>{t('excel.sheet', locale)}</legend><div class="chips sheet-chips" role="group" aria-label={t('excel.sheet', locale)} id="sheet-chips"></div></fieldset>
+      <fieldset><legend>{t('excel.separator', locale)}</legend><div class="chips" role="group" aria-label={t('excel.separator', locale)}>
+        {separators.map(([value, key]) => <button type="button" data-separator={value} aria-pressed={value === separator ? 'true' : 'false'}>{t(key, locale)}</button>)}
+      </div></fieldset>
+      <fieldset><legend>{t('excel.encoding', locale)}</legend><div class="chips" role="group" aria-label={t('excel.encoding', locale)}>
+        <button type="button" data-bom="false" aria-pressed="true">{t('excel.utf8', locale)}</button>
+        <button type="button" data-bom="true" aria-pressed="false">{t('excel.utf8Bom', locale)}</button>
+      </div></fieldset>
+      <fieldset><legend>{t('excel.numbers', locale)}</legend><div class="chips" role="group" aria-label={t('excel.numbers', locale)}>
+        <button type="button" data-numbers="formatted" aria-pressed="true">{t('excel.formatted', locale)}</button>
+        <button type="button" data-numbers="plain" aria-pressed="false">{t('excel.plain', locale)}</button>
+      </div></fieldset>
+    </div>
+    <div class="result excel-result">
+      <div class="result-head"><div class="chips" role="group" aria-label={t('excel.view', locale)}>
+        <button type="button" data-view="table" aria-pressed="true">{t('excel.previewTable', locale)}</button>
+        <button type="button" data-view="text" aria-pressed="false">{t('excel.csvText', locale)}</button>
+      </div><p class="result-summary" id="result-summary"></p></div>
+      <div class="result-view">
+        <div class="sheet-preview" id="sheet-preview" tabindex="0" role="region" aria-label={t('excel.previewLabel', locale)}><table id="preview-table"></table></div>
+        <pre class="code-view" id="csv-view" tabindex="0" hidden></pre>
+      </div>
+      <p class="result-note" id="preview-note"></p>
+      <div class="actions">
+        <button class="btn" id="download" type="button">{t('excel.download', locale)}</button>
+        <button class="btn alt" id="download-zip" type="button" hidden></button>
+        <button class="btn alt" id="choose-again" type="button">{t('excel.chooseAgain', locale)}</button>
+      </div>
+    </div>
+  </div>
+  <p id="status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
+</div>
+<script src="../scripts/excel-to-csv.ts"></script>

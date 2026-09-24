@@ -1,0 +1,85 @@
+---
+import Guide from '../../layouts/Guide.astro';
+
+const names = `["Asha", "Luis", "Mina"]`;
+const people = `{
+  "people": [
+    { "name": "Asha", "age": 28 },
+    { "name": "Luis", "age": 31 }
+  ]
+}`;
+const nested = `[
+  [1, 2],
+  [3, 4]
+]`;
+const errors = `// Missing comma between items
+["Asha" "Luis"]
+
+// Trailing comma after the last item
+["Asha", "Luis",]
+
+// Wrong closing mark
+["Asha", "Luis"}`;
+---
+
+<Guide
+  title="JSON syntax: square brackets [ ] explained with examples | thetoolproject"
+  description="Square brackets in JSON mark an array. See how JSON arrays work, how they differ from objects in curly braces, and how to fix common bracket errors."
+  path="/guides/json-syntax-square-brackets/"
+  heading="JSON syntax: what do square brackets mean?"
+  updated="2026-09-24"
+>
+  <p slot="intro" class="guide-intro">In JSON, square brackets <code>[ ]</code> surround an array: an ordered list of values. This page shows how to read that list, put it inside an object, and fix the mistakes that often appear around brackets.</p>
+
+  <h2 id="meaning">What do square brackets mean in JSON?</h2>
+  <p><strong>Square brackets mean “array.”</strong> Everything between the opening <code>[</code> and closing <code>]</code> is an item in the list. Commas separate items. The first item is at position 0 when a program reads the array.</p>
+  <p class="example-label">An array of three strings</p>
+  <pre><code>{names}</code></pre>
+  <p>This array has three values in order: <code>"Asha"</code>, <code>"Luis"</code>, and <code>"Mina"</code>. It is valid JSON by itself. An empty array is <code>[]</code>.</p>
+
+  <h2 id="brackets-vs-braces">Square brackets [ ] versus curly braces {'{ }'}</h2>
+  <p>Use square brackets for a list of values. Use curly braces for an object with named fields. The two often work together: an object has a key whose value is an array.</p>
+  <p class="example-label">An object containing an array of objects</p>
+  <pre><code>{people}</code></pre>
+  <p>The outer <code>{'{ }'}</code> is an object. Its <code>"people"</code> key points to an array between <code>[ ]</code>. Each item in that array is another object with <code>"name"</code> and <code>"age"</code> fields. If you need a table with one row per person, this array of objects is a natural shape.</p>
+  <table class="guide-table"><thead><tr><th scope="col">Syntax</th><th scope="col">Represents</th><th scope="col">Use it when</th></tr></thead><tbody>
+    <tr><td><code>["red", "blue"]</code></td><td>An array</td><td>You have values in a sequence</td></tr>
+    <tr><td><code>{'{"color": "red"}'}</code></td><td>An object</td><td>You need a named field</td></tr>
+    <tr><td><code>{'{"colors": ["red", "blue"]}'}</code></td><td>An object with an array</td><td>You need a named list</td></tr>
+  </tbody></table>
+
+  <h2 id="array-values">What can go inside a JSON array?</h2>
+  <p>An array may contain strings, numbers, <code>true</code>, <code>false</code>, <code>null</code>, objects, or more arrays. JSON does not require every item to have the same type. In data you plan to process as rows, keeping items the same shape usually makes the result easier to work with.</p>
+  <p class="example-label">Nested arrays</p>
+  <pre><code>{nested}</code></pre>
+  <p>This outer array contains two inner arrays. Each inner array has two numbers. The brackets must close from the inside out.</p>
+
+  <aside class="guide-tool" aria-labelledby="try-array-tool">
+    <h2 id="try-array-tool">Turn an array into a table</h2>
+    <p>Paste an array of objects into the JSON to HTML converter. It creates a table with one row per object.</p>
+    <a href="/json-to-html/">Open JSON to HTML converter</a>
+  </aside>
+
+  <h2 id="syntax-rules">The three rules to remember</h2>
+  <ol>
+    <li>Open with <code>[</code> and close with <code>]</code>.</li>
+    <li>Put a comma <em>between</em> items. Do not add a comma after the last item.</li>
+    <li>Each item must itself be a valid JSON value. For example, text needs double quotes: <code>["yes", "no"]</code>.</li>
+  </ol>
+  <p class="guide-note">Spaces and line breaks can make an array easier to read, but they do not create separators. The comma is still required.</p>
+
+  <h2 id="errors">Common square bracket errors</h2>
+  <p>The following three snippets are <strong>invalid JSON</strong>. The comments label the problems for this lesson; comments themselves are also not allowed in JSON files.</p>
+  <pre><code>{errors}</code></pre>
+  <p>Fix the first by adding a comma, the second by removing the last comma, and the third by changing <code>{'}'}</code> to <code>]</code>. The corrected array is:</p>
+  <pre><code>{`["Asha", "Luis"]`}</code></pre>
+
+  <h2 id="array-or-object">Should the whole JSON document start with [ or {'{'}?</h2>
+  <p>Start with <code>[</code> when the document is a list, such as many products or many people. Start with <code>{'{'}</code> when it describes one thing with named fields, such as a single product or a settings object. Both are valid JSON. A document can also be one simple JSON value.</p>
+  <p>For the rest of the format, including <code>.json</code> files, double quotes, comments, and XML comparisons, read the <a href="/guides/json/">complete beginner’s guide to JSON</a>.</p>
+
+  <div class="guide-sources">
+    <h2>Source</h2>
+    <p>The array grammar and permitted JSON values come from <a href="https://www.rfc-editor.org/rfc/rfc8259#section-5">RFC 8259, section 5: Arrays</a>.</p>
+  </div>
+</Guide>

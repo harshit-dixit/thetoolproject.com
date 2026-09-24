@@ -1,0 +1,33 @@
+.guide-page{padding-block-start:40px}
+.guide-breadcrumb{display:flex;gap:10px;align-items:center;color:var(--slate);font-size:14px;margin-block-end:32px}
+.guide-breadcrumb a{text-decoration:underline;text-underline-offset:3px}
+.guide-article{max-width:68ch;font-size:18px;line-height:1.65}
+.guide-header{padding-block-end:32px;border-block-end:1px solid var(--line);margin-block-end:40px}
+.guide-header h1{font-size:clamp(36px,5vw,56px);font-weight:700;font-stretch:88%;line-height:1.05;letter-spacing:-.015em;margin:0 0 20px}
+.guide-updated{font-size:14px;color:var(--slate);margin:0 0 20px}
+.guide-updated time{font-stretch:75%;font-weight:600}
+.guide-intro{font-size:20px;line-height:1.55;color:var(--slate);margin:0}
+.guide-article h2{font-size:28px;font-weight:700;font-stretch:88%;line-height:1.15;margin:48px 0 16px;scroll-margin-top:24px}
+.guide-article h3{font-size:22px;font-weight:700;font-stretch:88%;line-height:1.2;margin:32px 0 12px}
+.guide-article p{margin:0 0 20px}
+.guide-article ul,.guide-article ol{padding-inline-start:1.25em;margin:0 0 24px}
+.guide-article li{padding-inline-start:4px;margin-block-end:8px}
+.guide-article a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.guide-article a:hover{color:var(--cobalt)}
+.guide-article code{font: .86em/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.guide-article pre{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:16px;overflow-x:auto;max-width:100%;margin:0 0 24px;font:15px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:2}
+.guide-article pre code{font:inherit;overflow-wrap:normal}
+.guide-article .example-label{color:var(--slate);font-size:14px;font-weight:600;margin-block-end:8px}
+.guide-article .guide-note{border-inline-start:2px solid var(--ink);padding-inline-start:20px;margin-block:24px}
+.guide-article .guide-tool{border:2px solid var(--ink);border-radius:4px;background:var(--paper);padding:24px;margin-block:32px 40px}
+.guide-article .guide-tool h2{margin:0 0 12px;font-size:24px}
+.guide-article .guide-tool p{color:var(--slate);margin-block-end:20px}
+.guide-article .guide-tool a{display:inline-block;background:var(--ink);color:var(--paper);text-decoration:none;border-radius:4px;padding:11px 18px;font-size:16px;font-weight:600;line-height:1.4}
+.guide-article .guide-tool a:hover{background:var(--cobalt);color:var(--paper)}
+.guide-article .guide-table{width:100%;border-collapse:collapse;background:var(--paper);font-size:16px;margin:0 0 24px}
+.guide-article .guide-table th,.guide-article .guide-table td{padding:12px 14px;text-align:start;vertical-align:top;border-bottom:1px solid var(--line)}
+.guide-article .guide-table th{font-weight:600}
+.guide-article .guide-table tr:last-child td{border-bottom:0}
+.guide-article .guide-sources{font-size:15px;color:var(--slate);border-block-start:1px solid var(--line);padding-block-start:20px;margin-block-start:48px}
+.guide-article .guide-sources h2{font-size:22px;margin:0 0 12px}
+@media(max-width:560px){.guide-page{padding-block-start:24px}.guide-breadcrumb{margin-block-end:24px}.guide-article{font-size:17px}.guide-header{margin-block-end:32px}.guide-article pre{font-size:13px;padding:12px}.guide-article .guide-table{font-size:14px}}

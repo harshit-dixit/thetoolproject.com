@@ -1,0 +1,42 @@
+---
+import Base from './Base.astro';
+import '../styles/guide.css';
+import { t } from '../i18n/utils';
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  heading: string;
+  updated: string;
+}
+
+const { title, description, path, heading, updated } = Astro.props;
+const updatedText = t('guide.updated').replace('{date}', new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(updated)));
+const url = new URL(path, 'https://thetoolproject.com').href;
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: t('breadcrumb.home'), item: 'https://thetoolproject.com/' },
+    { '@type': 'ListItem', position: 2, name: heading, item: url },
+  ],
+};
+---
+
+<Base locale="en" {title} {description} {path}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbs).replaceAll('<', '\\u003c')} />
+  </Fragment>
+  <main class="wrap guide-page">
+    <nav class="guide-breadcrumb" aria-label={t('breadcrumb.label')}><a href="/">{t('breadcrumb.home')}</a><span aria-hidden="true">/</span><span aria-current="page">{heading}</span></nav>
+    <article class="guide-article">
+      <header class="guide-header">
+        <h1>{heading}</h1>
+        <p class="guide-updated"><time datetime={updated}>{updatedText}</time></p>
+        <slot name="intro" />
+      </header>
+      <slot />
+    </article>
+  </main>
+</Base>

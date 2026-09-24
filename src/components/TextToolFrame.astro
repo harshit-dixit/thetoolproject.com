@@ -1,0 +1,45 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const clientKeys: TranslationKey[] = ['tool.convertTable','tool.convertList','tool.copied','tool.copy','tool.selectCode','tool.working','tool.reading','tool.fileLoaded','tool.summary','tool.rows.one','tool.rows.other','tool.columns.one','tool.columns.other','tool.previewCap','tool.codeCap','tool.unsafeWarning','tool.empty','tool.wrongType','tool.tooLarge','tool.readError','tool.workerError','tool.inputHintTouch','tool.largeFileHint','unit.bytes','unit.kb','unit.mb','error.trailingComma','error.singleQuote','error.unquotedKey','error.comment','error.jsonLines','error.syntax','error.depth','error.location'];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="drop" id="json-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <label class="field-label" for="json-input">{t('tool.inputLabel', locale)}</label>
+    <textarea id="json-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <p id="input-hint" class="input-hint">{t('tool.inputHint', locale)}</p>
+    <div class="actions input-actions">
+      <input class="visually-hidden" type="file" id="json-file" accept=".json,application/json,.txt" tabindex="-1" />
+      <button class="btn alt" type="button" id="choose-file">{t('tool.choose', locale)}</button>
+      <button class="text-button" type="button" id="try-example">{t('tool.example', locale)}</button>
+    </div>
+    <div class="file-line" id="file-line" hidden><span class="file-name" id="file-name"></span><span class="file-size" id="file-size"></span></div>
+    <div class="option-row">
+      <fieldset><legend>{t('tool.layout', locale)}</legend><div class="chips" role="group" aria-label={t('tool.layout', locale)}>
+        <button type="button" data-layout="table" aria-pressed="true">{t('tool.table', locale)}</button>
+        <button type="button" data-layout="list" aria-pressed="false">{t('tool.list', locale)}</button>
+      </div></fieldset>
+      <fieldset><legend>{t('tool.output', locale)}</legend><div class="chips" role="group" aria-label={t('tool.output', locale)}>
+        <button type="button" data-output="fragment" aria-pressed="true">{t('tool.fragment', locale)}</button>
+        <button type="button" data-output="page" aria-pressed="false">{t('tool.fullPage', locale)}</button>
+      </div></fieldset>
+    </div>
+    <button class="btn" id="convert" type="button">{t('tool.convertTable', locale)}</button>
+    <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+    <div id="json-lines-help" hidden><button type="button" id="wrap-lines" class="text-button">{t('tool.jsonLinesAction', locale)}</button></div>
+    <div id="preview-placeholder" class="preview-placeholder"><p>{t('tool.previewPlaceholder', locale)}</p></div>
+    <div id="result" class="result" hidden>
+      <div class="result-head"><div class="chips" role="group" aria-label={t('tool.resultView', locale)}>
+        <button type="button" data-view="preview" aria-pressed="true">{t('tool.preview', locale)}</button>
+        <button type="button" data-view="code" aria-pressed="false">{t('tool.code', locale)}</button>
+      </div><p class="result-summary" id="result-summary" aria-live="polite" aria-atomic="true"></p></div>
+      <div class="result-view"><iframe id="preview-frame" class="preview-frame" title={t('tool.preview', locale)} sandbox=""></iframe><pre id="code-view" class="code-view" tabindex="0" hidden></pre></div>
+      <p class="result-note" id="preview-note" hidden></p><p class="result-note" id="code-note" hidden></p><p class="result-note" id="unsafe-note" hidden></p>
+      <div class="actions"><button class="btn" id="download" type="button">{t('tool.download', locale)}</button><button class="btn alt" id="copy" type="button">{t('tool.copy', locale)}</button><button class="btn alt" id="start-over" type="button">{t('tool.startOver', locale)}</button></div>
+    </div>
+  </div>
+</div>
+<script src="../scripts/json-to-html.ts"></script>

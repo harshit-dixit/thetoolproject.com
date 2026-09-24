@@ -1,0 +1,57 @@
+---
+import Tool from '../layouts/Tool.astro';
+import TextToolFrame from '../components/TextToolFrame.astro';
+import ExcelToCsvTool from '../components/ExcelToCsvTool.astro';
+import { tools, publishedToolLocales } from '../data/tools';
+import { t, type TranslationKey } from '../i18n/utils';
+export function getStaticPaths() {
+  return Object.values(tools).flatMap(tool => publishedToolLocales(tool).map(([locale, entry]) => ({ params: { tool: entry.path.replace(/^\/|\/$/g, '') }, props: { locale, entry, tool } })));
+}
+const { locale, entry, tool } = Astro.props;
+const alternates = Object.fromEntries(publishedToolLocales(tool).map(([lang, item]) => [lang, item.path]));
+const excelRows: [TranslationKey, TranslationKey][] = [
+  ['excel.howNumbers', 'excel.howNumbersResult'],
+  ['excel.howDates', 'excel.howDatesResult'],
+  ['excel.howFormulas', 'excel.howFormulasResult'],
+  ['excel.howMerged', 'excel.howMergedResult'],
+  ['excel.howHidden', 'excel.howHiddenResult'],
+  ['excel.howFormatting', 'excel.howFormattingResult'],
+];
+---
+<Tool {locale} {entry} category={tool.category} {alternates}>
+  <main class="wrap">
+    {tool.id === 'json-to-html' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('tool.leadStrong', locale)}</strong> {t('tool.lead', locale)}</p><p class="caption">{t('tool.caption', locale)}</p></div></div>
+      <TextToolFrame {locale} />
+      <section aria-labelledby="how-title">
+        <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+        <div class="how-copy">
+          <p>{t('how.intro', locale)}</p>
+          <h3>{t('how.mapTitle', locale)}</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('how.yourJson', locale)}</th><th scope="col">{t('how.youGet', locale)}</th></tr></thead>
+            <tbody>
+              <tr><td>{t('how.arrayObjects', locale)}</td><td>{t('how.arrayObjectsResult', locale)}</td></tr>
+              <tr><td>{t('how.object', locale)}</td><td>{t('how.objectResult', locale)}</td></tr>
+              <tr><td>{t('how.nested', locale)}</td><td>{t('how.nestedResult', locale)}</td></tr>
+              <tr><td>{t('how.simple', locale)}</td><td>{t('how.simpleResult', locale)}</td></tr>
+            </tbody></table></div>
+          <p>{t('how.layouts', locale)}</p><p>{t('how.outputs', locale)}</p><p>{t('how.limits', locale)}</p><p>{t('how.errors', locale)}</p>
+        </div>
+      </section>
+    </>}
+    {tool.id === 'excel-to-csv' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('excel.leadStrong', locale)}</strong> {t('excel.lead', locale)}</p><p class="caption">{t('excel.caption', locale)}</p></div></div>
+      <ExcelToCsvTool {locale} />
+      <section aria-labelledby="how-title">
+        <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+        <div class="how-copy">
+          <p>{t('excel.howIntro', locale)}</p>
+          <h3>{t('excel.howMapTitle', locale)}</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('excel.howInWorkbook', locale)}</th><th scope="col">{t('excel.howInCsv', locale)}</th></tr></thead>
+            <tbody>{excelRows.map(([what, result]) => <tr><td>{t(what, locale)}</td><td>{t(result, locale)}</td></tr>)}</tbody></table></div>
+          <p>{t('excel.howSeparators', locale)}</p><p>{t('excel.howEncoding', locale)}</p><p>{t('excel.howLimits', locale)}</p><p>{t('excel.howErrors', locale)}</p>
+        </div>
+      </section>
+    </>}
+  </main>
+</Tool>

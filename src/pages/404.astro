@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import { t } from '../i18n/utils';
+import { tools } from '../data/tools';
+const entry = tools.jsonToHtml.locales.en!;
+const excel = tools.excelToCsv.locales.en!;
+---
+<Base locale="en" title={t('notFound.title')} description={t('notFound.description')} path="/404/" noindex>
+  <main class="wrap"><div class="hero"><h1 class="page-title">{t('notFound.h1')}</h1><p class="lead">{t('notFound.lead')}</p></div>
+    <div class="table-scroll"><table class="spec-table"><thead><tr><th>{t('home.tool')}</th><th>{t('home.takes')}</th><th>{t('home.gives')}</th><th>{t('home.goodFor')}</th></tr></thead>
+      <tbody><tr><td><a href={entry.path}>{entry.h1}</a></td><td class="fmt">{t('home.jsonInput')}</td><td class="fmt">{t('home.htmlOutput')}</td><td class="note">{t('home.goodForText')}</td></tr>
+        <tr><td><a href={excel.path}>{excel.h1}</a></td><td class="fmt">{t('home.excelInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.excelGoodFor')}</td></tr></tbody></table></div>
+    <p><a href="/">{t('notFound.home')}</a></p>
+  </main>
+</Base>
