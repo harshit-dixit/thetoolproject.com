@@ -26,7 +26,7 @@ const EXTENSIONS = /\.(xlsx|xlsm|xlsb|xls|ods)$/i;
 let worker: Worker | undefined;
 let sequence = 0;
 let generation = 0;
-
+// Counts chosen files, so a ZIP built for an earlier file is dropped.
 let fileId = 0;
 let settingsVersion = 0;
 const pending = new Map<number, Pending>();
@@ -121,7 +121,7 @@ async function loadFile(file: File) {
   $('result-summary').textContent = strings['excel.reading'];
   note.textContent = '';
   setReady(false);
-  
+  // Show the panel straight away, while the click still counts as input, so the layout change isn't a shift.
   empty.hidden = true;
   panel.hidden = false;
   announce(strings['excel.reading']);
@@ -160,7 +160,7 @@ async function convert(announceResult = true) {
   result = undefined;
   blob = undefined;
   setReady(false);
-  
+  // Most sheets convert in a few milliseconds; only say "Converting" when it takes long enough to notice.
   const slow = setTimeout(() => { if (ticket === generation) { announce(strings['excel.working']); $('result-summary').textContent = strings['excel.working']; } }, 200);
   try {
     const data = await send<{ result: ConvertedSheet }>({ type: 'convert', sheet, options: { separator, numbers } });

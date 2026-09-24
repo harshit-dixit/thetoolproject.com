@@ -10,7 +10,7 @@ export default defineConfig({
     locales: ['en', 'es', 'pt', 'de', 'fr', 'ja'],
     routing: { prefixDefaultLocale: false },
   },
-  
+  // ES module workers can split off chunks they load on demand, such as the legacy .xls code pages.
   vite: { worker: { format: 'es' } },
   integrations: [sitemap({ filter: (page) => !/\/(?:404|500)(?:\/|\.html)?$/.test(new URL(page).pathname) })],
 });

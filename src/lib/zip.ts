@@ -1,4 +1,4 @@
-
+// A minimal ZIP writer: entries are stored uncompressed, with UTF-8 names. Enough for a handful of CSV files.
 export type ZipEntry = { name: string; data: Uint8Array };
 
 const CRC_TABLE = new Uint32Array(256).map((_, n) => {
@@ -34,8 +34,8 @@ export function createZip(entries: ZipEntry[], modified = new Date()): Uint8Arra
     offsets.push(at);
     view.setUint32(at, 0x04034b50, true);
     view.setUint16(at + 4, 20, true);
-    view.setUint16(at + 6, 0x0800, true); 
-    view.setUint16(at + 8, 0, true); 
+    view.setUint16(at + 6, 0x0800, true); // bit 11: names are UTF-8
+    view.setUint16(at + 8, 0, true); // stored
     view.setUint16(at + 10, time, true);
     view.setUint16(at + 12, day, true);
     view.setUint32(at + 14, crcs[i], true);

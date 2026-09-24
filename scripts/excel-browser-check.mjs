@@ -1,5 +1,5 @@
-
-
+// Browser checks for /excel-to-csv/. Run `npm run build && npm run preview` first, then:
+//   node scripts/excel-browser-check.mjs [--browser=chromium|webkit|firefox] [--base=http://localhost:4321]
 import { base as jsonBase, launch } from './browser-env.mjs';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';

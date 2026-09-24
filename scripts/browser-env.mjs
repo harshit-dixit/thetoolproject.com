@@ -1,6 +1,6 @@
-
-
-
+// Shared setup for the browser checks. Run `npm run build && npm run preview` first, then:
+//   node scripts/browser-check.mjs [--browser=chromium|webkit|firefox] [--base=http://localhost:4321]
+// Playwright's own browsers are used (`npx playwright install chromium webkit`). Set CHROME_PATH to use an installed Chrome instead.
 import { chromium, firefox, webkit } from 'playwright';
 
 const flag = name => process.argv.find(arg => arg.startsWith(`--${name}=`))?.split('=').slice(1).join('=');

@@ -550,7 +550,7 @@ footer .wrap {
     height: 640px;
   }
 }
-
+/* File tool drop zone (Excel to CSV) */
 .drop-empty {
   min-height: 220px;
   display: grid;
@@ -631,7 +631,7 @@ footer .wrap {
     height: 300px;
   }
 }
-
+/* Reserve the rows that fill in after the workbook is read, so the panel doesn't shift. */
 .sheet-chips {
   min-height: 40px;
 }
@@ -641,7 +641,8 @@ footer .wrap {
 #sheet-group {
   flex-basis: 100%;
 }
-
+/* Loading a workbook grows the frame after the file dialog closes, which doesn't count as input.
+   Filling the first screen keeps the section below out of view, so that growth isn't a layout shift. */
 .excel-drop {
   display: flex;
   flex-direction: column;

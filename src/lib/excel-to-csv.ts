@@ -19,19 +19,19 @@ export function openWorkbook(data: ArrayBuffer | Uint8Array): WorkBook {
     workbook = read(data, { type: 'array', dense: true, cellNF: true, cellHTML: false, cellFormula: false });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    
-    
+    // Encrypted Excel files fail with "File is password-protected" and ODS with "Unsupported ODS Encryption".
+    // Damaged ZIP headers can report "ZIP encryption", which is not a password anyone set.
     throw { code: /password|ODS Encryption/i.test(message) ? 'passwordProtected' : 'unreadable' } satisfies ExcelError;
   }
   if (!sheetIndexes(workbook).length) throw { code: 'noSheets' } satisfies ExcelError;
   return workbook;
 }
 
-
+// Chart and dialog sheets have no cells to export, so they are left out of the list.
 function sheetIndexes(workbook: WorkBook) {
   return workbook.SheetNames.map((name, index) => ({ name, index })).filter(({ name }) => {
     const sheet = workbook.Sheets[name];
-    
+    // The SheetJS types only list sheet and chart, but dialog and macro sheets are reported too.
     const type = sheet?.['!type'] as string | undefined;
     return sheet && type !== 'chart' && type !== 'dialog';
   });
@@ -50,7 +50,7 @@ export function sheetNames(workbook: WorkBook) {
 
 type Grid = { rows: number; columns: number; startRow: number; startColumn: number; data: CellObject[][] };
 
-
+// The used range often includes formatted but empty rows and columns at the end, so trim to real content.
 function extent(sheet: WorkSheet): Grid {
   const data: CellObject[][] = sheet['!data'] ?? [];
   const ref = sheet['!ref'];
@@ -109,9 +109,9 @@ export function cellText(cell: CellObject | undefined, numbers: NumberMode, date
 function numberText(cell: CellObject, numbers: NumberMode, date1904: boolean) {
   const value = cell.v as number;
   const format = typeof cell.z === 'string' ? cell.z : 'General';
-  
+  // Elapsed-time formats such as [h]:mm count past 24 hours, so keep Excel's own text for them.
   if (SSF.is_date(format) && !/\[[hms]+\]/i.test(format)) return isoFromSerial(value, format, date1904) ?? cell.w ?? plainNumber(value);
-  
+  // SheetJS rounds General numbers to fit a narrow column; Excel's CSV export keeps 15 significant digits.
   if (numbers === 'plain' || format === 'General') return plainNumber(value);
   return cell.w ?? plainNumber(value);
 }
@@ -127,7 +127,7 @@ function isoFromSerial(serial: number, format: string, date1904: boolean) {
   const pattern = format.replace(/"[^"]*"|\[[^\]]*\]|\\./g, '').replace(/AM\/PM|A\/P/gi, '');
   const hasTime = /[hs]/i.test(pattern);
   const hasDate = /[yd]/i.test(pattern) || (!hasTime && /m/i.test(pattern));
-  
+  // Excel shows day 0 as "1/0/1900", which has no ISO form.
   if (!parts || (parts.d === 0 && (hasDate || !hasTime))) return undefined;
   const date = `${pad(parts.y, 4)}-${pad(parts.m)}-${pad(parts.d)}`;
   const time = `${pad(parts.H)}:${pad(parts.M)}:${pad(parts.S)}`;

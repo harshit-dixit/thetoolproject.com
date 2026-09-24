@@ -14,14 +14,14 @@ let workbook: WorkBook | undefined;
 async function handle(request: ExcelRequest) {
   if (request.type === 'open') {
     workbook = undefined;
-    
+    // Only Excel 95 and older .xls files need code page tables, so other formats skip the extra download.
     if (/\.xls$/i.test(request.file.name)) set_cptable(await import('xlsx/dist/cpexcel.full.mjs'));
     workbook = openWorkbook(await request.file.arrayBuffer());
     return { sheets: describeWorkbook(workbook) };
   }
   if (!workbook) throw { code: 'unreadable' } satisfies ExcelError;
   if (request.type === 'convert') {
-    
+    // Posting a Blob shares the bytes; posting the string would copy tens of MB onto the main thread.
     const { csv, ...result } = sheetToCsv(workbook, request.sheet, request.options);
     return { result: { ...result, csv: new Blob([csv]) } satisfies ConvertedSheet };
   }

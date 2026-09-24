@@ -15,7 +15,7 @@ const copy = $<HTMLButtonElement>('copy');
 const previewNote = $('preview-note');
 const codeNote = $('code-note');
 const unsafeNote = $('unsafe-note');
-
+// Files above this size stay out of the textarea, which gets slow on phones with multi-MB text.
 const TEXTAREA_LIMIT = 2 * 1024 * 1024;
 let worker: Worker | undefined;
 let busy = false;
@@ -39,7 +39,7 @@ const wrapJsonLines = (source: string) => `[\n${source.split('\n').filter(line =
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.textContent = ''; status.hidden = true; }
 function setWorking(working: boolean) { busy = working; convert.disabled = working; if (working) announce(strings['tool.working']); }
-
+// A worker can't drop a conversion midway, so replace it instead of queueing behind it.
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; setWorking(false); clearStatus(); } }
 const hint = $('input-hint');
 function useTextarea() { fileText = undefined; hint.textContent = defaultHint; }

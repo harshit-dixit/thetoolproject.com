@@ -19,7 +19,7 @@ function build(sheets: Record<string, Cells>, hidden: string[] = []): WorkBook {
   return workbook;
 }
 const roundTrip = (workbook: WorkBook, bookType: 'xlsx' | 'xls' | 'ods' | 'xlsb' = 'xlsx') => openWorkbook(write(workbook, { type: 'array', bookType }) as ArrayBuffer);
-
+// Tests read a real file back, so cells look the way they do after a user opens a workbook.
 const book = (sheets: Record<string, Cells>, hidden: string[] = []) => roundTrip(build(sheets, hidden));
 const csvOf = (workbook: WorkBook, sheet = workbook.SheetNames[0], separator: 'comma' | 'semicolon' | 'tab' = 'comma', numbers: 'formatted' | 'plain' = 'formatted') => sheetToCsv(workbook, sheet, { separator, numbers });
 

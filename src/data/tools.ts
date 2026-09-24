@@ -3,7 +3,7 @@ import en from '../i18n/en.json';
 export const locales = ['en', 'es', 'pt', 'de', 'fr', 'ja'] as const;
 export type Locale = typeof locales[number];
 export type ToolLocale = { path: string; title: string; description: string; h1: string; reviewed: boolean };
-
+// category is the schema.org WebApplication applicationCategory.
 export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesApplication'; locales: Partial<Record<Locale, ToolLocale>> };
 
 export const tools: Record<string, Tool> = {

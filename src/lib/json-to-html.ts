@@ -22,7 +22,7 @@ function failure(code: ErrorCode, source: string, position: number): ConversionE
   return { code, position, ...lineAt(source, position) };
 }
 
-
+// Every integer outside the safe range has at least 16 digits, so most input skips the slower parse paths.
 const mayHaveUnsafeInteger = (source: string) => /\d{16}/.test(source);
 function scanNumbers(source: string): { start: number; end: number; value: string }[] {
   const found: { start: number; end: number; value: string }[] = [];
@@ -168,7 +168,7 @@ function primitive(value: unknown): string {
   if (value instanceof LargeInteger) return esc(value.digits);
   return esc(String(value));
 }
-
+// `level` counts JSON nesting; `depth` counts indentation, which grows faster in table layout.
 function child(value: unknown, depth: number, level: number, layout: Layout): string[] {
   if (value === null || value === undefined || (Array.isArray(value) && !value.length) || (isRecord(value) && !Object.keys(value).length)) return [];
   if (level > MAX_NESTING && (Array.isArray(value) || isRecord(value))) throw new TooDeep();

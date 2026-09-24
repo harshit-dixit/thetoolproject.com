@@ -25,7 +25,7 @@ Visit [thetoolproject.com](https://thetoolproject.com)
 
 2. **Install dependencies:**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Start the development server:**
@@ -33,10 +33,15 @@ Visit [thetoolproject.com](https://thetoolproject.com)
    npm run dev
    ```
 
-4. **Build for production:**
+4. **Run tests and build for production:**
    ```bash
+   npm test
    npm run build
+   npm run test:build
    ```
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
+
+The bundled Archivo font is licensed separately under the
+[SIL Open Font License 1.1](public/fonts/OFL.txt).
