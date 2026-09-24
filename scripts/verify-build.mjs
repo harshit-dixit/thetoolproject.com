@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const read = path => readFileSync(new URL(`../dist/${path}`, import.meta.url), 'utf8');
 const tool = read('json-to-html/index.html');
 const excel = read('excel-to-csv/index.html');
+const jsonExcel = read('json-to-excel/index.html');
 const home = read('index.html');
 const hasGuides = existsSync(new URL('../dist/guides/json/index.html', import.meta.url)) && existsSync(new URL('../dist/guides/json-syntax-square-brackets/index.html', import.meta.url));
 const notFound = read('404.html');
@@ -32,6 +33,15 @@ const excelLd = [...excel.matchAll(/<script type="application\/ld\+json">([^<]+)
 assert.deepEqual(excelLd.map(item => item['@type']), ['WebApplication', 'BreadcrumbList']);
 assert.equal(excelLd[0].applicationCategory, 'UtilitiesApplication');
 assert.equal(excelLd[0].offers.price, '0');
+assert.match(home, /href="\/json-to-excel\/"/);
+assert.match(jsonExcel, /<title>JSON to Excel converter: JSON to XLSX \| thetoolproject<\/title>/);
+assert.match(jsonExcel, /<meta name="description" content="Convert JSON to an Excel XLSX file/);
+assert.match(jsonExcel, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-excel\/"/);
+assert.match(jsonExcel, /hreflang="x-default" href="https:\/\/thetoolproject\.com\/json-to-excel\/"/);
+assert.match(jsonExcel, /<h1 class="page-title">JSON to Excel<\/h1>/);
+const jsonExcelLd = [...jsonExcel.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
+assert.deepEqual(jsonExcelLd.map(item => item['@type']), ['WebApplication', 'BreadcrumbList']);
+assert.equal(jsonExcelLd[0].applicationCategory, 'UtilitiesApplication');
 if (hasGuides) {
   const jsonGuide = read('guides/json/index.html');
   const bracketsGuide = read('guides/json-syntax-square-brackets/index.html');
@@ -45,8 +55,13 @@ assert.match(notFound, /<meta name="robots" content="noindex"/);
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]).sort();
 const expectedUrls = [
   'https://thetoolproject.com/',
+  'https://thetoolproject.com/about/',
+  'https://thetoolproject.com/contact/',
   'https://thetoolproject.com/json-to-html/',
+  'https://thetoolproject.com/json-to-excel/',
   'https://thetoolproject.com/excel-to-csv/',
+  'https://thetoolproject.com/privacy/',
+  'https://thetoolproject.com/terms/',
   ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json/'] : []),
 ].sort();
 assert.deepEqual(sitemapUrls, expectedUrls);
@@ -58,7 +73,7 @@ const firstLoad = page => {
   assert.ok(files.length, `${page} has a client script`);
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'excel-to-csv'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'excel-to-csv'].map(page => [page, firstLoad(`${page}/index.html`)]));
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);
 assert.ok(readdirSync(jsDir).some(name => name.startsWith('cpexcel.') && name.endsWith('.js')), 'Legacy .xls code pages are a separate chunk');
 console.log(`Built output checks passed. First-load JS: ${Object.entries(sizes).map(([page, size]) => `${page} ${size.gzip} bytes gzip (${size.raw} raw)`).join(', ')}.`);

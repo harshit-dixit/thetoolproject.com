@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import { t } from '../i18n/utils';
 import { tools } from '../data/tools';
 const tool = tools.jsonToHtml.locales.en!;
+const jsonExcel = tools.jsonToExcel.locales.en!;
 const excel = tools.excelToCsv.locales.en!;
 ---
 <Base locale="en" title={t('home.title')} description={t('home.description')} path="/">
@@ -11,6 +12,7 @@ const excel = tools.excelToCsv.locales.en!;
     <section aria-labelledby="file-tools"><div class="sec-head"><h2 id="file-tools">{t('home.fileTools')}</h2></div>
       <div class="table-scroll"><table class="spec-table"><thead><tr><th scope="col">{t('home.tool')}</th><th scope="col">{t('home.takes')}</th><th scope="col">{t('home.gives')}</th><th scope="col">{t('home.goodFor')}</th></tr></thead>
         <tbody><tr><td><a href={tool.path}>{tool.h1}</a></td><td class="fmt">{t('home.jsonInput')}</td><td class="fmt">{t('home.htmlOutput')}</td><td class="note">{t('home.goodForText')}</td></tr>
+        <tr><td><a href={jsonExcel.path}>{jsonExcel.h1}</a></td><td class="fmt">{t('home.jsonExcelInput')}</td><td class="fmt">{t('home.xlsxOutput')}</td><td class="note">{t('home.jsonExcelGoodFor')}</td></tr>
         <tr><td><a href={excel.path}>{excel.h1}</a></td><td class="fmt">{t('home.excelInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.excelGoodFor')}</td></tr></tbody></table></div>
     </section>
     <section aria-labelledby="json-guides"><div class="sec-head"><h2 id="json-guides">{t('home.guidesTitle')}</h2><p>{t('home.guidesIntro')}</p></div>
@@ -19,6 +21,9 @@ const excel = tools.excelToCsv.locales.en!;
           <tr><td><a href="/guides/json/">{t('home.jsonGuideTitle')}</a></td><td class="note">{t('home.jsonGuideDescription')}</td></tr>
           <tr><td><a href="/guides/json-syntax-square-brackets/">{t('home.bracketsGuideTitle')}</a></td><td class="note">{t('home.bracketsGuideDescription')}</td></tr>
         </tbody></table></div>
+    </section>
+    <section class="home-open-source" aria-labelledby="open-source"><div class="sec-head"><h2 id="open-source">{t('home.openSourceTitle')}</h2><p>{t('home.openSourceText')}</p></div>
+      <a class="source-link" href="https://github.com/harshit-dixit/thetoolproject.com">{t('home.openSourceLink')} <span aria-hidden="true">↗</span></a>
     </section>
   </main>
 </Base>

@@ -1,0 +1,40 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const clientKeys: TranslationKey[] = ['jsonExcel.working','jsonExcel.summary','jsonExcel.summaryMulti','jsonExcel.sheetCount.one','jsonExcel.sheetCount.other','jsonExcel.previewCap','jsonExcel.columnsCap','jsonExcel.jsonLinesNote','jsonExcel.textNumbers.one','jsonExcel.textNumbers.other','jsonExcel.truncated.one','jsonExcel.truncated.other','jsonExcel.defaultSheet','jsonExcel.value','jsonExcel.wrongType','jsonExcel.tooLarge','jsonExcel.noData','jsonExcel.tooManyRows','jsonExcel.tooManyColumns','jsonExcel.tooManyColumnsNumbered','jsonExcel.workerError','tool.reading','tool.fileLoaded','tool.rows.one','tool.rows.other','tool.columns.one','tool.columns.other','tool.empty','tool.readError','tool.inputHintTouch','tool.largeFileHint','unit.bytes','unit.kb','unit.mb','error.trailingComma','error.singleQuote','error.unquotedKey','error.comment','error.jsonLines','error.syntax','error.depth','error.location'];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="drop" id="json-excel-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <label class="field-label" for="json-input">{t('tool.inputLabel', locale)}</label>
+    <textarea id="json-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <p id="input-hint" class="input-hint">{t('tool.inputHint', locale)}</p>
+    <div class="actions input-actions">
+      <input class="visually-hidden" type="file" id="json-file" accept=".json,.jsonl,.ndjson,.txt,application/json" tabindex="-1" />
+      <button class="btn alt" type="button" id="choose-file">{t('tool.choose', locale)}</button>
+      <button class="text-button" type="button" id="try-example">{t('tool.example', locale)}</button>
+    </div>
+    <div class="file-line" id="file-line" hidden><span class="file-name" id="file-name"></span><span class="file-size" id="file-size"></span></div>
+    <div class="option-row">
+      <fieldset><legend>{t('jsonExcel.nested', locale)}</legend><div class="chips" role="group" aria-label={t('jsonExcel.nested', locale)}>
+        <button type="button" data-nested="sheets" aria-pressed="true">{t('jsonExcel.nestedSheets', locale)}</button>
+        <button type="button" data-nested="columns" aria-pressed="false">{t('jsonExcel.nestedColumns', locale)}</button>
+      </div></fieldset>
+    </div>
+    <button class="btn" id="convert" type="button">{t('jsonExcel.convert', locale)}</button>
+    <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+    <div id="preview-placeholder" class="preview-placeholder excel-placeholder"><p>{t('tool.previewPlaceholder', locale)}</p></div>
+    <div id="result" class="result excel-result" hidden>
+      <fieldset class="sheet-field" id="sheet-group"><legend>{t('jsonExcel.sheet', locale)}</legend><div class="chips sheet-chips" role="group" aria-label={t('jsonExcel.sheet', locale)} id="sheet-chips"></div></fieldset>
+      <p class="result-summary" id="result-summary"></p>
+      <div class="result-view">
+        <div class="sheet-preview" id="sheet-preview" tabindex="0" role="region" aria-label={t('jsonExcel.previewLabel', locale)}><table id="preview-table"></table></div>
+      </div>
+      <p class="result-note" id="preview-note"></p>
+      <div class="actions"><button class="btn" id="download" type="button">{t('jsonExcel.download', locale)}</button><button class="btn alt" id="start-over" type="button">{t('tool.startOver', locale)}</button></div>
+    </div>
+  </div>
+</div>
+<script src="../scripts/json-to-excel.ts"></script>

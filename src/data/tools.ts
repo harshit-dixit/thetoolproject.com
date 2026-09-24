@@ -20,6 +20,19 @@ export const tools: Record<string, Tool> = {
       },
     },
   },
+  jsonToExcel: {
+    id: 'json-to-excel',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/json-to-excel/',
+        title: en['jsonExcel.title'],
+        description: en['jsonExcel.description'],
+        h1: en['jsonExcel.h1'],
+        reviewed: true,
+      },
+    },
+  },
   excelToCsv: {
     id: 'excel-to-csv',
     category: 'UtilitiesApplication',

@@ -2,6 +2,7 @@
 import Tool from '../layouts/Tool.astro';
 import TextToolFrame from '../components/TextToolFrame.astro';
 import ExcelToCsvTool from '../components/ExcelToCsvTool.astro';
+import JsonToExcelTool from '../components/JsonToExcelTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -16,6 +17,14 @@ const excelRows: [TranslationKey, TranslationKey][] = [
   ['excel.howMerged', 'excel.howMergedResult'],
   ['excel.howHidden', 'excel.howHiddenResult'],
   ['excel.howFormatting', 'excel.howFormattingResult'],
+];
+const jsonExcelRows: [TranslationKey, TranslationKey][] = [
+  ['jsonExcel.howArray', 'jsonExcel.howArrayResult'],
+  ['jsonExcel.howObject', 'jsonExcel.howObjectResult'],
+  ['jsonExcel.howList', 'jsonExcel.howListResult'],
+  ['jsonExcel.howSimpleList', 'jsonExcel.howSimpleListResult'],
+  ['jsonExcel.howRoot', 'jsonExcel.howRootResult'],
+  ['jsonExcel.howGrid', 'jsonExcel.howGridResult'],
 ];
 ---
 <Tool {locale} {entry} category={tool.category} {alternates}>
@@ -50,6 +59,20 @@ const excelRows: [TranslationKey, TranslationKey][] = [
           <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('excel.howInWorkbook', locale)}</th><th scope="col">{t('excel.howInCsv', locale)}</th></tr></thead>
             <tbody>{excelRows.map(([what, result]) => <tr><td>{t(what, locale)}</td><td>{t(result, locale)}</td></tr>)}</tbody></table></div>
           <p>{t('excel.howSeparators', locale)}</p><p>{t('excel.howEncoding', locale)}</p><p>{t('excel.howLimits', locale)}</p><p>{t('excel.howErrors', locale)}</p>
+        </div>
+      </section>
+    </>}
+    {tool.id === 'json-to-excel' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('jsonExcel.leadStrong', locale)}</strong> {t('jsonExcel.lead', locale)}</p><p class="caption">{t('jsonExcel.caption', locale)}</p></div></div>
+      <JsonToExcelTool {locale} />
+      <section aria-labelledby="how-title">
+        <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+        <div class="how-copy">
+          <p>{t('jsonExcel.howIntro', locale)}</p>
+          <h3>{t('jsonExcel.howMapTitle', locale)}</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('jsonExcel.howYourJson', locale)}</th><th scope="col">{t('jsonExcel.howInWorkbook', locale)}</th></tr></thead>
+            <tbody>{jsonExcelRows.map(([what, result]) => <tr><td>{t(what, locale)}</td><td>{t(result, locale)}</td></tr>)}</tbody></table></div>
+          <p>{t('jsonExcel.howValues', locale)}</p><p>{t('jsonExcel.howNested', locale)}</p><p>{t('jsonExcel.howLimits', locale)}</p><p>{t('jsonExcel.howErrors', locale)}</p>
         </div>
       </section>
     </>}

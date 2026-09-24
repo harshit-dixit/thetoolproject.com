@@ -6,9 +6,9 @@ export type Conversion = { html: string; previewHtml: string; rows: number; colu
 
 export const MAX_NESTING = 128;
 export const PREVIEW_ROWS = 500;
-class LargeInteger { constructor(readonly digits: string) {} }
+export class LargeInteger { constructor(readonly digits: string) {} }
 class TooDeep {}
-const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof LargeInteger);
+export const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof LargeInteger);
 const own = (record: Record<string, unknown>, key: string) => Object.hasOwn(record, key) ? record[key] : undefined;
 const parseWithSource = JSON.parse as (text: string, reviver: (key: string, value: unknown, context?: { source: string }) => unknown) => unknown;
 const esc = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);

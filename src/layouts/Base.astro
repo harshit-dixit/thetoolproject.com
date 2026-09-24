@@ -25,6 +25,6 @@ const alternateEntries = Object.entries(alternates);
   <body>
     <header class="site-header"><div class="wrap"><a class="logo" href="/" aria-label={t('brand', locale)}>thetool<b>project</b></a></div></header>
     <slot />
-    <footer><div class="wrap"><span>{t('footer.tagline', locale)}</span></div></footer>
+    <footer><div class="wrap footer-inner"><span>{t('footer.tagline', locale)}</span><nav aria-label="Footer"><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/harshit-dixit/thetoolproject.com">GitHub</a></nav></div></footer>
   </body>
 </html>

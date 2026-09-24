@@ -464,6 +464,55 @@ footer .wrap {
   border-block-start: 1px solid var(--line);
   padding-block-start: 24px;
 }
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px 32px;
+  flex-wrap: wrap;
+}
+.footer-inner nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.footer-inner nav a {
+  text-decoration: none;
+}
+.footer-inner nav a:hover {
+  text-decoration: underline;
+}
+.home-open-source {
+  padding-block-end: 8px;
+}
+.source-link {
+  display: inline-block;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+.text-body {
+  max-width: 68ch;
+  font-size: 18px;
+  line-height: 1.65;
+  padding-block-start: 40px;
+}
+.text-body h2 {
+  font-size: 28px;
+  font-weight: 700;
+  font-stretch: 88%;
+  line-height: 1.15;
+  margin-block: 48px 16px;
+}
+.text-body p,
+.text-body ul {
+  margin-block: 0 20px;
+}
+.text-body li + li {
+  margin-block-start: 8px;
+}
+.text-body a {
+  text-underline-offset: 3px;
+}
 @media (max-width: 860px) {
   .hero-row {
     grid-template-columns: 1fr;
@@ -653,4 +702,37 @@ footer .wrap {
 }
 .excel-drop > .excel-panel {
   width: 100%;
+}
+/* JSON to Excel: the sheet preview reuses the Excel to CSV table, with a header row. */
+.sheet-preview th {
+  position: sticky;
+  inset-block-start: 0;
+  background: var(--paper);
+  color: var(--slate);
+  font-weight: 600;
+  text-align: start;
+  padding: 6px 12px;
+  border-block-end: 1px solid var(--line);
+  border-inline-end: 1px solid var(--line);
+  white-space: nowrap;
+  max-width: 32ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sheet-field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+  min-width: 0;
+}
+.sheet-field legend {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--slate);
+  margin-block-end: 8px;
+}
+/* A long second column squeezed the first down to one word per line. */
+.how-copy .mapping-table th:first-child,
+.how-copy .mapping-table td:first-child {
+  min-width: 14ch;
 }
