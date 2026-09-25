@@ -11,6 +11,7 @@ import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
+import ImageTool from '../components/ImageTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -37,6 +38,30 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
 ---
 <Tool {locale} {entry} category={tool.category} {alternates}>
   <main class="wrap">
+    {tool.id === 'image-resizer' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Resize a photo to the size you need.</strong> Set pixels, a percentage, centimetres or a maximum KB. Apply the same settings to a batch and download each result or one ZIP.</p><p class="caption">Free online photo resizer · Up to 20 images · No upload</p></div></div>
+      <ImageTool mode="resize" />
+      <section aria-labelledby="image-how-title"><div class="sec-head"><h2 id="image-how-title">How to resize an image online</h2><p>Choose your images, set a size and download the results.</p></div><div class="how-copy">
+        <p>Choose JPG, PNG or WebP images, or drop them on the tool. This online image resizer handles up to 20 photos at once. Each file can be up to 25MB. Processing happens in your browser, so your images are not uploaded.</p>
+        <h3>Pixels, percentage and bulk image resizing</h3>
+        <p>Enter a width and height in pixels, or scale each image by a percentage. With <strong>Keep aspect ratio</strong> on, the dimensions form a maximum-size box: each image fits inside it without being stretched. Turn it off to set exact width and height. <strong>Do not enlarge small images</strong> prevents a smaller photo from being scaled up. Select <strong>Estimate output size</strong> to check the first image before resizing; in a batch, each image may produce a different file size. For a batch, the same settings are applied to every image; choose individual downloads or a ZIP.</p>
+        <h3>Resize an image in cm</h3>
+        <p>Choose <strong>Centimetres</strong> and enter the intended width, height and resolution in pixels per inch (PPI). The tool converts cm to pixel dimensions using <code>pixels = cm ÷ 2.54 × PPI</code>. For example, 5 cm at 300 PPI is about 591 pixels. The downloaded image does not have a print-size or DPI metadata setting, so set the same print resolution in your printing software.</p>
+        <h3>Resize an image in KB</h3>
+        <p>Choose <strong>File size (KB)</strong> and enter a maximum. This mode saves a JPG, adjusts its quality and, if needed, reduces its pixel dimensions until it fits. Transparent areas become white. Some detail may be lost at a small target size. A JPG already under the limit is kept as-is. Need a specific JPG limit? Use <a href="/compress-jpg-to-100kb/">Compress JPG to 100KB</a>.</p>
+        <h3>File formats and quality</h3>
+        <p>For pixel, percentage and cm resizing, save in the original format or choose JPG, PNG or WebP. JPG cannot keep transparency; transparent pixels are filled white. PNG can be larger than the original even when its dimensions shrink. Animated images and SVG are not supported. Resizing upward creates more pixels but cannot recover detail that was not in the original.</p>
+      </div></section>
+    </>}
+    {tool.id === 'compress-jpg-to-100kb' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Make a JPG fit a 100KB limit.</strong> Choose a photo, preview it, then download a JPG at or below 100KB. The exact output size is shown before you save.</p><p class="caption">Free JPG compressor · No upload · No sign-up</p></div></div>
+      <ImageTool mode="compress" />
+      <section aria-labelledby="jpg-how-title"><div class="sec-head"><h2 id="jpg-how-title">How the 100KB compressor works</h2></div><div class="how-copy">
+        <p>Choose one JPG or drop it on the tool. It searches for a high JPG quality that fits within 100KB (102,400 bytes). If reducing quality is not enough, it reduces the image dimensions and tries again. The result shows its pixel dimensions and file size before download.</p>
+        <p>If the original JPG is already 100KB or less, you can download an unchanged copy. Compression may remove fine detail, especially in photos with text or complex patterns. A very small limit may require a noticeably smaller image. Everything runs in your browser; the photo is not sent to a server.</p>
+        <p>Need a different KB target or want to resize by pixels or centimetres? Open the <a href="/image-resizer/">image resizer</a>.</p>
+      </div></section>
+    </>}
     {tool.id === 'qr-code-scanner' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Scan a QR code right here.</strong> Use your camera, choose an image, or paste a screenshot. Review the decoded link or text before you act on it.</p><p class="caption">Free online QR scanner · No sign-up · On-device decoding</p></div></div>
       <QrCodeScannerTool />

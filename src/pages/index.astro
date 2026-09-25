@@ -13,13 +13,17 @@ const jsonBeautifier = tools.jsonBeautifier.locales.en!;
 const csvViewer = tools.csvViewer.locales.en!;
 const csvJson = tools.csvToJson.locales.en!;
 const qrScanner = tools.qrCodeScanner.locales.en!;
+const imageResizer = tools.imageResizer.locales.en!;
+const jpg100 = tools.compressJpg100kb.locales.en!;
 ---
 <Base locale="en" title={t('home.title')} description={t('home.description')} path="/">
   <main class="wrap">
     <div class="hero"><h1 class="page-title">{t('home.h1')}</h1><p class="lead"><strong>{t('home.leadStrong')}</strong> {t('home.lead')}</p></div>
     <section aria-labelledby="file-tools"><div class="sec-head"><h2 id="file-tools">{t('home.fileTools')}</h2></div>
       <div class="table-scroll"><table class="spec-table"><thead><tr><th scope="col">{t('home.tool')}</th><th scope="col">{t('home.takes')}</th><th scope="col">{t('home.gives')}</th><th scope="col">{t('home.goodFor')}</th></tr></thead>
-        <tbody><tr><td><a href={qrScanner.path}>{qrScanner.h1}</a></td><td class="fmt">Camera, image or screenshot</td><td class="fmt">QR link or text</td><td class="note">Reading a QR code privately, without installing an app</td></tr>
+        <tbody><tr><td><a href={imageResizer.path}>{imageResizer.h1}</a></td><td class="fmt">JPG, PNG, WebP</td><td class="fmt">Resized image or ZIP</td><td class="note">Resizing photos by pixels, cm or KB, including batches</td></tr>
+        <tr><td><a href={jpg100.path}>{jpg100.h1}</a></td><td class="fmt">JPG photo</td><td class="fmt">JPG at or under 100KB</td><td class="note">Meeting a 100KB JPG upload limit</td></tr>
+        <tr><td><a href={qrScanner.path}>{qrScanner.h1}</a></td><td class="fmt">Camera, image or screenshot</td><td class="fmt">QR link or text</td><td class="note">Reading a QR code privately, without installing an app</td></tr>
         <tr><td><a href={csvJson.path}>{csvJson.h1}</a></td><td class="fmt">CSV text, .csv, .tsv</td><td class="fmt">JSON array or JSON Lines</td><td class="note">Turning table rows into API or data pipeline records</td></tr>
         <tr><td><a href={csvViewer.path}>{csvViewer.h1}</a></td><td class="fmt">CSV text, .csv, .tsv</td><td class="fmt">Searchable table, CSV, JSON</td><td class="note">Opening, filtering, editing and checking CSV rows locally</td></tr>
         <tr><td><a href={jsonBeautifier.path}>{jsonBeautifier.h1}</a></td><td class="fmt">JSON text, .json</td><td class="fmt">Formatted JSON</td><td class="note">Reading, validating and sharing JSON with consistent indentation</td></tr>

@@ -7,6 +7,32 @@ export type ToolLocale = { path: string; title: string; description: string; h1:
 export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesApplication'; locales: Partial<Record<Locale, ToolLocale>> };
 
 export const tools: Record<string, Tool> = {
+  imageResizer: {
+    id: 'image-resizer',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/image-resizer/',
+        title: 'Image resizer online: pixels, cm, KB and bulk | thetoolproject',
+        description: 'Resize photos online by pixels, percentage or centimetres, reduce an image to a target KB, or resize up to 20 images at once. Free, private and processed in your browser.',
+        h1: 'Image resizer',
+        reviewed: true,
+      },
+    },
+  },
+  compressJpg100kb: {
+    id: 'compress-jpg-to-100kb',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/compress-jpg-to-100kb/',
+        title: 'Compress JPG to 100KB online | thetoolproject',
+        description: 'Compress a JPG to 100KB or less in your browser. Preview the result, see its exact file size and download it without uploading your photo.',
+        h1: 'Compress JPG to 100KB',
+        reviewed: true,
+      },
+    },
+  },
   qrCodeScanner: {
     id: 'qr-code-scanner',
     category: 'UtilitiesApplication',

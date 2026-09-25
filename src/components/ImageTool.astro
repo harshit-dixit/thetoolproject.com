@@ -1,0 +1,95 @@
+---
+interface Props { mode: 'resize' | 'compress' }
+const { mode } = Astro.props;
+const resize = mode === 'resize';
+---
+<div class="image-tool" id="image-tool" data-mode={mode}>
+  <div class="image-tool-head"><div><h2>{resize ? 'Choose your images' : 'Choose a JPG'}</h2><p>{resize ? 'Resize one image or a batch of up to 20.' : 'We will make a JPG that fits within 100KB.'}</p></div><span>Processed on your device</span></div>
+  <div class="image-drop" id="image-drop">
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><rect x="8" y="11" width="48" height="42" rx="3" stroke="currentColor" stroke-width="2.5"/><circle cx="23" cy="25" r="4" stroke="currentColor" stroke-width="2.5"/><path d="m10 45 14-12 9 8 9-12 13 15" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+    <h3>{resize ? 'Drop images here' : 'Drop a JPG here'}</h3><p>or choose {resize ? 'files' : 'a file'} from your device</p>
+    <input id="image-files" type="file" accept={resize ? 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp' : 'image/jpeg,.jpg,.jpeg'} multiple={resize} class="visually-hidden" tabindex="-1" />
+    <button class="btn" type="button" id="image-choose">{resize ? 'Choose images' : 'Choose JPG'}</button>
+    <small>{resize ? 'JPG, PNG or WebP · 25MB per file · up to 20 images' : 'JPG only · up to 25MB'}</small>
+  </div>
+  <div class="image-workspace" id="image-workspace" hidden>
+    <div class="image-selected"><div><h3 id="image-selection-title">Selected image</h3><p id="image-selection-detail"></p></div><button type="button" id="image-change">{resize ? 'Change images' : 'Change JPG'}</button></div>
+    <div class="image-preview-row"><div class="image-preview"><img id="image-before" alt="Preview of selected image" /></div><div class="image-preview-copy"><span>Original</span><strong id="image-original-size"></strong><span id="image-original-dimensions"></span><p>{resize ? 'All selected images use the same settings.' : 'Image quality and dimensions may be reduced to reach 100KB.'}</p></div></div>
+    {resize && <div class="image-settings">
+      <fieldset class="image-modes"><legend>Resize by</legend><label><input type="radio" name="resize-mode" value="pixels" checked /> Pixels</label><label><input type="radio" name="resize-mode" value="percent" /> Percentage</label><label><input type="radio" name="resize-mode" value="cm" /> Centimetres</label><label><input type="radio" name="resize-mode" value="kb" /> File size (KB)</label></fieldset>
+      <div class="image-fields" id="image-dim-fields"><label><span>Width <b id="image-width-unit">px</b></span><input id="image-width" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label><span>Height <b id="image-height-unit">px</b></span><input id="image-height" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label id="image-dpi-field" hidden><span>Resolution (PPI)</span><input id="image-dpi" type="number" min="1" max="1200" value="300" step="1" inputmode="numeric" /></label></div>
+      <div class="image-fields" id="image-percent-field" hidden><label><span>Scale</span><div class="image-suffix"><input id="image-percent" type="number" min="1" max="500" value="50" step="1" inputmode="numeric" /><span>%</span></div></label><div class="image-range"><input id="image-percent-slider" type="range" min="1" max="500" value="50" step="1" aria-label="Scale percentage slider" /><div class="image-range-ends" aria-hidden="true"><span>1%</span><span>500%</span></div></div></div>
+      <div class="image-fields" id="image-kb-field" hidden><label><span>Maximum file size</span><div class="image-suffix"><input id="image-kb" type="number" min="1" max="20000" value="100" step="1" inputmode="numeric" /><span>KB</span></div></label></div>
+      <div class="image-settings-row" id="image-dim-options"><label class="image-check"><input id="image-lock" type="checkbox" checked /> Keep aspect ratio</label><label class="image-check"><input id="image-no-enlarge" type="checkbox" checked /> Do not enlarge small images</label></div>
+      <div class="image-format-row" id="image-format-row"><label for="image-format">Save as</label><select id="image-format"><option value="original">Same format</option><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select><p id="image-mode-hint">With aspect ratio on, width and height form a maximum-size box for each image.</p></div>
+    </div>}
+    {resize && <div class="image-estimate"><button type="button" class="btn alt" id="image-estimate-button">Estimate output size</button><p id="image-estimate-result" role="status" aria-live="polite" hidden></p></div>}
+    <div class="image-action"><button type="button" class="btn" id="image-run">{resize ? 'Resize images' : 'Compress to 100KB'}</button><p>Nothing is uploaded.</p></div>
+  </div>
+  <p class="image-status" id="image-status" role="status" aria-live="polite" hidden></p>
+  <div class="image-results" id="image-results" hidden><div class="image-results-head"><h3>Ready to download</h3><p id="image-results-summary"></p></div><div id="image-result-list" class="image-result-list"></div><button type="button" class="btn alt" id="image-download-all" hidden>Download all as ZIP</button></div>
+</div>
+<style>
+  .image-tool { margin-block-start: 40px; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper); overflow: hidden; }
+  .image-tool-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 26px 30px; border-block-end: 1px solid var(--line); }
+  .image-tool-head h2 { font-size: 30px; font-stretch: 88%; line-height: 1.1; margin: 0 0 6px; }
+  .image-tool-head p, .image-selected p { margin: 0; color: var(--slate); }
+  .image-tool-head > span { color: var(--cobalt); font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .image-drop { min-height: 300px; margin: 28px 30px; padding: 32px; border: 2px dashed #a8b0bf; background: #f8f9fb; display: grid; align-content: center; justify-items: center; text-align: center; border-radius: 3px; }
+  .image-drop.over { background: var(--cobalt-wash); border-color: var(--cobalt); }
+  .image-drop svg { width: 58px; height: 58px; color: var(--cobalt); margin-block-end: 14px; }
+  .image-drop h3 { margin: 0; font-size: 26px; font-stretch: 88%; line-height: 1.15; }
+  .image-drop p { margin: 6px 0 20px; color: var(--slate); }
+  .image-drop small { margin-block-start: 14px; color: var(--slate); }
+  .image-workspace { padding: 26px 30px 30px; }
+  .image-selected, .image-results-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .image-selected h3, .image-results h3 { margin: 0 0 4px; font-size: 23px; font-stretch: 88%; }
+  .image-selected button { border: 0; background: none; color: var(--cobalt); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+  .image-preview-row { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 22px; margin-block: 22px 28px; align-items: center; }
+  .image-preview { display: grid; place-items: center; min-height: 180px; max-height: 280px; padding: 10px; background: #eff1f5; overflow: hidden; }
+  .image-preview img { display: block; max-width: 100%; max-height: 260px; object-fit: contain; }
+  .image-preview-copy { display: grid; gap: 4px; color: var(--slate); }
+  .image-preview-copy strong { color: var(--ink); font-size: 24px; }
+  .image-preview-copy p { margin: 14px 0 0; font-size: 14px; }
+  .image-settings { border-block-start: 1px solid var(--line); padding-block-start: 24px; }
+  .image-modes { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 22px; border: 0; }
+  .image-modes legend { font-weight: 600; margin-block-end: 10px; }
+  .image-modes label { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1.5px solid var(--line); border-radius: 3px; cursor: pointer; font-weight: 600; }
+  .image-modes label:has(input:checked) { border-color: var(--cobalt); background: var(--cobalt-wash); color: var(--cobalt); }
+  .image-modes input { accent-color: var(--cobalt); }
+  .image-fields { display: flex; flex-wrap: wrap; gap: 15px; margin-block-end: 18px; }
+  .image-fields label { display: grid; gap: 7px; min-width: 150px; flex: 1; font-size: 14px; color: var(--slate); }
+  .image-fields b { font-weight: 400; }
+  .image-fields input[type="number"], .image-format-row select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 3px; color: var(--ink); background: white; font: inherit; font-size: 16px; }
+  #image-percent-field > label { flex: 0 0 240px; }
+  .image-range { flex: 1 1 260px; max-width: 540px; padding-block-start: 22px; }
+  .image-range input { display: block; width: 100%; height: 24px; margin: 0; accent-color: var(--cobalt); cursor: pointer; }
+  .image-range-ends { display: flex; justify-content: space-between; margin-block-start: 2px; color: var(--slate); font-size: 13px; }
+  .image-suffix { display: flex; align-items: center; max-width: 240px; }
+  .image-suffix input { border-radius: 3px 0 0 3px; }
+  .image-suffix span { min-height: 44px; padding: 9px 13px; border: 1.5px solid var(--line); border-inline-start: 0; background: #f7f8fa; color: var(--ink); }
+  .image-settings-row { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-block: 8px 22px; }
+  .image-check { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; }
+  .image-check input { width: 18px; height: 18px; accent-color: var(--cobalt); }
+  .image-format-row { display: grid; grid-template-columns: 90px minmax(140px, 220px) 1fr; align-items: center; gap: 14px; }
+  .image-format-row label { font-weight: 600; }
+  .image-format-row p { margin: 0; color: var(--slate); font-size: 14px; }
+  .image-estimate { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-block-start: 26px; }
+  .image-estimate p { margin: 0; min-width: 0; color: var(--slate); }
+  .image-estimate strong { color: var(--ink); }
+  .image-action { display: flex; align-items: center; gap: 18px; margin-block-start: 28px; }
+  .image-action p { margin: 0; color: var(--slate); font-size: 14px; }
+  .image-status { margin: 0 30px 28px; padding: 12px 15px; border-inline-start: 3px solid var(--cobalt); background: var(--cobalt-wash); }
+  .image-status.error { border-color: #b33e31; background: #fff0ef; }
+  .image-results { padding: 28px 30px 30px; border-block-start: 1px solid var(--line); }
+  .image-results-head p { margin: 0; color: var(--slate); }
+  .image-result-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); margin-block: 20px; }
+  .image-result-list :global(.image-result-row) { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px; background: white; }
+  .image-result-list :global(.image-result-row img) { width: 64px; height: 64px; flex: none; object-fit: contain; background: #eff1f5; }
+  .image-result-list :global(.image-result-row div) { min-width: 0; display: grid; gap: 3px; flex: 1; }
+  .image-result-list :global(.image-result-row strong) { overflow-wrap: anywhere; }
+  .image-result-list :global(.image-result-row span) { color: var(--slate); font-size: 14px; }
+  .image-result-list :global(.image-result-row a) { white-space: nowrap; color: var(--cobalt); font-weight: 700; }
+  @media (max-width: 680px) { .image-tool-head { align-items: start; flex-direction: column; gap: 7px; } .image-tool-head, .image-workspace, .image-results { padding-inline: 20px; } .image-drop { margin-inline: 20px; } .image-preview-row { grid-template-columns: 1fr; gap: 12px; } .image-preview-copy p { margin-block-start: 4px; } .image-format-row { grid-template-columns: 1fr; gap: 8px; } .image-range { flex-basis: 100%; padding-block-start: 0; } .image-status { margin-inline: 20px; } .image-results-head { align-items: start; flex-direction: column; } }
+</style>
+<script src="../scripts/image-tool.ts"></script>
