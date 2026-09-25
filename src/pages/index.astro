@@ -8,6 +8,7 @@ const jsonCsv = tools.jsonToCsv.locales.en!;
 const xmlCsv = tools.xmlToCsv.locales.en!;
 const xmlJson = tools.xmlToJson.locales.en!;
 const excel = tools.excelToCsv.locales.en!;
+const dbfExcel = tools.dbfToExcel.locales.en!;
 const csvSql = tools.csvToSql.locales.en!;
 const jsonBeautifier = tools.jsonBeautifier.locales.en!;
 const csvViewer = tools.csvViewer.locales.en!;
@@ -43,6 +44,7 @@ const pdf500 = tools.compressPdf500kb.locales.en!;
         <tr><td><a href={xmlCsv.path}>{xmlCsv.h1}</a></td><td class="fmt">{t('home.xmlInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.xmlCsvGoodFor')}</td></tr>
         <tr><td><a href={xmlJson.path}>{xmlJson.h1}</a></td><td class="fmt">{t('home.xmlInput')}</td><td class="fmt">{t('home.xmlJsonOutput')}</td><td class="note">{t('home.xmlJsonGoodFor')}</td></tr>
         <tr><td><a href={excel.path}>{excel.h1}</a></td><td class="fmt">{t('home.excelInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.excelGoodFor')}</td></tr>
+        <tr><td><a href={dbfExcel.path}>{dbfExcel.h1}</a></td><td class="fmt">DBF table</td><td class="fmt">XLSX workbook</td><td class="note">Opening dBASE or FoxPro records in Excel</td></tr>
         <tr><td><a href={csvSql.path}>{csvSql.h1}</a></td><td class="fmt">CSV text, .csv, .tsv</td><td class="fmt">SQL statements, .sql</td><td class="note">Loading CSV rows into PostgreSQL, MySQL, SQLite or SQL Server</td></tr></tbody></table></div>
     </section>
     <section aria-labelledby="json-guides"><div class="sec-head"><h2 id="json-guides">{t('home.guidesTitle')}</h2><p>{t('home.guidesIntro')}</p></div>

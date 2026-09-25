@@ -1,0 +1,43 @@
+---
+---
+<div class="drop" id="dbf-tool">
+  <div class="tool-frame">
+    <input class="visually-hidden" type="file" id="dbf-file" accept=".dbf" tabindex="-1" aria-label="Choose a DBF file" />
+    <div class="drop-empty" id="dbf-empty">
+      <h2 class="drop-title">Drop a DBF file here</h2>
+      <p class="drop-hint">Or choose a .dbf file, up to 20 MB</p>
+      <button class="btn" type="button" id="dbf-choose">Choose DBF file</button>
+    </div>
+    <div id="dbf-panel" hidden>
+      <div class="file-line"><span class="file-name" id="dbf-name"></span><span class="file-size" id="dbf-size"></span></div>
+      <div class="option-row">
+        <div><label class="field-label" for="dbf-encoding">Text encoding</label>
+          <select id="dbf-encoding" class="dbf-select">
+            <option value="auto">Auto detect from DBF header</option>
+            <option value="windows-1252">Western European (Windows-1252)</option>
+            <option value="windows-1251">Cyrillic (Windows-1251)</option>
+            <option value="ibm866">Cyrillic DOS (CP866)</option>
+            <option value="ibm850">Western European DOS (CP850)</option>
+            <option value="ibm437">US DOS (CP437)</option>
+            <option value="utf-8">UTF-8</option>
+          </select>
+          <p class="input-hint">If accented or Cyrillic text looks wrong, choose the source encoding and convert again.</p>
+        </div>
+      </div>
+      <div class="actions input-actions"><button class="btn" type="button" id="dbf-convert">Convert to XLSX</button><button class="btn alt" type="button" id="dbf-change">Choose another file</button></div>
+      <p id="dbf-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+      <div id="dbf-result" class="result excel-result" hidden>
+        <p class="result-summary" id="dbf-summary"></p>
+        <div class="result-view"><div class="sheet-preview" tabindex="0" role="region" aria-label="Preview of converted Excel rows"><table id="dbf-preview"></table></div></div>
+        <p class="result-note" id="dbf-note"></p>
+        <div class="actions"><button class="btn" type="button" id="dbf-download">Download XLSX</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .dbf-select { display: block; width: min(100%, 380px); min-height: 44px; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); font: inherit; }
+  #dbf-panel .option-row { margin-block-start: 22px; }
+  #dbf-result { margin-block-start: 26px; }
+</style>
+<script src="../scripts/dbf-to-excel.ts"></script>

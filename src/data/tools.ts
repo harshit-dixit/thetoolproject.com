@@ -205,6 +205,19 @@ export const tools: Record<string, Tool> = {
       },
     },
   },
+  dbfToExcel: {
+    id: 'dbf-to-excel',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/dbf-to-excel/',
+        title: 'DBF to Excel converter online: download XLSX | thetoolproject',
+        description: 'Convert a DBF table to an Excel XLSX file in your browser. Preview records, choose legacy text encoding and download without uploading your data.',
+        h1: 'DBF to Excel',
+        reviewed: true,
+      },
+    },
+  },
 };
 
 export function publishedToolLocales(tool: Tool) {

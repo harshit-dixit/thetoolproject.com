@@ -2,6 +2,7 @@
 import Tool from '../layouts/Tool.astro';
 import TextToolFrame from '../components/TextToolFrame.astro';
 import ExcelToCsvTool from '../components/ExcelToCsvTool.astro';
+import DbfToExcelTool from '../components/DbfToExcelTool.astro';
 import JsonToExcelTool from '../components/JsonToExcelTool.astro';
 import JsonToCsvTool from '../components/JsonToCsvTool.astro';
 import XmlToCsvTool from '../components/XmlToCsvTool.astro';
@@ -220,6 +221,21 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p>{t('jsonExcel.howValues', locale)}</p><p>{t('jsonExcel.howNested', locale)}</p><p>{t('jsonExcel.howLimits', locale)}</p><p>{t('jsonExcel.howErrors', locale)}</p>
         </div>
       </section>
+    </>}
+    {tool.id === 'dbf-to-excel' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Open an old database table in Excel.</strong> Choose a DBF file, check the records and download an XLSX workbook. Everything runs in this browser.</p><p class="caption">.dbf to .xlsx · Up to 20 MB · No upload</p></div></div>
+      <DbfToExcelTool />
+      <section aria-labelledby="dbf-how-title"><div class="sec-head"><h2 id="dbf-how-title">How to convert DBF to Excel</h2></div><div class="how-copy">
+        <p>Choose or drop a <code>.dbf</code> file. The converter reads its fields and records, creates an <code>.xlsx</code> workbook, and shows a preview before download. Each DBF field becomes a column; each active record becomes a row. Records marked as deleted are skipped.</p>
+        <h3>Dates, numbers and text</h3>
+        <p>Text, numeric, date and logical fields become Excel text, numbers, dates and booleans. Long numbers that Excel would round are kept as text. The DBF header selects the text encoding when it has a recognized language marker. If names or values look wrong in the preview, choose a different encoding and convert again.</p>
+        <h3>Supported DBF files and limits</h3>
+        <p>This tool reads common dBASE III, dBASE IV and FoxPro DBF tables up to 20 MB. A DBF with memo, picture or general fields needs companion files such as <code>.dbt</code> or <code>.fpt</code>; those fields are not converted here. Unrecognized field types and malformed tables produce an error instead of a partial spreadsheet. One worksheet can hold up to 1,048,575 data rows and 16,384 columns.</p>
+        <h3>Frequently asked questions</h3>
+        <p><strong>Do I need Microsoft Excel?</strong> No. The tool generates a standard XLSX file in your browser. You can open it in Excel or another compatible spreadsheet app.</p>
+        <p><strong>Is my DBF uploaded?</strong> No. The file stays on your device during conversion.</p>
+        <p><strong>Can I get a legacy XLS file?</strong> This converter downloads XLSX, the current Excel workbook format. It does not create the older XLS format.</p>
+      </div></section>
     </>}
     {tool.id === 'json-to-csv' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('jsonCsv.leadStrong', locale)}</strong> {t('jsonCsv.lead', locale)}</p><p class="caption">{t('jsonCsv.caption', locale)}</p></div></div>

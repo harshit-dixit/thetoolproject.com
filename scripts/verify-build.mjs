@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const read = path => readFileSync(new URL(`../dist/${path}`, import.meta.url), 'utf8');
 const tool = read('json-to-html/index.html');
 const excel = read('excel-to-csv/index.html');
+const dbfExcel = read('dbf-to-excel/index.html');
 const jsonExcel = read('json-to-excel/index.html');
 const jsonCsv = read('json-to-csv/index.html');
 const xmlCsv = read('xml-to-csv/index.html');
@@ -38,6 +39,9 @@ assert.equal(ld[0].applicationCategory, 'DeveloperApplication');
 assert.equal(ld[0].operatingSystem, 'Any');
 assert.match(home, /rel="canonical" href="https:\/\/thetoolproject\.com\/"/);
 assert.match(home, /href="\/excel-to-csv\/"/);
+assert.match(home, /href="\/dbf-to-excel\/"/);
+assert.match(dbfExcel, /<h1 class="page-title">DBF to Excel<\/h1>/);
+assert.match(dbfExcel, /rel="canonical" href="https:\/\/thetoolproject\.com\/dbf-to-excel\/"/);
 assert.match(excel, /<title>Excel to CSV converter for XLSX and XLS \| thetoolproject<\/title>/);
 assert.match(excel, /<meta name="description" content="Convert Excel XLSX, XLS and ODS sheets to CSV/);
 assert.match(excel, /rel="canonical" href="https:\/\/thetoolproject\.com\/excel-to-csv\/"/);
@@ -133,6 +137,7 @@ const expectedUrls = [
   'https://thetoolproject.com/xml-to-csv/',
   'https://thetoolproject.com/xml-to-json/',
   'https://thetoolproject.com/excel-to-csv/',
+  'https://thetoolproject.com/dbf-to-excel/',
   'https://thetoolproject.com/csv-to-sql/',
   'https://thetoolproject.com/csv-viewer/',
   'https://thetoolproject.com/csv-to-json/',
@@ -158,6 +163,7 @@ const firstLoad = page => {
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
 const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+assert.match(dbfExcel, /<script type="module">/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);
 assert.ok(readdirSync(jsDir).some(name => name.startsWith('cpexcel.') && name.endsWith('.js')), 'Legacy .xls code pages are a separate chunk');
 console.log(`Built output checks passed. First-load JS: ${Object.entries(sizes).map(([page, size]) => `${page} ${size.gzip} bytes gzip (${size.raw} raw)`).join(', ')}.`);
