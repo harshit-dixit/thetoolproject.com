@@ -2,6 +2,7 @@ import { createZip } from '../lib/zip';
 
 const root = document.getElementById('image-tool') as HTMLDivElement;
 const resize = root.dataset.mode === 'resize';
+const targetKb = Number(root.dataset.targetKb) || 100;
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const drop = $<HTMLDivElement>('image-drop');
 const input = $<HTMLInputElement>('image-files');
@@ -227,7 +228,7 @@ async function fitJpeg(bitmap: ImageBitmap, maxBytes: number) {
 }
 
 function extension(mime: string) { return mime === 'image/jpeg' ? 'jpg' : mime === 'image/png' ? 'png' : 'webp'; }
-function outputName(file: File, mime: string) { return `${file.name.replace(/\.[^.]+$/, '').replace(/[^\w .()-]/g, '_')}-${resize ? 'resized' : '100kb'}.${extension(mime)}`; }
+function outputName(file: File, mime: string) { return `${file.name.replace(/\.[^.]+$/, '').replace(/[^\w .()-]/g, '_')}-${resize ? 'resized' : `${targetKb}kb`}.${extension(mime)}`; }
 
 async function process(file: File): Promise<Output> {
   const bitmap = await decode(file);
@@ -238,7 +239,7 @@ async function process(file: File): Promise<Output> {
     let mime: string;
     if (!resize || selectedMode() === 'kb') {
       mime = 'image/jpeg';
-      const limit = resize ? Number($<HTMLInputElement>('image-kb').value) : 100;
+      const limit = resize ? Number($<HTMLInputElement>('image-kb').value) : targetKb;
       if (!Number.isInteger(limit) || limit < 1 || limit > 20000) throw new Error('Enter a file size from 1 to 20,000 KB.');
       if (file.type === mime && file.size <= limit * 1024) {
         blob = file;

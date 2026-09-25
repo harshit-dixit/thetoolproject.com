@@ -48,18 +48,27 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         <h3>Resize an image in cm</h3>
         <p>Choose <strong>Centimetres</strong> and enter the intended width, height and resolution in pixels per inch (PPI). The tool converts cm to pixel dimensions using <code>pixels = cm ÷ 2.54 × PPI</code>. For example, 5 cm at 300 PPI is about 591 pixels. The downloaded image does not have a print-size or DPI metadata setting, so set the same print resolution in your printing software.</p>
         <h3>Resize an image in KB</h3>
-        <p>Choose <strong>File size (KB)</strong> and enter a maximum. This mode saves a JPG, adjusts its quality and, if needed, reduces its pixel dimensions until it fits. Transparent areas become white. Some detail may be lost at a small target size. A JPG already under the limit is kept as-is. Need a specific JPG limit? Use <a href="/compress-jpg-to-100kb/">Compress JPG to 100KB</a>.</p>
+        <p>Choose <strong>File size (KB)</strong> and enter a maximum. This mode saves a JPG, adjusts its quality and, if needed, reduces its pixel dimensions until it fits. Transparent areas become white. Some detail may be lost at a small target size. A JPG already under the limit is kept as-is. Need a specific JPG limit? Use <a href="/compress-jpg-to-50kb/">Compress JPG to 50KB</a> or <a href="/compress-jpg-to-100kb/">Compress JPG to 100KB</a>.</p>
         <h3>File formats and quality</h3>
         <p>For pixel, percentage and cm resizing, save in the original format or choose JPG, PNG or WebP. JPG cannot keep transparency; transparent pixels are filled white. PNG can be larger than the original even when its dimensions shrink. Animated images and SVG are not supported. Resizing upward creates more pixels but cannot recover detail that was not in the original.</p>
       </div></section>
     </>}
     {tool.id === 'compress-jpg-to-100kb' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Make a JPG fit a 100KB limit.</strong> Choose a photo, preview it, then download a JPG at or below 100KB. The exact output size is shown before you save.</p><p class="caption">Free JPG compressor · No upload · No sign-up</p></div></div>
-      <ImageTool mode="compress" />
+      <ImageTool mode="compress" targetKb={100} />
       <section aria-labelledby="jpg-how-title"><div class="sec-head"><h2 id="jpg-how-title">How the 100KB compressor works</h2></div><div class="how-copy">
         <p>Choose one JPG or drop it on the tool. It searches for a high JPG quality that fits within 100KB (102,400 bytes). If reducing quality is not enough, it reduces the image dimensions and tries again. The result shows its pixel dimensions and file size before download.</p>
         <p>If the original JPG is already 100KB or less, you can download an unchanged copy. Compression may remove fine detail, especially in photos with text or complex patterns. A very small limit may require a noticeably smaller image. Everything runs in your browser; the photo is not sent to a server.</p>
         <p>Need a different KB target or want to resize by pixels or centimetres? Open the <a href="/image-resizer/">image resizer</a>.</p>
+      </div></section>
+    </>}
+    {tool.id === 'compress-jpg-to-50kb' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Make a JPG fit a 50KB limit.</strong> Choose a photo, preview it, then download a JPG at or below 50KB. The exact output size is shown before you save.</p><p class="caption">Free JPG compressor · No upload · No sign-up</p></div></div>
+      <ImageTool mode="compress" targetKb={50} />
+      <section aria-labelledby="jpg-50-how-title"><div class="sec-head"><h2 id="jpg-50-how-title">How the 50KB compressor works</h2></div><div class="how-copy">
+        <p>Choose one JPG or drop it on the tool. It searches for a high JPG quality that fits within 50KB (51,200 bytes). If reducing quality is not enough, it reduces the image dimensions and tries again. The result shows its pixel dimensions and exact file size before download.</p>
+        <p>If the original JPG is already 50KB or less, you can download an unchanged copy. Compression may remove fine detail, especially in photos with text or complex patterns. A 50KB limit may require a noticeably smaller image. Everything runs in your browser; the photo is not sent to a server.</p>
+        <p>Need a larger limit? Try <a href="/compress-jpg-to-100kb/">Compress JPG to 100KB</a>. For a different KB target or resizing by pixels or centimetres, use the <a href="/image-resizer/">image resizer</a>.</p>
       </div></section>
     </>}
     {tool.id === 'qr-code-scanner' && <>

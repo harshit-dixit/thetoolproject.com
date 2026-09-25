@@ -1,10 +1,10 @@
 ---
-interface Props { mode: 'resize' | 'compress' }
-const { mode } = Astro.props;
+interface Props { mode: 'resize' | 'compress'; targetKb?: 50 | 100 }
+const { mode, targetKb = 100 } = Astro.props;
 const resize = mode === 'resize';
 ---
-<div class="image-tool" id="image-tool" data-mode={mode}>
-  <div class="image-tool-head"><div><h2>{resize ? 'Choose your images' : 'Choose a JPG'}</h2><p>{resize ? 'Resize one image or a batch of up to 20.' : 'We will make a JPG that fits within 100KB.'}</p></div><span>Processed on your device</span></div>
+<div class="image-tool" id="image-tool" data-mode={mode} data-target-kb={targetKb}>
+  <div class="image-tool-head"><div><h2>{resize ? 'Choose your images' : 'Choose a JPG'}</h2><p>{resize ? 'Resize one image or a batch of up to 20.' : `We will make a JPG that fits within ${targetKb}KB.`}</p></div><span>Processed on your device</span></div>
   <div class="image-drop" id="image-drop">
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><rect x="8" y="11" width="48" height="42" rx="3" stroke="currentColor" stroke-width="2.5"/><circle cx="23" cy="25" r="4" stroke="currentColor" stroke-width="2.5"/><path d="m10 45 14-12 9 8 9-12 13 15" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
     <h3>{resize ? 'Drop images here' : 'Drop a JPG here'}</h3><p>or choose {resize ? 'files' : 'a file'} from your device</p>
@@ -14,7 +14,7 @@ const resize = mode === 'resize';
   </div>
   <div class="image-workspace" id="image-workspace" hidden>
     <div class="image-selected"><div><h3 id="image-selection-title">Selected image</h3><p id="image-selection-detail"></p></div><button type="button" id="image-change">{resize ? 'Change images' : 'Change JPG'}</button></div>
-    <div class="image-preview-row"><div class="image-preview"><img id="image-before" alt="Preview of selected image" /></div><div class="image-preview-copy"><span>Original</span><strong id="image-original-size"></strong><span id="image-original-dimensions"></span><p>{resize ? 'All selected images use the same settings.' : 'Image quality and dimensions may be reduced to reach 100KB.'}</p></div></div>
+    <div class="image-preview-row"><div class="image-preview"><img id="image-before" alt="Preview of selected image" /></div><div class="image-preview-copy"><span>Original</span><strong id="image-original-size"></strong><span id="image-original-dimensions"></span><p>{resize ? 'All selected images use the same settings.' : `Image quality and dimensions may be reduced to reach ${targetKb}KB.`}</p></div></div>
     {resize && <div class="image-settings">
       <fieldset class="image-modes"><legend>Resize by</legend><label><input type="radio" name="resize-mode" value="pixels" checked /> Pixels</label><label><input type="radio" name="resize-mode" value="percent" /> Percentage</label><label><input type="radio" name="resize-mode" value="cm" /> Centimetres</label><label><input type="radio" name="resize-mode" value="kb" /> File size (KB)</label></fieldset>
       <div class="image-fields" id="image-dim-fields"><label><span>Width <b id="image-width-unit">px</b></span><input id="image-width" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label><span>Height <b id="image-height-unit">px</b></span><input id="image-height" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label id="image-dpi-field" hidden><span>Resolution (PPI)</span><input id="image-dpi" type="number" min="1" max="1200" value="300" step="1" inputmode="numeric" /></label></div>
@@ -24,7 +24,7 @@ const resize = mode === 'resize';
       <div class="image-format-row" id="image-format-row"><label for="image-format">Save as</label><select id="image-format"><option value="original">Same format</option><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select><p id="image-mode-hint">With aspect ratio on, width and height form a maximum-size box for each image.</p></div>
     </div>}
     {resize && <div class="image-estimate"><button type="button" class="btn alt" id="image-estimate-button">Estimate output size</button><p id="image-estimate-result" role="status" aria-live="polite" hidden></p></div>}
-    <div class="image-action"><button type="button" class="btn" id="image-run">{resize ? 'Resize images' : 'Compress to 100KB'}</button><p>Nothing is uploaded.</p></div>
+    <div class="image-action"><button type="button" class="btn" id="image-run">{resize ? 'Resize images' : `Compress to ${targetKb}KB`}</button><p>Nothing is uploaded.</p></div>
   </div>
   <p class="image-status" id="image-status" role="status" aria-live="polite" hidden></p>
   <div class="image-results" id="image-results" hidden><div class="image-results-head"><h3>Ready to download</h3><p id="image-results-summary"></p></div><div id="image-result-list" class="image-result-list"></div><button type="button" class="btn alt" id="image-download-all" hidden>Download all as ZIP</button></div>

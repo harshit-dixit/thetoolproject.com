@@ -33,6 +33,19 @@ export const tools: Record<string, Tool> = {
       },
     },
   },
+  compressJpg50kb: {
+    id: 'compress-jpg-to-50kb',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/compress-jpg-to-50kb/',
+        title: 'Compress JPG to 50KB online | thetoolproject',
+        description: 'Compress a JPG to 50KB or less in your browser. Preview the result, see its exact file size and download it without uploading your photo.',
+        h1: 'Compress JPG to 50KB',
+        reviewed: true,
+      },
+    },
+  },
   qrCodeScanner: {
     id: 'qr-code-scanner',
     category: 'UtilitiesApplication',
