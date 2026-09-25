@@ -7,6 +7,32 @@ export type ToolLocale = { path: string; title: string; description: string; h1:
 export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesApplication'; locales: Partial<Record<Locale, ToolLocale>> };
 
 export const tools: Record<string, Tool> = {
+  csvToJson: {
+    id: 'csv-to-json',
+    category: 'DeveloperApplication',
+    locales: {
+      en: {
+        path: '/csv-to-json/',
+        title: 'CSV to JSON converter online | thetoolproject',
+        description: 'Convert CSV or TSV to JSON instantly in your browser. Preview rows, choose delimiters and types, then copy or download JSON or JSON Lines. Your data stays on your device.',
+        h1: 'CSV to JSON',
+        reviewed: true,
+      },
+    },
+  },
+  csvViewer: {
+    id: 'csv-viewer',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/csv-viewer/',
+        title: 'CSV viewer online: open, search and edit CSV files | thetoolproject',
+        description: 'Open CSV and TSV files in your browser. Search, filter, sort, edit and inspect columns, then download CSV or JSON. Your file is never uploaded.',
+        h1: 'CSV viewer',
+        reviewed: true,
+      },
+    },
+  },
   jsonBeautifier: {
     id: 'json-beautifier',
     category: 'DeveloperApplication',

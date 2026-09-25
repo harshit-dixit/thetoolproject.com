@@ -1,0 +1,66 @@
+<div class="drop csv-json-drop" id="csv-json-tool">
+  <div class="csv-json-workspace">
+    <div class="csv-json-topline"><span>CSV input</span><span id="csv-json-state">Ready for data</span><span>JSON output</span></div>
+    <div class="csv-json-panes">
+      <div class="csv-json-pane">
+        <label class="visually-hidden" for="csv-json-input">Paste CSV data</label>
+        <textarea id="csv-json-input" class="json-input" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder={'name,city,visits\nAda,London,12\n"Grace, Jr.",New York,8'}></textarea>
+        <div class="csv-json-pane-foot"><span id="csv-json-source-label">Paste CSV or drop a file here</span><div class="actions"><input class="visually-hidden" id="csv-json-file" type="file" accept=".csv,.tsv,.tab,.txt,text/csv,text/tab-separated-values" tabindex="-1" /><button class="text-button" id="csv-json-choose" type="button">Choose file</button><button class="text-button" id="csv-json-example" type="button">Try example</button><button class="text-button" id="csv-json-clear" type="button">Clear</button></div></div>
+      </div>
+      <div class="csv-json-pane csv-json-output">
+        <pre id="csv-json-code" class="code-view" tabindex="0" aria-label="Converted JSON">Your JSON will appear here as you type.</pre>
+        <div class="csv-json-pane-foot"><span id="csv-json-output-label">All conversion happens in your browser</span><div class="actions"><button class="text-button" id="csv-json-copy" type="button" disabled>Copy JSON</button><button class="text-button" id="csv-json-download" type="button" disabled>Download .json</button></div></div>
+      </div>
+    </div>
+    <p id="csv-json-status" class="csv-json-status" role="status" aria-live="polite" hidden></p>
+    <div class="csv-json-settings">
+      <label>Separator<select id="csv-json-separator" class="tool-select"><option value="auto">Auto detect</option><option value="comma">Comma</option><option value="semicolon">Semicolon</option><option value="tab">Tab</option><option value="pipe">Pipe</option></select></label>
+      <label>File encoding<select id="csv-json-encoding" class="tool-select"><option value="auto">Auto detect</option><option value="utf-8">UTF-8</option><option value="utf-16le">UTF-16 LE</option><option value="utf-16be">UTF-16 BE</option><option value="windows-1252">Windows-1252</option></select></label>
+      <label>JSON format<select id="csv-json-format" class="tool-select"><option value="pretty">Pretty, 2 spaces</option><option value="compact">Compact</option><option value="lines">JSON Lines</option></select></label>
+      <div class="csv-json-checks"><label><input id="csv-json-headers" type="checkbox" checked /> First row is headers</label><label><input id="csv-json-types" type="checkbox" /> Detect numbers and booleans</label><label><input id="csv-json-null" type="checkbox" /> Empty cells as null</label></div>
+    </div>
+    <div id="csv-json-details" class="csv-json-details" hidden>
+      <div class="csv-json-details-head"><h2>Check the result</h2><p id="csv-json-summary"></p></div>
+      <p id="csv-json-diagnostics" class="csv-json-diagnostics"></p>
+      <div class="csv-json-table-scroll" tabindex="0" role="region" aria-label="CSV table preview"><table id="csv-json-table"></table></div>
+      <p class="result-note" id="csv-json-preview-note"></p>
+    </div>
+  </div>
+</div>
+<script src="../scripts/csv-to-json.ts"></script>
+<style>
+  .csv-json-drop { padding: 0; overflow: hidden; }
+  .csv-json-workspace { min-width: 0; }
+  .csv-json-topline { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--line); font-weight: 600; font-stretch: 85%; }
+  .csv-json-topline span:nth-child(2) { color: var(--slate); font-size: 13px; font-weight: 500; }
+  .csv-json-topline span:last-child { text-align: right; }
+  .csv-json-panes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .csv-json-pane { min-width: 0; display: grid; grid-template-rows: minmax(290px, auto) auto; }
+  .csv-json-pane:first-child { border-right: 1px solid var(--line); }
+  :global(#csv-json-input), :global(#csv-json-code) { width: 100%; height: 100%; min-height: 290px; max-height: 420px; border: 0; border-radius: 0; margin: 0; padding: 20px; font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow: auto; }
+  :global(#csv-json-input) { resize: vertical; }
+  :global(#csv-json-code) { background: #f7f9ff; color: #1c2b4f; white-space: pre; }
+  .csv-json-pane-foot { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 8px 18px; flex-wrap: wrap; padding: 10px 20px; border-top: 1px solid var(--line); color: var(--slate); font-size: 13px; }
+  .csv-json-pane-foot .actions { gap: 12px; }
+  .csv-json-pane-foot .text-button { font-size: 13px; font-weight: 600; padding: 4px 0; }
+  .csv-json-pane-foot .text-button:disabled { color: var(--slate); opacity: .55; cursor: default; }
+  .csv-json-status { margin: 0; padding: 12px 20px; color: #8f2f20; background: #fff2ef; border-top: 1px solid #e8b9ad; }
+  .csv-json-settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 20px; border-top: 1px solid var(--line); }
+  .csv-json-settings > label { display: grid; gap: 6px; color: var(--slate); font-size: 13px; font-weight: 600; }
+  :global(.csv-json-settings .tool-select) { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); padding: 8px 10px; font: inherit; color: var(--ink); }
+  .csv-json-checks { grid-column: 1 / -1; display: flex; gap: 12px 28px; flex-wrap: wrap; }
+  .csv-json-checks label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .csv-json-checks input { width: 17px; height: 17px; accent-color: var(--cobalt); }
+  .csv-json-details { border-top: 1px solid var(--line); padding: 24px 20px 26px; }
+  .csv-json-details-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px 24px; flex-wrap: wrap; }
+  .csv-json-details-head h2 { margin: 0; font-size: 24px; font-stretch: 85%; line-height: 1.1; }
+  .csv-json-details-head p { margin: 0; color: var(--slate); font-size: 14px; }
+  .csv-json-diagnostics { margin: 12px 0; color: var(--slate); font-size: 14px; }
+  .csv-json-table-scroll { overflow: auto; max-height: 320px; border: 1px solid var(--line); margin-top: 16px; }
+  :global(#csv-json-table) { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 14px; }
+  :global(#csv-json-table th), :global(#csv-json-table td) { text-align: left; padding: 8px 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: pre; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+  :global(#csv-json-table th) { position: sticky; top: 0; background: #f7f9ff; font-weight: 600; }
+  .csv-json-details .result-note { margin-bottom: 0; }
+  @media(max-width: 740px) { .csv-json-topline { grid-template-columns: 1fr 1fr; } .csv-json-topline span:nth-child(2) { display: none; } .csv-json-panes { grid-template-columns: 1fr; } .csv-json-pane:first-child { border-right: 0; border-bottom: 2px solid var(--ink); } .csv-json-settings { grid-template-columns: 1fr 1fr; } }
+  @media(max-width: 500px) { .csv-json-settings { grid-template-columns: 1fr; } .csv-json-pane-foot { align-items: start; } }
+</style>

@@ -8,6 +8,8 @@ import XmlToCsvTool from '../components/XmlToCsvTool.astro';
 import XmlToJsonTool from '../components/XmlToJsonTool.astro';
 import CsvToSqlTool from '../components/CsvToSqlTool.astro';
 import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
+import CsvViewerTool from '../components/CsvViewerTool.astro';
+import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -34,6 +36,36 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
 ---
 <Tool {locale} {entry} category={tool.category} {alternates}>
   <main class="wrap">
+    {tool.id === 'csv-to-json' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Paste CSV. See JSON immediately.</strong> Check the parsed rows, choose how values are handled, then copy or download the complete result. Your data stays in your browser.</p><p class="caption">CSV, TSV and text files up to 10 MB</p></div></div>
+      <CsvToJsonTool />
+      <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">How CSV becomes JSON</h2></div><div class="how-copy">
+        <p>Paste CSV or TSV, choose a local file, or drag one into the converter. It reads the file on your device and converts it in a browser worker. Nothing is uploaded. The output updates as you edit the input or settings.</p>
+        <h3>Choose how to map rows</h3>
+        <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">CSV input</th><th scope="col">JSON result</th></tr></thead><tbody>
+          <tr><td>First row contains names</td><td>Each following row becomes an object with those names as keys. Blank or repeated names get unique labels.</td></tr>
+          <tr><td>No header row</td><td>Every row becomes an object with keys such as <code>Column 1</code> and <code>Column 2</code>.</td></tr>
+          <tr><td><code>001</code>, <code>true</code>, empty cell</td><td>Values stay strings by default, preserving codes and leading zeros. You can detect safe numbers and booleans or turn empty cells into <code>null</code>.</td></tr>
+          <tr><td>A quoted comma, quote or line break</td><td>It stays within one field. Double a quote inside a quoted field, as standard CSV requires.</td></tr>
+        </tbody></table></div>
+        <p>Auto detect checks comma, semicolon, tab and pipe separators. You can set one explicitly if the preview looks wrong. UTF-8, UTF-16 and Windows-1252 files are supported; set the encoding if characters look incorrect.</p>
+        <p>Pretty and compact output are JSON arrays. JSON Lines writes one object per line for tools that accept <code>.jsonl</code>. The preview shows at most eight rows and 25 columns; Copy JSON and Download include all rows and columns. Rows with fewer fields get empty values, and rows with extra fields get generated column names. The converter points out differing row widths and renamed headers.</p>
+        <p>Files are limited to 10 MB and 500 columns. Large conversions may use substantial memory on a phone. Need to explore or edit the table first? Open the <a href="/csv-viewer/">CSV viewer</a>. For the reverse conversion, use <a href="/json-to-csv/">JSON to CSV</a>.</p>
+      </div></section>
+    </>}
+    {tool.id === 'csv-viewer' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Open and explore a CSV in seconds.</strong> Search rows, filter a column, sort, fix cells and export the result. Everything runs locally in your browser.</p><p class="caption">.csv, .tsv, .tab and .txt files up to 10 MB</p></div></div>
+      <CsvViewerTool />
+      <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">How the viewer works</h2></div><div class="how-copy">
+        <p>Choose a file, drop it on the viewer, or paste CSV text. The file is read and parsed in a browser worker; its contents are not sent to a server. Commas, semicolons, tabs and pipes are detected automatically. If the table looks wrong, set the separator in Import settings before opening the file.</p>
+        <h3>Explore and edit</h3>
+        <p>Search every column, filter one column by text, and click a heading to sort in either direction. The column details panel counts shown values, blanks and distinct values, with examples. Click a cell to change it. Revert edits restores the original values in this tab.</p>
+        <p>The grid renders only rows near the visible area so large tables remain practical to scroll. Files are limited to 10 MB and 500 columns; very large datasets can still use substantial device memory. Rows with missing fields are padded with empty cells, and you can isolate rows whose field counts differ.</p>
+        <h3>Save what you need</h3>
+        <p>Choose all rows or shown rows before downloading CSV or JSON, or copying tab-separated text. CSV downloads use commas and UTF-8. JSON values remain strings, so codes such as <code>001</code> are preserved. Your original file is never changed.</p>
+        <p>UTF-8, UTF-16 and Windows-1252 file encodings are supported. Encoding detection uses byte marks and text checks; choose the encoding manually in Import settings if characters look wrong.</p>
+      </div></section>
+    </>}
     {tool.id === 'json-beautifier' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Make JSON easier to read.</strong> Paste text or choose a file, pick an indentation style, and copy or download the formatted result. Everything runs in your browser.</p><p class="caption">.json and .txt files up to 10 MB</p></div></div>
       <JsonBeautifierTool />
