@@ -10,6 +10,7 @@ import CsvToSqlTool from '../components/CsvToSqlTool.astro';
 import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
+import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -36,6 +37,23 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
 ---
 <Tool {locale} {entry} category={tool.category} {alternates}>
   <main class="wrap">
+    {tool.id === 'qr-code-scanner' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Scan a QR code right here.</strong> Use your camera, choose an image, or paste a screenshot. Review the decoded link or text before you act on it.</p><p class="caption">Free online QR scanner · No sign-up · On-device decoding</p></div></div>
+      <QrCodeScannerTool />
+      <section aria-labelledby="qr-how-title"><div class="sec-head"><h2 id="qr-how-title">How to scan a QR code</h2><p>Your camera feed and images stay on your device.</p></div><div class="how-copy">
+        <h3>With your camera</h3>
+        <p>The camera starts when you open this page. Allow camera access when prompted, then keep the full code in view until it is read. The camera stops after a successful scan. You can inspect and copy the full result, then choose whether to open a web link.</p>
+        <h3>From an image or screenshot</h3>
+        <p>Choose <strong>Image</strong>, then select or drop a PNG, JPG, WebP, GIF or BMP image. You can also paste a screenshot from your clipboard. For best results, use a clear, straight-on image with the entire QR code and its blank border visible.</p>
+        <h3>What happens to the result?</h3>
+        <p>The scanner shows the exact text encoded in the QR code. For web links, it also shows the destination and offers an explicit Open link button. It never opens a scanned link automatically. Only <code>http://</code> and <code>https://</code> addresses can be opened from the result. Scans are not saved or uploaded.</p>
+        <p>This online QR code scanner works in modern desktop and mobile browsers. Camera access needs a secure connection and your permission. If camera access is unavailable, scan a saved image instead. It reads QR codes, rather than other barcode types.</p>
+        <h3>Frequently asked questions</h3>
+        <p><strong>Is the QR scanner free?</strong> Yes. There is no account, installation, or scan limit.</p>
+        <p><strong>Can I scan a QR code from a screenshot?</strong> Yes. Choose an image or paste a screenshot into the image panel.</p>
+        <p><strong>Is my camera recording?</strong> No. Decoding happens in this browser tab. Camera access stops when you stop scanning, scan a code, switch to image mode, or leave the page.</p>
+      </div></section>
+    </>}
     {tool.id === 'csv-to-json' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Paste CSV. See JSON immediately.</strong> Check the parsed rows, choose how values are handled, then copy or download the complete result. Your data stays in your browser.</p><p class="caption">CSV, TSV and text files up to 10 MB</p></div></div>
       <CsvToJsonTool />

@@ -7,6 +7,19 @@ export type ToolLocale = { path: string; title: string; description: string; h1:
 export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesApplication'; locales: Partial<Record<Locale, ToolLocale>> };
 
 export const tools: Record<string, Tool> = {
+  qrCodeScanner: {
+    id: 'qr-code-scanner',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/qr-code-scanner/',
+        title: 'QR code scanner free online: camera or image | thetoolproject',
+        description: 'Scan QR codes online for free with your camera, or read one from an image or screenshot. See the full result before opening a link. Private, fast, and no app required.',
+        h1: 'QR code scanner',
+        reviewed: true,
+      },
+    },
+  },
   csvToJson: {
     id: 'csv-to-json',
     category: 'DeveloperApplication',

@@ -1,0 +1,67 @@
+<div class="qr-tool" id="qr-tool">
+  <div class="qr-topline"><div><h2>Scan a code</h2><p>Choose a live camera or an image you already have.</p></div><span class="qr-private">Decoded on your device</span></div>
+  <div class="qr-modes" role="group" aria-label="Scan source">
+    <button type="button" id="qr-camera-tab" aria-pressed="true">Camera</button>
+    <button type="button" id="qr-image-tab" aria-pressed="false">Image or screenshot</button>
+  </div>
+  <div class="qr-body">
+    <div id="qr-camera-panel" class="qr-camera-panel">
+      <div class="qr-view" id="qr-view">
+        <video id="qr-video" autoplay muted playsinline aria-label="Live camera view"></video>
+        <div class="qr-view-message" id="qr-view-message"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M4 16V8a4 4 0 0 1 4-4h8M32 4h8a4 4 0 0 1 4 4v8M44 32v8a4 4 0 0 1-4 4h-8M16 44H8a4 4 0 0 1-4-4v-8M14 14h8v8h-8zM26 14h8v8h-8zM14 26h8v8h-8zM26 26h3M34 26v8h-8" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg><p>Camera preview appears here</p></div>
+      </div>
+      <div class="qr-controls"><button type="button" class="btn" id="qr-start">Start camera</button><button type="button" class="btn alt" id="qr-stop" hidden>Stop camera</button><button type="button" class="text-button" id="qr-switch" hidden>Switch camera</button><button type="button" class="text-button" id="qr-torch" hidden aria-pressed="false">Turn on light</button></div>
+      <p class="qr-tip">Keep the whole QR code in view and hold it steady. Scanning stops when a code is found.</p>
+    </div>
+    <div id="qr-image-panel" class="qr-image-panel" hidden>
+      <div class="qr-file-zone" id="qr-file-zone"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 34V10a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v24M8 34l9-10 7 7 7-9 9 12M8 34v4a4 4 0 0 0 4 4h24a4 4 0 0 0 4-4v-4H8zM18 18h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>Drop a QR image here</h3><p>Or choose a file from your device</p><input type="file" id="qr-file" class="visually-hidden" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" tabindex="-1" /><button type="button" class="btn" id="qr-choose">Choose image</button></div>
+      <p class="qr-tip">PNG, JPG, WebP, GIF or BMP up to 20 MB. You can also paste a screenshot while this page is open.</p>
+    </div>
+    <p id="qr-status" class="qr-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+    <div class="qr-result" id="qr-result" hidden>
+      <div class="qr-result-head"><div><span>QR code found</span><h3 id="qr-result-type">Scanned text</h3></div><button type="button" class="text-button" id="qr-clear">Scan another</button></div>
+      <p id="qr-destination" class="qr-destination" hidden></p>
+      <label for="qr-output" class="field-label">Full result</label><textarea id="qr-output" readonly spellcheck="false" rows="4"></textarea>
+      <div class="qr-result-actions"><button type="button" class="btn" id="qr-copy">Copy result</button><a id="qr-open" class="btn alt" target="_blank" rel="noopener noreferrer" hidden>Open link</a></div>
+      <p class="qr-result-note" id="qr-result-note">Check the full result before opening a link.</p>
+    </div>
+  </div>
+</div>
+<style>
+  .qr-tool { margin-block-start: 40px; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper); overflow: hidden; }
+  .qr-topline { display: flex; justify-content: space-between; align-items: end; gap: 20px; padding: 28px 32px 24px; }
+  .qr-topline h2 { font-size: 32px; font-stretch: 88%; line-height: 1; margin: 0 0 8px; }
+  .qr-topline p { margin: 0; color: var(--slate); }
+  .qr-private { color: var(--cobalt); font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .qr-modes { display: flex; border-block: 1px solid var(--line); }
+  .qr-modes button { flex: 1; min-height: 52px; border: 0; background: #f7f8fa; color: var(--slate); font: inherit; font-weight: 600; cursor: pointer; }
+  .qr-modes button + button { border-inline-start: 1px solid var(--line); }
+  .qr-modes button[aria-pressed="true"] { color: var(--ink); background: var(--paper); box-shadow: inset 0 -3px var(--cobalt); }
+  .qr-body { padding: 28px 32px 32px; }
+  .qr-view { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 8; min-height: 280px; max-height: 520px; background: #151a26; color: white; overflow: hidden; border-radius: 3px; }
+  .qr-view video { display: none; width: 100%; height: 100%; position: absolute; inset: 0; object-fit: contain; }
+  .qr-view.active video { display: block; }
+  .qr-view-message { display: grid; justify-items: center; text-align: center; gap: 8px; color: #dce2f1; }
+  .qr-view-message svg { width: 64px; height: 64px; color: #8d9fcd; }
+  .qr-view-message p { margin: 0; }
+  .qr-view.active .qr-view-message { display: none; }
+  .qr-controls, .qr-result-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block-start: 20px; }
+  .qr-tip { margin: 14px 0 0; color: var(--slate); font-size: 14px; }
+  .qr-file-zone { min-height: 280px; display: grid; place-content: center; justify-items: center; text-align: center; padding: 28px; border: 2px dashed #a8b0bf; border-radius: 3px; background: #f8f9fb; }
+  .qr-file-zone.over { border-color: var(--cobalt); background: var(--cobalt-wash); }
+  .qr-file-zone svg { width: 54px; height: 54px; color: var(--cobalt); margin-block-end: 12px; }
+  .qr-file-zone h3 { margin: 0; font-size: 25px; line-height: 1.2; font-stretch: 88%; }
+  .qr-file-zone p { margin: 6px 0 20px; color: var(--slate); }
+  .qr-status { margin: 20px 0 0; padding: 12px 16px; background: var(--cobalt-wash); color: var(--ink); border-inline-start: 3px solid var(--cobalt); }
+  .qr-status.error { background: #fff0ef; border-color: #b33e31; }
+  .qr-result { border-block-start: 1px solid var(--line); margin-block-start: 28px; padding-block-start: 24px; }
+  .qr-result-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+  .qr-result-head span { color: #2e714d; font-size: 14px; font-weight: 700; }
+  .qr-result-head h3 { margin: 4px 0 20px; font-size: 28px; line-height: 1.2; font-stretch: 88%; }
+  .qr-destination { margin: 0 0 20px; padding: 12px 14px; overflow-wrap: anywhere; background: #f2f4f7; font-weight: 600; }
+  .qr-result textarea { display: block; width: 100%; max-height: 260px; min-height: 92px; resize: vertical; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 3px; color: var(--ink); background: white; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  .qr-result-actions a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+  .qr-result-note { margin: 12px 0 0; color: var(--slate); font-size: 14px; }
+  @media (max-width: 650px) { .qr-topline { align-items: start; flex-direction: column; gap: 8px; } .qr-topline, .qr-body { padding-inline: 20px; } .qr-view { aspect-ratio: 4 / 5; min-height: 320px; } .qr-topline h2 { font-size: 28px; } }
+</style>
+<script src="../scripts/qr-code-scanner.ts"></script>

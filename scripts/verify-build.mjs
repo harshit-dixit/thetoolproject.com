@@ -12,6 +12,7 @@ const csvSql = read('csv-to-sql/index.html');
 const csvViewer = read('csv-viewer/index.html');
 const csvJson = read('csv-to-json/index.html');
 const jsonBeautifier = read('json-beautifier/index.html');
+const qrScanner = read('qr-code-scanner/index.html');
 const home = read('index.html');
 const hasGuides = existsSync(new URL('../dist/guides/json/index.html', import.meta.url)) && existsSync(new URL('../dist/guides/json-syntax-square-brackets/index.html', import.meta.url));
 const notFound = read('404.html');
@@ -69,6 +70,13 @@ assert.match(csvSql, /<h1 class="page-title">CSV to SQL<\/h1>/);
 assert.match(csvSql, /rel="canonical" href="https:\/\/thetoolproject\.com\/csv-to-sql\/"/);
 assert.match(home, /href="\/csv-viewer\/"/);
 assert.match(home, /href="\/csv-to-json\/"/);
+assert.match(home, /href="\/qr-code-scanner\/"/);
+assert.match(qrScanner, /<title>QR code scanner free online: camera or image \| thetoolproject<\/title>/);
+assert.match(qrScanner, /rel="canonical" href="https:\/\/thetoolproject\.com\/qr-code-scanner\/"/);
+assert.match(qrScanner, /<h1 class="page-title">QR code scanner<\/h1>/);
+const qrLd = [...qrScanner.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
+assert.deepEqual(qrLd.map(item => item['@type']), ['WebApplication', 'BreadcrumbList']);
+assert.equal(qrLd[0].applicationCategory, 'UtilitiesApplication');
 assert.match(csvJson, /<h1 class="page-title">CSV to JSON<\/h1>/);
 assert.match(csvJson, /rel="canonical" href="https:\/\/thetoolproject\.com\/csv-to-json\/"/);
 assert.match(csvViewer, /<h1 class="page-title">CSV viewer<\/h1>/);
@@ -106,6 +114,7 @@ const expectedUrls = [
   'https://thetoolproject.com/csv-to-sql/',
   'https://thetoolproject.com/csv-viewer/',
   'https://thetoolproject.com/csv-to-json/',
+  'https://thetoolproject.com/qr-code-scanner/',
   'https://thetoolproject.com/privacy/',
   'https://thetoolproject.com/terms/',
   ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/'] : []),
@@ -119,7 +128,7 @@ const firstLoad = page => {
   assert.ok(files.length, `${page} has a client script`);
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql', 'csv-viewer', 'csv-to-json'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner'].map(page => [page, firstLoad(`${page}/index.html`)]));
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);
 assert.ok(readdirSync(jsDir).some(name => name.startsWith('cpexcel.') && name.endsWith('.js')), 'Legacy .xls code pages are a separate chunk');
 console.log(`Built output checks passed. First-load JS: ${Object.entries(sizes).map(([page, size]) => `${page} ${size.gzip} bytes gzip (${size.raw} raw)`).join(', ')}.`);
