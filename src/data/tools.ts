@@ -7,6 +7,19 @@ export type ToolLocale = { path: string; title: string; description: string; h1:
 export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesApplication'; locales: Partial<Record<Locale, ToolLocale>> };
 
 export const tools: Record<string, Tool> = {
+  jsonBeautifier: {
+    id: 'json-beautifier',
+    category: 'DeveloperApplication',
+    locales: {
+      en: {
+        path: '/json-beautifier/',
+        title: 'JSON beautifier and formatter online | thetoolproject',
+        description: 'Beautify and validate JSON in your browser. Choose indentation, fix syntax errors, then copy or download formatted JSON. Nothing is uploaded.',
+        h1: 'JSON beautifier',
+        reviewed: true,
+      },
+    },
+  },
   csvToSql: {
     id: 'csv-to-sql',
     category: 'DeveloperApplication',

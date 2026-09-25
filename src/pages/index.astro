@@ -9,13 +9,15 @@ const xmlCsv = tools.xmlToCsv.locales.en!;
 const xmlJson = tools.xmlToJson.locales.en!;
 const excel = tools.excelToCsv.locales.en!;
 const csvSql = tools.csvToSql.locales.en!;
+const jsonBeautifier = tools.jsonBeautifier.locales.en!;
 ---
 <Base locale="en" title={t('home.title')} description={t('home.description')} path="/">
   <main class="wrap">
     <div class="hero"><h1 class="page-title">{t('home.h1')}</h1><p class="lead"><strong>{t('home.leadStrong')}</strong> {t('home.lead')}</p></div>
     <section aria-labelledby="file-tools"><div class="sec-head"><h2 id="file-tools">{t('home.fileTools')}</h2></div>
       <div class="table-scroll"><table class="spec-table"><thead><tr><th scope="col">{t('home.tool')}</th><th scope="col">{t('home.takes')}</th><th scope="col">{t('home.gives')}</th><th scope="col">{t('home.goodFor')}</th></tr></thead>
-        <tbody><tr><td><a href={tool.path}>{tool.h1}</a></td><td class="fmt">{t('home.jsonInput')}</td><td class="fmt">{t('home.htmlOutput')}</td><td class="note">{t('home.goodForText')}</td></tr>
+        <tbody><tr><td><a href={jsonBeautifier.path}>{jsonBeautifier.h1}</a></td><td class="fmt">JSON text, .json</td><td class="fmt">Formatted JSON</td><td class="note">Reading, validating and sharing JSON with consistent indentation</td></tr>
+        <tr><td><a href={tool.path}>{tool.h1}</a></td><td class="fmt">{t('home.jsonInput')}</td><td class="fmt">{t('home.htmlOutput')}</td><td class="note">{t('home.goodForText')}</td></tr>
         <tr><td><a href={jsonExcel.path}>{jsonExcel.h1}</a></td><td class="fmt">{t('home.jsonExcelInput')}</td><td class="fmt">{t('home.xlsxOutput')}</td><td class="note">{t('home.jsonExcelGoodFor')}</td></tr>
         <tr><td><a href={jsonCsv.path}>{jsonCsv.h1}</a></td><td class="fmt">{t('home.jsonInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.jsonCsvGoodFor')}</td></tr>
         <tr><td><a href={xmlCsv.path}>{xmlCsv.h1}</a></td><td class="fmt">{t('home.xmlInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.xmlCsvGoodFor')}</td></tr>

@@ -9,6 +9,7 @@ const jsonCsv = read('json-to-csv/index.html');
 const xmlCsv = read('xml-to-csv/index.html');
 const xmlJson = read('xml-to-json/index.html');
 const csvSql = read('csv-to-sql/index.html');
+const jsonBeautifier = read('json-beautifier/index.html');
 const home = read('index.html');
 const hasGuides = existsSync(new URL('../dist/guides/json/index.html', import.meta.url)) && existsSync(new URL('../dist/guides/json-syntax-square-brackets/index.html', import.meta.url));
 const notFound = read('404.html');
@@ -47,6 +48,9 @@ const jsonExcelLd = [...jsonExcel.matchAll(/<script type="application\/ld\+json"
 assert.deepEqual(jsonExcelLd.map(item => item['@type']), ['WebApplication', 'BreadcrumbList']);
 assert.equal(jsonExcelLd[0].applicationCategory, 'UtilitiesApplication');
 assert.match(home, /href="\/json-to-csv\/"/);
+assert.match(home, /href="\/json-beautifier\/"/);
+assert.match(jsonBeautifier, /<h1 class="page-title">JSON beautifier<\/h1>/);
+assert.match(jsonBeautifier, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-beautifier\/"/);
 assert.match(jsonCsv, /<title>JSON to CSV converter: convert JSON files online \| thetoolproject<\/title>/);
 assert.match(jsonCsv, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
 assert.match(jsonCsv, /hreflang="x-default" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
@@ -87,6 +91,7 @@ const expectedUrls = [
   'https://thetoolproject.com/json-to-html/',
   'https://thetoolproject.com/json-to-excel/',
   'https://thetoolproject.com/json-to-csv/',
+  'https://thetoolproject.com/json-beautifier/',
   'https://thetoolproject.com/xml-to-csv/',
   'https://thetoolproject.com/xml-to-json/',
   'https://thetoolproject.com/excel-to-csv/',
@@ -104,7 +109,7 @@ const firstLoad = page => {
   assert.ok(files.length, `${page} has a client script`);
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql'].map(page => [page, firstLoad(`${page}/index.html`)]));
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);
 assert.ok(readdirSync(jsDir).some(name => name.startsWith('cpexcel.') && name.endsWith('.js')), 'Legacy .xls code pages are a separate chunk');
 console.log(`Built output checks passed. First-load JS: ${Object.entries(sizes).map(([page, size]) => `${page} ${size.gzip} bytes gzip (${size.raw} raw)`).join(', ')}.`);

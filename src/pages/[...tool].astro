@@ -7,6 +7,7 @@ import JsonToCsvTool from '../components/JsonToCsvTool.astro';
 import XmlToCsvTool from '../components/XmlToCsvTool.astro';
 import XmlToJsonTool from '../components/XmlToJsonTool.astro';
 import CsvToSqlTool from '../components/CsvToSqlTool.astro';
+import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -33,6 +34,15 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
 ---
 <Tool {locale} {entry} category={tool.category} {alternates}>
   <main class="wrap">
+    {tool.id === 'json-beautifier' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Make JSON easier to read.</strong> Paste text or choose a file, pick an indentation style, and copy or download the formatted result. Everything runs in your browser.</p><p class="caption">.json and .txt files up to 10 MB</p></div></div>
+      <JsonBeautifierTool />
+      <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">How it works</h2></div><div class="how-copy">
+        <p>The beautifier checks that your input is valid JSON, then adds line breaks and indentation. Choose 2 spaces, 4 spaces or tabs. Compact removes optional whitespace when you need a smaller text file. The output can be copied or downloaded as .json.</p>
+        <p>Objects, arrays, strings, numbers, booleans and null are accepted at the top level. Integer digits larger than JavaScript can safely represent are preserved. As with JSON parsing generally, duplicate object keys collapse to their last value, and object keys made only of integer digits may be reordered.</p>
+        <p>For invalid JSON, the message points to a line and column and suggests a fix for common problems such as trailing commas, single quotes and unquoted keys. JSON Lines, comments and JSON with trailing commas are not accepted as standard JSON. Files up to 10 MB are processed locally in a Web Worker; large files may use substantial memory on a phone.</p>
+      </div></section>
+    </>}
     {tool.id === 'csv-to-sql' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Turn CSV rows into SQL INSERT statements.</strong> Paste data or choose a file, select your database, then copy or download the generated SQL. Conversion happens in your browser.</p><p class="caption">.csv, .tsv and .txt files up to 10 MB</p></div></div>
       <CsvToSqlTool />

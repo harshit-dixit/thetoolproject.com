@@ -1,0 +1,32 @@
+<div class="drop" id="json-beautifier-tool">
+  <div class="tool-frame">
+    <label class="field-label" for="beautifier-input">Input JSON</label>
+    <textarea id="beautifier-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder='Paste JSON here, for example {"name":"Maya"}'></textarea>
+    <p class="input-hint" id="beautifier-hint">Paste JSON, drop a file here, or choose a .json or .txt file. Your data stays in this browser.</p>
+    <div class="actions input-actions">
+      <input class="visually-hidden" type="file" id="beautifier-file" accept=".json,.txt,application/json,text/plain" tabindex="-1" />
+      <button class="btn alt" type="button" id="beautifier-choose">Choose JSON file</button>
+      <button class="text-button" type="button" id="beautifier-example">Try an example</button>
+    </div>
+    <div class="file-line" id="beautifier-file-line" hidden><span class="file-name" id="beautifier-file-name"></span><span class="file-size" id="beautifier-file-size"></span></div>
+    <div class="option-row"><fieldset><legend>Indentation</legend><div class="chips" role="group" aria-label="Indentation">
+      <button type="button" data-spacing="2" aria-pressed="true">2 spaces</button>
+      <button type="button" data-spacing="4" aria-pressed="false">4 spaces</button>
+      <button type="button" data-spacing="tab" aria-pressed="false">Tabs</button>
+      <button type="button" data-spacing="compact" aria-pressed="false">Compact</button>
+    </div></fieldset></div>
+    <button class="btn" id="beautifier-format" type="button">Beautify JSON</button>
+    <p id="beautifier-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+    <div id="beautifier-placeholder" class="preview-placeholder"><p>Formatted JSON will appear here.</p></div>
+    <div id="beautifier-result" class="result" hidden>
+      <div class="result-head"><label class="field-label" for="beautifier-output">Formatted JSON</label><p class="result-summary" id="beautifier-summary"></p></div>
+      <textarea id="beautifier-output" class="code-view beautifier-output" readonly spellcheck="false" aria-label="Formatted JSON"></textarea>
+      <div class="actions"><button class="btn" id="beautifier-download" type="button">Download JSON</button><button class="btn alt" id="beautifier-copy" type="button">Copy JSON</button><button class="btn alt" id="beautifier-reset" type="button">Start over</button></div>
+    </div>
+  </div>
+</div>
+<style>
+  .beautifier-output { width: 100%; height: 360px; resize: vertical; background: var(--paper); color: var(--ink); }
+  @media (max-width: 560px) { .beautifier-output { height: 300px; } }
+</style>
+<script src="../scripts/json-beautifier.ts"></script>
