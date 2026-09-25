@@ -1,8 +1,8 @@
 import type { Conversion, ConversionError, Layout, Output } from '../lib/json-to-html';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.querySelector<HTMLElement>('#json-tool')!;
-const strings = JSON.parse(root.dataset.strings!) as Record<string, string>;
-const locale = root.dataset.locale || 'en';
+const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const textarea = $<HTMLTextAreaElement>('json-input');
 const fileInput = $<HTMLInputElement>('json-file');
@@ -26,19 +26,10 @@ let output: Output = 'fragment';
 let current: Conversion | undefined;
 let fileName: string | undefined;
 let view: 'preview' | 'code' = 'preview';
-const formatter = new Intl.NumberFormat(locale);
-const plurals = new Intl.PluralRules(locale);
-const counted = (key: string, count: number) => (strings[`${key}.${plurals.select(count)}`] ?? strings[`${key}.other`]).replace('{count}', formatter.format(count));
-const size = (bytes: number) => {
-  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
-  const n = unit === 'unit.mb' ? bytes / 1048576 : unit === 'unit.kb' ? bytes / 1024 : bytes;
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: unit === 'unit.bytes' ? 0 : 1 }).format(n)} ${strings[unit]}`;
-};
-const substitute = (template: string, values: Record<string, string | number>) => template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
 const wrapJsonLines = (source: string) => `[\n${source.split('\n').filter(line => line.trim()).map(line => `  ${line.trim()}`).join(',\n')}\n]`;
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.textContent = ''; status.hidden = true; }
-function setWorking(working: boolean) { busy = working; convert.disabled = working; if (working) announce(strings['tool.working']); }
+function setWorking(working: boolean) { busy = working; convert.disabled = working; if (working) announce(t('tool.working')); }
 // A worker can't drop a conversion midway, so replace it instead of queueing behind it.
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; setWorking(false); clearStatus(); } }
 const hint = $('input-hint');
@@ -57,22 +48,22 @@ function showResult(data: Conversion) {
   result.hidden = false;
   frame.srcdoc = data.previewHtml;
   code.textContent = data.html.length > 100000 ? data.html.slice(0, 100000) : data.html;
-  $('result-summary').textContent = substitute(strings['tool.summary'], { rows: counted('tool.rows', data.rows), columns: counted('tool.columns', data.columns), size: size(new Blob([data.html], { type: 'text/html;charset=utf-8' }).size) });
-  previewNote.textContent = substitute(strings['tool.previewCap'], { shown: formatter.format(data.previewRows), total: formatter.format(data.rows) });
-  codeNote.textContent = strings['tool.codeCap'];
-  unsafeNote.textContent = strings['tool.unsafeWarning'];
+  $('result-summary').textContent = t('tool.summary', { rows: counted('tool.rows', data.rows), columns: counted('tool.columns', data.columns), size: formatBytes(new Blob([data.html], { type: 'text/html;charset=utf-8' }).size) });
+  previewNote.textContent = t('tool.previewCap', { shown: formatNumber(data.previewRows), total: formatNumber(data.rows) });
+  codeNote.textContent = t('tool.codeCap');
+  unsafeNote.textContent = t('tool.unsafeWarning');
   unsafeNote.hidden = !data.unsafeNumberFallback;
-  copy.textContent = strings['tool.copy'];
+  copy.textContent = t('tool.copy');
   showView('preview');
   clearStatus();
 }
 function errorMessage(error: ConversionError) {
-  if (error.code === 'empty') return strings['tool.empty'];
-  return substitute(strings['error.location'], { line: formatter.format(error.line), column: formatter.format(error.column), reason: strings[`error.${error.code}`] || strings['error.syntax'] });
+  if (error.code === 'empty') return t('tool.empty');
+  return t('error.location', { line: formatNumber(error.line), column: formatNumber(error.column), reason: t(`error.${error.code}`) });
 }
 function run() {
   const source = fileText ?? textarea.value;
-  if (!source.trim()) { announce(strings['tool.empty']); result.hidden = true; $('preview-placeholder').hidden = false; textarea.focus(); return; }
+  if (!source.trim()) { announce(t('tool.empty')); result.hidden = true; $('preview-placeholder').hidden = false; textarea.focus(); return; }
   stopWorker();
   setWorking(true);
   $('json-lines-help').hidden = true;
@@ -83,33 +74,33 @@ function run() {
     setWorking(false);
     if (event.data.result) { showResult(event.data.result); return; }
     const error = event.data.error;
-    if (!error || !error.code) { announce(strings['tool.workerError']); return; }
+    if (!error || !error.code) { announce(t('tool.workerError')); return; }
     result.hidden = true; $('preview-placeholder').hidden = false; current = undefined;
     announce(errorMessage(error));
     $('json-lines-help').hidden = error.code !== 'jsonLines';
     if (fileText === undefined) { textarea.focus(); textarea.setSelectionRange(error.position, error.position); }
   };
-  worker.onerror = () => { setWorking(false); announce(strings['tool.workerError']); };
+  worker.onerror = () => { setWorking(false); announce(t('tool.workerError')); };
   worker.postMessage({ id, source, layout, output });
 }
 async function loadFile(file: File) {
   const extension = file.name.split('.').at(-1)?.toLowerCase();
-  if (extension !== 'json' && extension !== 'txt') { announce(strings['tool.wrongType']); return; }
-  if (file.size > 50 * 1024 * 1024) { announce(strings['tool.tooLarge']); return; }
+  if (extension !== 'json' && extension !== 'txt') { announce(t('tool.wrongType')); return; }
+  if (file.size > 50 * 1024 * 1024) { announce(t('tool.tooLarge')); return; }
   stopWorker();
-  announce(strings['tool.reading']);
+  announce(t('tool.reading'));
   try {
     const text = await file.text();
-    if (file.size > TEXTAREA_LIMIT) { textarea.value = ''; fileText = text; hint.textContent = substitute(strings['tool.largeFileHint'], { name: file.name }); }
+    if (file.size > TEXTAREA_LIMIT) { textarea.value = ''; fileText = text; hint.textContent = t('tool.largeFileHint', { name: file.name }); }
     else { textarea.value = text; useTextarea(); }
     fileName = file.name;
     $('file-name').textContent = file.name;
-    $('file-size').textContent = size(file.size);
+    $('file-size').textContent = formatBytes(file.size);
     $('file-line').hidden = false;
     result.hidden = true; $('preview-placeholder').hidden = false; current = undefined;
-    announce(substitute(strings['tool.fileLoaded'], { name: file.name, size: size(file.size) }));
+    announce(t('tool.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
     // Keep the file button focused; moving focus here scrolls the mobile page.
-  } catch { announce(strings['tool.readError']); }
+  } catch { announce(t('tool.readError')); }
 }
 $('choose-file').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
@@ -126,7 +117,7 @@ textarea.addEventListener('input', () => { stopWorker(); useTextarea(); fileName
 root.querySelectorAll<HTMLButtonElement>('[data-layout]').forEach(button => button.addEventListener('click', () => {
   layout = button.dataset.layout as Layout;
   root.querySelectorAll<HTMLButtonElement>('[data-layout]').forEach(x => x.setAttribute('aria-pressed', String(x === button)));
-  convert.textContent = strings[layout === 'table' ? 'tool.convertTable' : 'tool.convertList'];
+  convert.textContent = t(layout === 'table' ? 'tool.convertTable' : 'tool.convertList');
   if (current || convert.disabled) run();
 }));
 root.querySelectorAll<HTMLButtonElement>('[data-output]').forEach(button => button.addEventListener('click', () => {
@@ -146,15 +137,15 @@ $('download').addEventListener('click', () => {
 });
 copy.addEventListener('click', async () => {
   if (!current) return;
-  try { if (!navigator.clipboard?.writeText) throw Error(); await navigator.clipboard.writeText(current.html); copy.textContent = strings['tool.copied']; announce(strings['tool.copied']); }
+  try { if (!navigator.clipboard?.writeText) throw Error(); await navigator.clipboard.writeText(current.html); copy.textContent = t('tool.copied'); announce(t('tool.copied')); }
   catch {
     showView('code'); code.textContent = current.html;
     const selection = window.getSelection(); const range = document.createRange(); range.selectNodeContents(code); selection?.removeAllRanges(); selection?.addRange(range);
-    announce(strings['tool.selectCode']);
+    announce(t('tool.selectCode'));
   }
 });
 $('start-over').addEventListener('click', () => { ++sequence; stopWorker(); useTextarea(); textarea.value = ''; fileInput.value = ''; fileName = undefined; current = undefined; result.hidden = true; $('preview-placeholder').hidden = false; $('file-line').hidden = true; $('json-lines-help').hidden = true; clearStatus(); textarea.focus(); });
-const defaultHint = matchMedia('(pointer: coarse)').matches ? strings['tool.inputHintTouch'] : hint.textContent!;
+const defaultHint = matchMedia('(pointer: coarse)').matches ? t('tool.inputHintTouch') : hint.textContent!;
 hint.textContent = defaultHint;
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });
 root.addEventListener('dragleave', event => { if (!root.contains(event.relatedTarget as Node)) root.classList.remove('over'); });

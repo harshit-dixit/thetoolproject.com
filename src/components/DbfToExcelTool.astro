@@ -6,12 +6,12 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'dbf.reading', 'dbf.ready', 'dbf.summary', 'dbf.noteEncoding',
-  'dbf.noteSkipped', 'dbf.noteTextNumbers', 'dbf.notePreviewLimited',
-  'dbf.errInvalid', 'dbf.errUnsupported', 'dbf.errMemo',
-  'dbf.errTooManyRows', 'dbf.errTooManyColumns', 'dbf.errEncoding',
-  'dbf.errWrongType', 'dbf.errTooLarge', 'dbf.errWorker',
-  'unit.kb', 'unit.mb'
+  'dbf.errEncoding', 'dbf.errInvalid', 'dbf.errMemo', 'dbf.errTooLarge', 'dbf.errTooManyColumns',
+  'dbf.errTooManyRows', 'dbf.errUnsupported', 'dbf.errWorker', 'dbf.errWrongType',
+  'dbf.noteEncoding', 'dbf.notePreviewLimited', 'dbf.noteSkipped.one', 'dbf.noteSkipped.other',
+  'dbf.noteTextNumbers.one', 'dbf.noteTextNumbers.other', 'dbf.reading', 'dbf.ready',
+  'dbf.records.one', 'dbf.records.other', 'dbf.summary', 'tool.columns.one', 'tool.columns.other',
+  'unit.bytes', 'unit.kb', 'unit.mb'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
@@ -29,11 +29,11 @@ const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]))
         <div><label class="field-label" for="dbf-encoding">{t('dbf.encodingLabel', locale)}</label>
           <select id="dbf-encoding" class="dbf-select">
             <option value="auto">{t('dbf.encodingAuto', locale)}</option>
-            <option value="windows-1252">Western European (Windows-1252)</option>
-            <option value="windows-1251">Cyrillic (Windows-1251)</option>
-            <option value="ibm866">Cyrillic DOS (CP866)</option>
-            <option value="ibm850">Western European DOS (CP850)</option>
-            <option value="ibm437">US DOS (CP437)</option>
+            <option value="windows-1252">{t('dbf.encWestern', locale)} (Windows-1252)</option>
+            <option value="windows-1251">{t('dbf.encCyrillic', locale)} (Windows-1251)</option>
+            <option value="ibm866">{t('dbf.encCyrillicDos', locale)} (CP866)</option>
+            <option value="ibm850">{t('dbf.encWesternDos', locale)} (CP850)</option>
+            <option value="ibm437">{t('dbf.encUsDos', locale)} (CP437)</option>
             <option value="utf-8">UTF-8</option>
           </select>
           <p class="input-hint">{t('dbf.encodingHint', locale)}</p>

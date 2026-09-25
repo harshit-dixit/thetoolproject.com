@@ -1,7 +1,7 @@
 import { SaxesParser } from 'saxes';
 
 export type XmlJsonOptions = { attributePrefix: '@_' | '@'; alwaysArray: boolean; pretty: boolean };
-export type XmlJsonError = { code: 'empty' | 'doctype' | 'invalidXml' | 'tooDeep'; line?: number; column?: number; detail?: string };
+export type XmlJsonError = { code: 'empty' | 'doctype' | 'invalidXml' | 'noRoot' | 'tooDeep'; line?: number; column?: number; detail?: string };
 export type XmlJsonConversion = { json: string; elements: number; bytes: number };
 type JsonValue = string | JsonValue[] | { [key: string]: JsonValue };
 type Frame = { name: string; attributes: Record<string, string>; children: Record<string, JsonValue>; counts: Record<string, number>; content: (string | { [key: string]: JsonValue })[]; text: string };
@@ -67,7 +67,7 @@ export function convertXmlToJson(source: string, options: XmlJsonOptions): XmlJs
     if (error && typeof error === 'object' && 'code' in error) throw error;
     throw { code: 'invalidXml', line: parser.line, column: parser.column, detail: error instanceof Error ? error.message.replace(/^\d+:\d+:\s*/, '') : undefined } satisfies XmlJsonError;
   }
-  if (!root) throw { code: 'invalidXml', detail: 'No root element was found.' } satisfies XmlJsonError;
+  if (!root) throw { code: 'noRoot' } satisfies XmlJsonError;
   const output: Record<string, JsonValue> = Object.create(null);
   output[root.name] = root.value;
   const json = JSON.stringify(output, null, options.pretty ? 2 : 0);

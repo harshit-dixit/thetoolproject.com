@@ -6,7 +6,8 @@ import {
   formatBytes,
   counted,
   registerLocaleDictionary,
-  getLocaleFromUrl
+  getLocaleFromUrl,
+  langTag
 } from './utils';
 
 describe('i18n utils', () => {
@@ -14,7 +15,7 @@ describe('i18n utils', () => {
     expect(interpolate('Hello {name}!', { name: 'World' })).toBe('Hello World!');
     expect(interpolate('{count} items found', { count: 42 })).toBe('42 items found');
     expect(interpolate('No params')).toBe('No params');
-    expect(interpolate('Missing {param}', {})).toBe('Missing ');
+    expect(() => interpolate('Missing {param}', {})).toThrow(/Missing value for {param}/);
   });
 
   it('translates English keys correctly', () => {
@@ -23,13 +24,13 @@ describe('i18n utils', () => {
   });
 
   it('throws for missing non-English dictionaries', () => {
-    expect(() => t('brand', 'es')).toThrow(/Translation dictionary not found for locale "es"/);
+    expect(() => t('brand', 'it' as any)).toThrow(/Translation dictionary not found for locale "it"/);
   });
 
   it('throws for missing keys in a registered non-English dictionary', () => {
-    registerLocaleDictionary('es', { 'brand': 'thetoolproject' });
-    expect(t('brand', 'es')).toBe('thetoolproject');
-    expect(() => t('home.title', 'es')).toThrow(/Missing translation for key "home.title" in locale "es"/);
+    registerLocaleDictionary('it' as any, { 'brand': 'thetoolproject' });
+    expect(t('brand', 'it' as any)).toBe('thetoolproject');
+    expect(() => t('home.title', 'it' as any)).toThrow(/Missing translation for key "home.title" in locale "it"/);
   });
 
   it('formats numbers according to locale', () => {
@@ -46,6 +47,12 @@ describe('i18n utils', () => {
   it('formats plural forms using counted()', () => {
     expect(counted('tool.rows', 1, 'en')).toBe('1 row');
     expect(counted('tool.rows', 5, 'en')).toBe('5 rows');
+  });
+
+  it('maps locales to BCP 47 tags for lang and hreflang', () => {
+    expect(langTag('pt')).toBe('pt-BR');
+    expect(langTag('ja')).toBe('ja');
+    expect(formatNumber(1234.5, 'pt', 1)).toBe('1.234,5');
   });
 
   it('extracts locale from URL', () => {

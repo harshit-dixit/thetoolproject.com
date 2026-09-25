@@ -6,31 +6,16 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'csvViewer.openTitle', 'csvViewer.openHint', 'csvViewer.chooseFile',
-  'csvViewer.pasteToggle', 'csvViewer.tryExample', 'csvViewer.pasteLabel',
-  'csvViewer.viewPasted', 'csvViewer.importSettings', 'csvViewer.separator',
-  'csvViewer.encoding', 'csvViewer.headersCheck', 'csvViewer.replaceFile',
-  'csvViewer.tableOverview', 'csvViewer.rows', 'csvViewer.columns',
-  'csvViewer.editedCells', 'csvViewer.searchAll', 'csvViewer.searchPlaceholder',
-  'csvViewer.filterColumn', 'csvViewer.allColumns', 'csvViewer.contains',
-  'csvViewer.filterPlaceholder', 'csvViewer.showIrregular', 'csvViewer.gridTip',
-  'csvViewer.tableAria', 'csvViewer.emptyFiltered', 'csvViewer.columnDetails',
-  'csvViewer.chooseColumn', 'csvViewer.exportData', 'csvViewer.exportDesc',
-  'csvViewer.rowsToExport', 'csvViewer.allRows', 'csvViewer.shownRows',
-  'csvViewer.downloadCsv', 'csvViewer.downloadJson', 'csvViewer.copyTsv',
-  'csvViewer.revertEdits', 'csvViewer.copied', 'csvViewer.showingRows',
-  'csvViewer.profileValues', 'csvViewer.profileBlanks', 'csvViewer.profileDistinct',
-  'csvViewer.profileExamples', 'csvViewer.errTooLarge', 'csvViewer.errTooManyColumns',
-  'csvViewer.errEmpty', 'csvViewer.errRead', 'csvViewer.errWorker',
-  'csvViewer.confirmRevert', 'csvViewer.sepAuto', 'csvViewer.sepComma',
-  'csvViewer.sepSemicolon', 'csvViewer.sepTab', 'csvViewer.sepPipe',
-  'csvViewer.metaSeparated', 'csvViewer.metaPasted', 'csvViewer.metaIrregular.one',
-  'csvViewer.metaIrregular.other', 'csvViewer.reading', 'csvViewer.errReadGeneric',
-  'csvViewer.errReadRow', 'csvViewer.errLargeMemory', 'csvViewer.sortHeader',
-  'csvViewer.emptyCell', 'csvViewer.cellAria', 'csvViewer.cellEmpty',
-  'csvViewer.editCellAria', 'csvViewer.profileNone', 'csvViewer.statusReverted',
-  'csvViewer.statusCsvDownloaded', 'csvViewer.statusJsonDownloaded',
-  'csvViewer.statusCopied', 'csvViewer.errClipboard'
+  'csvViewer.allColumns', 'csvViewer.cellAria', 'csvViewer.cellEmpty', 'csvViewer.confirmDiscard',
+  'csvViewer.editCellAria', 'csvViewer.emptyCell', 'csvViewer.errClipboard', 'csvViewer.errEmpty',
+  'csvViewer.errLargeMemory', 'csvViewer.errReadGeneric', 'csvViewer.errReadRow',
+  'csvViewer.errTooManyColumns', 'csvViewer.errWorker', 'csvViewer.metaIrregular.one',
+  'csvViewer.metaIrregular.other', 'csvViewer.metaPasted', 'csvViewer.metaSeparated',
+  'csvViewer.profileBlanks', 'csvViewer.profileDistinct', 'csvViewer.profileExamples',
+  'csvViewer.profileNone', 'csvViewer.profileValues', 'csvViewer.reading', 'csvViewer.sepComma',
+  'csvViewer.sepPipe', 'csvViewer.sepSemicolon', 'csvViewer.sepTab', 'csvViewer.showingRows.one',
+  'csvViewer.showingRows.other', 'csvViewer.sortHeader', 'csvViewer.statusCopied',
+  'csvViewer.statusCsvDownloaded', 'csvViewer.statusJsonDownloaded', 'csvViewer.statusReverted'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
@@ -51,7 +36,7 @@ const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]))
     </div>
     <details class="viewer-options"><summary>{t('csvViewer.importSettings', locale)}</summary><div class="viewer-option-grid">
       <label><span class="field-label">{t('csvViewer.separator', locale)}</span><select id="viewer-separator" class="tool-select"><option value="auto">{t('csvViewer.sepAuto', locale)}</option><option value="comma">{t('csvViewer.sepComma', locale)}</option><option value="semicolon">{t('csvViewer.sepSemicolon', locale)}</option><option value="tab">{t('csvViewer.sepTab', locale)}</option><option value="pipe">{t('csvViewer.sepPipe', locale)}</option></select></label>
-      <label><span class="field-label">{t('csvViewer.encoding', locale)}</span><select id="viewer-encoding" class="tool-select"><option value="auto">Auto detect</option><option value="utf-8">UTF-8</option><option value="utf-16le">UTF-16 LE</option><option value="utf-16be">UTF-16 BE</option><option value="windows-1252">Windows-1252</option></select></label>
+      <label><span class="field-label">{t('csvViewer.encoding', locale)}</span><select id="viewer-encoding" class="tool-select"><option value="auto">{t('csvViewer.sepAuto', locale)}</option><option value="utf-8">UTF-8</option><option value="utf-16le">UTF-16 LE</option><option value="utf-16be">UTF-16 BE</option><option value="windows-1252">Windows-1252</option></select></label>
       <label class="viewer-checkbox"><input id="viewer-headers" type="checkbox" checked /> {t('csvViewer.headersCheck', locale)}</label>
     </div></details>
     <p id="viewer-import-status" class="status" role="status" aria-live="polite" hidden></p>

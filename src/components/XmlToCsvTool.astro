@@ -3,7 +3,17 @@ import { t, type TranslationKey } from '../i18n/utils';
 import type { Locale } from '../data/tools';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
-const clientKeys: TranslationKey[] = ['xmlCsv.working','xmlCsv.summary','xmlCsv.summaryTsv','xmlCsv.previewCap','xmlCsv.columnsCap','xmlCsv.codeCap','xmlCsv.protectedNote','xmlCsv.empty','xmlCsv.wrongType','xmlCsv.tooLarge','xmlCsv.invalidXml','xmlCsv.doctype','xmlCsv.noData','xmlCsv.tooManyColumns','xmlCsv.invalidPath','xmlCsv.workerError','xmlCsv.download','xmlCsv.downloadTsv','xmlCsv.copy','xmlCsv.copyTsv','xmlCsv.copied','xmlCsv.selectText','xmlCsv.textView','xmlCsv.tsvText','tool.reading','tool.fileLoaded','tool.rows.one','tool.rows.other','tool.columns.one','tool.columns.other','tool.readError','tool.inputHintTouch','tool.largeFileHint','unit.bytes','unit.kb','unit.mb'];
+const clientKeys: TranslationKey[] = [
+  'error.location', 'tool.columns.one', 'tool.columns.other', 'tool.fileLoaded',
+  'tool.inputHintTouch', 'tool.largeFileHint', 'tool.readError', 'tool.reading', 'tool.rows.one',
+  'tool.rows.other', 'unit.bytes', 'unit.kb', 'unit.mb', 'xmlCsv.columnsCap', 'xmlCsv.copied',
+  'xmlCsv.copy', 'xmlCsv.copyTsv', 'xmlCsv.doctype', 'xmlCsv.download', 'xmlCsv.downloadTsv',
+  'xmlCsv.empty', 'xmlCsv.invalidPath', 'xmlCsv.invalidXml', 'xmlCsv.noData', 'xmlCsv.previewCap',
+  'xmlCsv.protectedNote.one', 'xmlCsv.protectedNote.other', 'xmlCsv.selectText', 'xmlCsv.summary',
+  'xmlCsv.summaryTsv', 'xmlCsv.textView', 'xmlCsv.tooDeep', 'xmlCsv.tooLarge',
+  'xmlCsv.tooManyColumns', 'xmlCsv.tsvText', 'xmlCsv.workerError', 'xmlCsv.working',
+  'xmlCsv.wrongType'
+];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
 <div class="drop" id="xml-csv-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>

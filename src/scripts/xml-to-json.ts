@@ -1,21 +1,9 @@
 import type { XmlJsonConversion, XmlJsonError, XmlJsonOptions } from '../lib/xml-to-json';
 import type { XmlJsonRequest } from '../workers/xml-to-json';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.querySelector<HTMLElement>('#xml-json-tool')!;
-const locale = root.dataset.locale || 'en';
-const strings: Record<string, string> = JSON.parse(root.dataset.strings || '{}');
-const t = (key: string, vars?: Record<string, string | number>) => {
-  const str = strings[key];
-  if (typeof str !== 'string') {
-    throw new Error(`Missing translation key: ${key}`);
-  }
-  if (!vars) return str;
-  let text = str;
-  for (const [k, v] of Object.entries(vars)) {
-    text = text.replaceAll(`{${k}}`, String(v));
-  }
-  return text;
-};
+const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = $<HTMLTextAreaElement>('xml-json-input');
@@ -26,7 +14,6 @@ const result = $('xml-json-result');
 const placeholder = $('xml-json-placeholder');
 const convertButton = $<HTMLButtonElement>('xml-json-convert');
 const copyButton = $<HTMLButtonElement>('xml-json-copy');
-const formatter = new Intl.NumberFormat(locale);
 const MAX_BYTES = 10 * 1024 * 1024;
 const TEXTAREA_LIMIT = 2 * 1024 * 1024;
 let worker: Worker | undefined;
@@ -36,11 +23,6 @@ let fileText: string | undefined;
 let fileName: string | undefined;
 let current: XmlJsonConversion | undefined;
 let options: XmlJsonOptions = { attributePrefix: '@_', alwaysArray: false, pretty: true };
-const formatSize = (bytes: number) => bytes >= 1048576
-  ? `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1048576)} ${t('unit.mb')}`
-  : bytes >= 1024
-  ? `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1024)} ${t('unit.kb')}`
-  : `${formatter.format(bytes)} ${t('unit.bytes')}`;
 
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
@@ -48,10 +30,9 @@ function hideResult() { current = undefined; result.hidden = true; placeholder.h
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; busy = false; convertButton.disabled = false; } }
 function showResult(data: XmlJsonConversion) {
   current = data; output.value = data.json; result.hidden = false; placeholder.hidden = true;
-  const elementsText = t(data.elements === 1 ? 'xmlJson.elements.one' : 'xmlJson.elements.other', { count: formatter.format(data.elements) });
   $('xml-json-summary').textContent = t('xmlJson.summary', {
-    elements: elementsText,
-    size: formatSize(data.bytes),
+    elements: counted('xmlJson.elements', data.elements),
+    size: formatBytes(data.bytes),
   });
   copyButton.textContent = t('xmlJson.copy'); clearStatus();
 }
@@ -59,11 +40,13 @@ function errorMessage(error: XmlJsonError | { code: 'workerError' }) {
   if (error.code === 'doctype') return t('xmlJson.errDoctype');
   if (error.code === 'tooDeep') return t('xmlJson.errTooDeep');
   if (error.code === 'empty') return t('xmlJson.errEmpty');
-  if (error.code === 'invalidXml') return t('xmlJson.errSyntax', {
-    line: formatter.format(error.line ?? 1),
-    column: formatter.format(error.column ?? 1),
-    detail: error.detail || t('xmlJson.syntaxCheck'),
-  });
+  if (error.code === 'noRoot') return t('xmlJson.errNoRoot');
+  // The parser's own message is English, so only the position is shown with a translated reason.
+  if (error.code === 'invalidXml') return error.line ? t('xmlJson.errSyntax', {
+    line: formatNumber(error.line),
+    column: formatNumber(error.column ?? 1),
+    detail: t('xmlJson.syntaxCheck'),
+  }) : t('xmlJson.syntaxCheck');
   return t('xmlJson.errWorker');
 }
 function run() {
@@ -91,8 +74,8 @@ async function loadFile(file: File) {
     if (id !== sequence) return;
     fileName = file.name;
     if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; announce(t('xmlJson.fileTooLargeText', { name: file.name })); }
-    else { input.value = content; fileText = undefined; announce(t('xmlJson.fileLoaded', { name: file.name, size: formatSize(file.size) })); }
-    $('xml-json-file-name').textContent = file.name; $('xml-json-file-size').textContent = formatSize(file.size); $('xml-json-file-line').hidden = false; hideResult();
+    else { input.value = content; fileText = undefined; announce(t('xmlJson.fileLoaded', { name: file.name, size: formatBytes(file.size) })); }
+    $('xml-json-file-name').textContent = file.name; $('xml-json-file-size').textContent = formatBytes(file.size); $('xml-json-file-line').hidden = false; hideResult();
   } catch { if (id === sequence) announce(t('xmlJson.errRead')); }
 }
 $('xml-json-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });

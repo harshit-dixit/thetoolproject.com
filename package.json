@@ -11,8 +11,10 @@
     "test": "vitest run",
     "test:browser": "node scripts/browser-check.mjs && node scripts/json-excel-browser-check.mjs && node scripts/json-csv-browser-check.mjs && node scripts/json-beautifier-browser-check.mjs && node scripts/xml-csv-browser-check.mjs && node scripts/xml-json-browser-check.mjs && node scripts/excel-browser-check.mjs && node scripts/dbf-excel-browser-check.mjs && node scripts/csv-sql-browser-check.mjs && node scripts/csv-viewer-browser-check.mjs && node scripts/csv-json-browser-check.mjs && node scripts/qr-scanner-browser-check.mjs && node scripts/image-browser-check.mjs && node scripts/pdf-browser-check.mjs && node scripts/i18n-browser-check.mjs",
     "test:build": "node scripts/verify-build.mjs",
+    "test:drafts": "node scripts/draft-preview-smoke-check.mjs",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
@@ -31,6 +33,7 @@
     "playwright": "^1.63.0",
     "qrcode": "^1.5.4",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "wrangler": "^4.140.0"
   }
 }

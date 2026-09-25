@@ -6,19 +6,11 @@ interface Props { targetKb?: 100 | 200 | 500; locale?: Locale }
 const { targetKb, locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'pdf.chooseHeading', 'pdf.chooseSubheading', 'pdf.processedOnDevice',
-  'pdf.dropTitle', 'pdf.dropHint', 'pdf.chooseButton', 'pdf.dropLimit',
-  'pdf.changeButton', 'pdf.howCompress', 'pdf.makeSmaller', 'pdf.makeSmallerDesc',
-  'pdf.keepText', 'pdf.keepTextDesc', 'pdf.levelLabel', 'pdf.levelLight',
-  'pdf.levelBalanced', 'pdf.levelStrong', 'pdf.targetLabel', 'pdf.targetNone',
-  'pdf.target100', 'pdf.target200', 'pdf.target500', 'pdf.targetHint',
-  'pdf.compressButton', 'pdf.original', 'pdf.compressed', 'pdf.saved',
-  'pdf.download', 'pdf.errTooLarge', 'pdf.errNotPdf', 'pdf.opening',
-  'pdf.checkingStructure', 'pdf.compressingPage', 'pdf.noteVisual',
-  'pdf.noteOptimized', 'pdf.noteOriginal', 'pdf.targetReached',
-  'pdf.targetNotReached', 'pdf.errGeneral', 'pdf.errInvalidPdf',
-  'pdf.errPasswordOrDamaged', 'pdf.errNoPages', 'pdf.errPageLimit',
-  'pdf.errRender', 'pdf.errCanvas', 'pdf.errEncode', 'unit.bytes', 'unit.kb', 'unit.mb'
+  'pdf.checkingStructure', 'pdf.compressingPage', 'pdf.errCanvas', 'pdf.errEncode', 'pdf.errGeneral',
+  'pdf.errInvalidPdf', 'pdf.errNoPages', 'pdf.errNotPdf', 'pdf.errPageLimit',
+  'pdf.errPasswordOrDamaged', 'pdf.errRender', 'pdf.errTooLarge', 'pdf.noteOptimized',
+  'pdf.noteOriginal', 'pdf.noteVisual', 'pdf.opening', 'pdf.targetNotReached', 'pdf.targetReached',
+  'unit.bytes', 'unit.kb', 'unit.mb'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---

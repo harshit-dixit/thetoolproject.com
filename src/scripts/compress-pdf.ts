@@ -1,18 +1,19 @@
-import type { CompressionLevel, CompressionMode } from '../lib/compress-pdf';
+import type { CompressionErrorCode, CompressionLevel, CompressionMode, CompressionProgress } from '../lib/compress-pdf';
+import { i18nFrom } from '../i18n/client';
+
+const errorKeys: Record<CompressionErrorCode, string> = {
+  invalidPdf: 'pdf.errInvalidPdf',
+  passwordOrDamaged: 'pdf.errPasswordOrDamaged',
+  noPages: 'pdf.errNoPages',
+  pageLimit: 'pdf.errPageLimit',
+  render: 'pdf.errRender',
+  canvas: 'pdf.errCanvas',
+  encode: 'pdf.errEncode',
+};
 
 const root = document.querySelector<HTMLElement>('#pdf-tool');
 if (root) {
-  const strings = JSON.parse(root.dataset.strings || '{}') as Record<string, string>;
-  const locale = root.dataset.locale || 'en';
-
-  function t(key: string, values?: Record<string, string | number>): string {
-    const str = strings[key];
-    if (typeof str !== 'string') {
-      throw new Error(`Missing translation key: ${key}`);
-    }
-    if (!values) return str;
-    return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
-  }
+  const { t, formatNumber, formatBytes, formatPercent } = i18nFrom(root);
 
   const get = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
   const input = get<HTMLInputElement>('#pdf-file');
@@ -24,21 +25,18 @@ if (root) {
   const level = get<HTMLSelectElement>('#pdf-level');
   const run = get<HTMLButtonElement>('#pdf-run');
   let file: File | null = null;
+  let compressionError: typeof import('../lib/compress-pdf').CompressionError | undefined;
   let downloadUrl: string | null = null;
-
-  const formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-
-  const size = (bytes: number) => {
-    const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
-    const amount = bytes >= 1048576 ? bytes / 1048576 : bytes >= 1024 ? bytes / 1024 : bytes;
-    return `${formatter.format(amount)} ${t(unit)}`;
-  };
 
   const message = (text: string, error = false) => {
     status.textContent = text;
     status.hidden = !text;
     status.classList.toggle('error', error);
   };
+
+  const progress = (update: CompressionProgress) => message(update.stage === 'checking'
+    ? t('pdf.checkingStructure')
+    : t('pdf.compressingPage', { current: formatNumber(update.current), total: formatNumber(update.total) }));
 
   const clearResult = () => {
     result.hidden = true;
@@ -65,7 +63,7 @@ if (root) {
     }
     file = chosen;
     get<HTMLElement>('#pdf-name').textContent = chosen.name;
-    get<HTMLElement>('#pdf-original-size').textContent = size(chosen.size);
+    get<HTMLElement>('#pdf-original-size').textContent = formatBytes(chosen.size);
     drop.hidden = true;
     workspace.hidden = false;
     message('');
@@ -91,21 +89,21 @@ if (root) {
     const selectedTarget = target.value ? Number(target.value) * 1024 : undefined;
     try {
       message(t('pdf.opening'));
-      const { compressPdf } = await import('../lib/compress-pdf');
+      const { compressPdf, CompressionError } = await import('../lib/compress-pdf');
+      compressionError = CompressionError;
       const output = await compressPdf(file, {
         mode,
         level: level.value as CompressionLevel,
         targetBytes: selectedTarget,
-        onProgress: message,
-        strings,
+        onProgress: progress,
       });
       downloadUrl = URL.createObjectURL(new Blob([output.bytes as BlobPart], { type: 'application/pdf' }));
       const link = get<HTMLAnchorElement>('#pdf-download');
       link.href = downloadUrl;
       link.download = `${file.name.replace(/\.pdf$/i, '')}-compressed.pdf`;
-      get<HTMLElement>('#pdf-before').textContent = size(file.size);
-      get<HTMLElement>('#pdf-after').textContent = size(output.bytes.length);
-      get<HTMLElement>('#pdf-saved').textContent = `${Math.max(0, Math.round((1 - output.bytes.length / file.size) * 100))}%`;
+      get<HTMLElement>('#pdf-before').textContent = formatBytes(file.size);
+      get<HTMLElement>('#pdf-after').textContent = formatBytes(output.bytes.length);
+      get<HTMLElement>('#pdf-saved').textContent = formatPercent(Math.max(0, 1 - output.bytes.length / file.size));
 
       let note = output.method === 'visual'
         ? t('pdf.noteVisual')
@@ -115,15 +113,16 @@ if (root) {
 
       if (selectedTarget) {
         const targetStatus = output.reachedTarget
-          ? t('pdf.targetReached', { target: target.value })
-          : t('pdf.targetNotReached', { target: target.value });
+          ? t('pdf.targetReached', { target: formatNumber(Number(target.value)) })
+          : t('pdf.targetNotReached', { target: formatNumber(Number(target.value)) });
         note = `${targetStatus} ${note}`;
       }
       get<HTMLElement>('#pdf-result-note').textContent = note;
       result.hidden = false;
       message('');
     } catch (error) {
-      message(error instanceof Error ? error.message : t('pdf.errGeneral'), true);
+      // pdf.js and pdf-lib throw English, technical messages; only known failures get a specific explanation.
+      message(compressionError && error instanceof compressionError ? t(errorKeys[error.code]) : t('pdf.errGeneral'), true);
     } finally {
       run.disabled = false;
     }

@@ -4,6 +4,7 @@ import sitemap from '@astrojs/sitemap';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { defaultLocale, locales } from './src/i18n/locales.mjs';
 
 export function localized404Integration() {
   return {
@@ -14,7 +15,7 @@ export function localized404Integration() {
         if (!fs.existsSync(outDir)) return;
         const entries = fs.readdirSync(outDir, { withFileTypes: true });
         for (const entry of entries) {
-          if (entry.isDirectory() && entry.name !== '_astro') {
+          if (entry.isDirectory() && entry.name !== defaultLocale && locales.includes(entry.name)) {
             const locale404Dir = path.join(outDir, entry.name, '404');
             const locale404Index = path.join(locale404Dir, 'index.html');
             const target404File = path.join(outDir, entry.name, '404.html');
@@ -34,8 +35,8 @@ export default defineConfig({
   trailingSlash: 'always',
   build: { format: 'directory' },
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'es', 'pt', 'de', 'fr', 'ja'],
+    defaultLocale,
+    locales: [...locales],
     routing: { prefixDefaultLocale: false },
   },
   // ES module workers can split off chunks they load on demand, such as the legacy .xls code pages.

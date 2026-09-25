@@ -3,7 +3,18 @@ import { t, type TranslationKey } from '../i18n/utils';
 import type { Locale } from '../data/tools';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
-const clientKeys: TranslationKey[] = ['jsonExcel.working','jsonExcel.summary','jsonExcel.summaryMulti','jsonExcel.sheetCount.one','jsonExcel.sheetCount.other','jsonExcel.previewCap','jsonExcel.columnsCap','jsonExcel.jsonLinesNote','jsonExcel.textNumbers.one','jsonExcel.textNumbers.other','jsonExcel.truncated.one','jsonExcel.truncated.other','jsonExcel.defaultSheet','jsonExcel.value','jsonExcel.wrongType','jsonExcel.tooLarge','jsonExcel.noData','jsonExcel.tooManyRows','jsonExcel.tooManyColumns','jsonExcel.tooManyColumnsNumbered','jsonExcel.workerError','tool.reading','tool.fileLoaded','tool.rows.one','tool.rows.other','tool.columns.one','tool.columns.other','tool.empty','tool.readError','tool.inputHintTouch','tool.largeFileHint','unit.bytes','unit.kb','unit.mb','error.trailingComma','error.singleQuote','error.unquotedKey','error.comment','error.jsonLines','error.syntax','error.depth','error.location'];
+const clientKeys: TranslationKey[] = [
+  'error.comment', 'error.depth', 'error.jsonLines', 'error.location', 'error.singleQuote',
+  'error.syntax', 'error.trailingComma', 'error.unquotedKey', 'jsonExcel.columnsCap',
+  'jsonExcel.jsonLinesNote', 'jsonExcel.noData', 'jsonExcel.previewCap', 'jsonExcel.sheetCount.one',
+  'jsonExcel.sheetCount.other', 'jsonExcel.summary', 'jsonExcel.summaryMulti',
+  'jsonExcel.textNumbers.one', 'jsonExcel.textNumbers.other', 'jsonExcel.tooLarge',
+  'jsonExcel.tooManyColumns', 'jsonExcel.tooManyColumnsNumbered', 'jsonExcel.tooManyRows',
+  'jsonExcel.truncated.one', 'jsonExcel.truncated.other', 'jsonExcel.workerError',
+  'jsonExcel.working', 'jsonExcel.wrongType', 'tool.columns.one', 'tool.columns.other', 'tool.empty',
+  'tool.fileLoaded', 'tool.inputHintTouch', 'tool.largeFileHint', 'tool.readError', 'tool.reading',
+  'tool.rows.one', 'tool.rows.other', 'unit.bytes', 'unit.kb', 'unit.mb'
+];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
 <div class="drop" id="json-excel-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>

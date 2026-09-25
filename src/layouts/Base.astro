@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { t } from '../i18n/utils';
+import { t, langTag } from '../i18n/utils';
 import { locales, type Locale } from '../data/tools';
 import { getPublishedHomePath, getPublishedPagePath } from '../data/pages';
 
@@ -26,16 +26,11 @@ const languageNames: Record<Locale, string> = {
   ja: '日本語',
 };
 
+// Same page in each published language, else that language's published home page.
 const switcherOptions: { locale: Locale; url: string; label: string }[] = [];
 for (const loc of locales) {
-  const targetPath = alternates[loc] ?? (loc !== locale ? getPublishedHomePath(loc) : undefined);
-  if (targetPath) {
-    switcherOptions.push({
-      locale: loc,
-      url: targetPath,
-      label: languageNames[loc],
-    });
-  }
+  const targetPath = loc === locale ? path : alternates[loc] ?? getPublishedHomePath(loc);
+  if (targetPath) switcherOptions.push({ locale: loc, url: targetPath, label: languageNames[loc] });
 }
 
 const homeUrl = getPublishedHomePath(locale) ?? '/';
@@ -45,16 +40,18 @@ const privacyUrl = getPublishedPagePath('privacy', locale);
 const termsUrl = getPublishedPagePath('terms', locale);
 ---
 <!doctype html>
-<html lang={locale}>
+<html lang={langTag(locale)}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
-    <link rel="canonical" href={canonical} />
-    {alternateEntries.map(([lang, alternate]) => <link rel="alternate" hreflang={lang} href={new URL(alternate!, 'https://thetoolproject.com').href} />)}
-    {alternates.en && <link rel="alternate" hreflang="x-default" href={new URL(alternates.en, 'https://thetoolproject.com').href} />}
+    {!noindex && <>
+      <link rel="canonical" href={canonical} />
+      {alternateEntries.map(([lang, alternate]) => <link rel="alternate" hreflang={langTag(lang as Locale)} href={new URL(alternate!, 'https://thetoolproject.com').href} />)}
+      {alternates.en && <link rel="alternate" hreflang="x-default" href={new URL(alternates.en, 'https://thetoolproject.com').href} />}
+    </>}
     <link rel="preload" href="/fonts/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <slot name="head" />
@@ -66,17 +63,18 @@ const termsUrl = getPublishedPagePath('terms', locale);
       <div class="wrap footer-inner">
         <span>{t('footer.tagline', locale)}</span>
         <div class="footer-actions">
-          {switcherOptions.length > 0 && (
-            <div class="language-picker">
+          {switcherOptions.length > 1 && (
+            <form class="language-picker" onsubmit="location.href=this.elements.language.value;return false">
               <label for="language-select" class="visually-hidden">{t('footer.language', locale)}</label>
-              <select id="language-select" class="language-select" aria-label={t('footer.language', locale)} onchange="if(this.value)window.location.href=this.value">
+              <select id="language-select" name="language" class="language-select">
                 {switcherOptions.map((opt) => (
-                  <option value={opt.url} selected={opt.locale === locale} lang={opt.locale}>
+                  <option value={opt.url} selected={opt.locale === locale} lang={langTag(opt.locale)}>
                     {opt.label}
                   </option>
                 ))}
               </select>
-            </div>
+              <button type="submit" class="language-go">{t('footer.languageGo', locale)}</button>
+            </form>
           )}
           <nav aria-label={t('footer.navLabel', locale)}>
             <a href={aboutUrl}>{t('footer.nav.about', locale)}</a>

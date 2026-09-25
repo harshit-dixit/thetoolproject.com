@@ -7,13 +7,12 @@ interface Props {
 
 const { text, links = {}, params } = Astro.props;
 
-// Step 1: Interpolate parameters if any ({param})
-let interpolated = text;
-if (params) {
-  for (const [key, val] of Object.entries(params)) {
-    interpolated = interpolated.replaceAll(`{${key}}`, String(val));
-  }
-}
+// Step 1: Interpolate parameters ({param}). Any placeholder left over is a missing
+// parameter, which fails the build rather than showing "{param}" to readers.
+const interpolated = text.replace(/\{(\w+)\}/g, (_, token: string) => {
+  if (!params || !(token in params)) throw new Error(`RichText: missing value for {${token}} in "${text}"`);
+  return String(params[token]);
+});
 
 // Step 2: Tokenize tags: <code>...</code>, <strong>...</strong>, <a:linkId>...</a:linkId>
 type Token =
@@ -45,15 +44,16 @@ if (lastIndex < interpolated.length) {
   tokens.push({ type: 'text', content: interpolated.slice(lastIndex) });
 }
 
-function resolveHref(link: string | { href: string } | undefined): string {
-  if (!link) return '#';
-  if (typeof link === 'string') return link;
-  return link.href || '#';
+function resolveHref(linkId: string): string {
+  const link = links[linkId];
+  const href = typeof link === 'string' ? link : link?.href;
+  if (!href) throw new Error(`RichText: no link provided for <a:${linkId}> in "${text}"`);
+  return href;
 }
 ---
 {tokens.map((token) => {
   if (token.type === 'code') return <code>{token.content}</code>;
   if (token.type === 'strong') return <strong>{token.content}</strong>;
-  if (token.type === 'link') return <a href={resolveHref(links[token.linkId])}>{token.content}</a>;
+  if (token.type === 'link') return <a href={resolveHref(token.linkId)}>{token.content}</a>;
   return token.content;
 })}

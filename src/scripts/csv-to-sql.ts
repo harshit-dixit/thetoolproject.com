@@ -1,21 +1,11 @@
 import type { CsvSqlOptions, CsvSqlResult, CsvSqlErrorCode } from '../lib/csv-to-sql';
 import type { CsvSqlRequest } from '../workers/csv-to-sql';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.querySelector<HTMLElement>('#csv-sql-tool')!;
-const locale = root.dataset.locale || 'en';
-const strings: Record<string, string> = JSON.parse(root.dataset.strings || '{}');
-const t = (key: string, vars?: Record<string, string | number>) => {
-  const str = strings[key];
-  if (typeof str !== 'string') {
-    throw new Error(`Missing translation key: ${key}`);
-  }
-  if (!vars) return str;
-  let text = str;
-  for (const [k, v] of Object.entries(vars)) {
-    text = text.replaceAll(`{${k}}`, String(v));
-  }
-  return text;
-};
+const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
+// Delimiter codes from the converter, shown as part of the result summary.
+const inputLabels = { comma: 'csvSql.inputComma', semicolon: 'csvSql.inputSemicolon', tab: 'csvSql.inputTab', pipe: 'csvSql.inputPipe' } as const;
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = $<HTMLTextAreaElement>('csv-sql-input');
@@ -27,7 +17,6 @@ const code = $<HTMLPreElement>('csv-sql-code');
 const preview = $('csv-sql-preview');
 const copy = $<HTMLButtonElement>('csv-sql-copy');
 const convert = $<HTMLButtonElement>('csv-sql-convert');
-const formatter = new Intl.NumberFormat(locale);
 const MAX_BYTES = 10 * 1024 * 1024;
 const TEXTAREA_LIMIT = 2 * 1024 * 1024;
 const CODE_LIMIT = 100000;
@@ -41,11 +30,6 @@ let view: 'sql' | 'table' = 'sql';
 
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
-function size(bytes: number) {
-  if (bytes < 1024) return `${formatter.format(bytes)} ${t('unit.bytes')}`;
-  if (bytes < 1048576) return `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1024)} ${t('unit.kb')}`;
-  return `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1048576)} ${t('unit.mb')}`;
-}
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; busy = false; convert.disabled = false; } }
 function hideResult() { current = undefined; result.hidden = true; placeholder.hidden = false; code.textContent = ''; }
 function options(): CsvSqlOptions {
@@ -68,19 +52,19 @@ function showView(next: 'sql' | 'table') {
   $('csv-sql-note').textContent = !current ? '' : view === 'sql'
     ? current.sql.length > CODE_LIMIT ? t('csvSql.noteSqlTruncated') : t('csvSql.noteSqlFull')
     : t('csvSql.noteTable', {
-        shown: formatter.format(current.preview.length),
-        rows: formatter.format(current.rows),
-        columns: formatter.format(current.columns),
+        shown: formatNumber(current.preview.length),
+        rows: formatNumber(current.rows),
+        columns: formatNumber(current.columns),
       });
 }
 function showResult(data: CsvSqlResult) {
   current = data;
   result.hidden = false; placeholder.hidden = true;
   $('csv-sql-summary').textContent = t('csvSql.summary', {
-    rows: formatter.format(data.rows),
-    columns: formatter.format(data.columns),
-    size: size(new Blob([data.sql]).size),
-    delimiter: data.delimiter,
+    rows: counted('tool.rows', data.rows),
+    columns: counted('tool.columns', data.columns),
+    size: formatBytes(new Blob([data.sql]).size),
+    input: t(inputLabels[data.delimiter]),
   });
   const head = document.createElement('thead');
   const headerRow = head.insertRow();
@@ -101,7 +85,7 @@ function showResult(data: CsvSqlResult) {
 function errorMessage(error: { code: CsvSqlErrorCode | 'workerError'; row?: number }): string {
   switch (error.code) {
     case 'empty': return t('csvSql.errEmpty');
-    case 'invalidCsv': return t('csvSql.errInvalidCsv', { row: formatter.format(error.row ?? 1) });
+    case 'invalidCsv': return t('csvSql.errInvalidCsv', { row: formatNumber(error.row ?? 1) });
     case 'noRows': return t('csvSql.errNoRows');
     case 'tooManyColumns': return t('csvSql.errTooManyColumns');
     case 'invalidTable': return t('csvSql.errInvalidTable');
@@ -135,8 +119,8 @@ async function loadFile(file: File) {
     if (id !== sequence) return;
     if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; $('csv-sql-hint').textContent = t('csvSql.loadedTooLarge', { name: file.name }); }
     else { input.value = content; fileText = undefined; $('csv-sql-hint').textContent = t('csvSql.editHint'); }
-    fileName = file.name; $('csv-sql-file-name').textContent = file.name; $('csv-sql-file-size').textContent = size(file.size); $('csv-sql-file-line').hidden = false;
-    hideResult(); announce(t('csvSql.loadedReady', { name: file.name, size: size(file.size) }));
+    fileName = file.name; $('csv-sql-file-name').textContent = file.name; $('csv-sql-file-size').textContent = formatBytes(file.size); $('csv-sql-file-line').hidden = false;
+    hideResult(); announce(t('csvSql.loadedReady', { name: file.name, size: formatBytes(file.size) }));
   } catch { if (id === sequence) announce(t('csvSql.errRead')); }
 }
 $('csv-sql-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });

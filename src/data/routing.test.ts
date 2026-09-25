@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { tools, publishedToolLocales, getPublishedToolPath, type Locale } from './tools';
-import { sitePages, publishedPageLocales, getPublishedPagePath, getPublishedHomePath, type SitePage } from './pages';
+import { tools, publishedToolLocales, getPublishedToolPath, createToolLocales, type Tool, type Locale } from './tools';
+import { sitePages, publishedPageLocales, getPublishedPagePath, getPublishedHomePath, createPageLocales, type SitePage } from './pages';
+import { buildStaticPaths } from './routes';
 
 describe('routing and review gate', () => {
   it('every tool has an English reviewed route', () => {
@@ -11,14 +12,17 @@ describe('routing and review gate', () => {
     }
   });
 
-  it('no non-English tool locale is reviewed in Phase 1', () => {
+  it('all non-English tool locales have draft entries with reviewed: false and non-empty metadata', () => {
     const nonEnLocales: Locale[] = ['es', 'pt', 'de', 'fr', 'ja'];
     for (const [key, tool] of Object.entries(tools)) {
       for (const loc of nonEnLocales) {
         const entry = tool.locales[loc];
-        if (entry) {
-          expect(entry.reviewed, `tool ${key} ${loc} must not be reviewed in Phase 1`).toBe(false);
-        }
+        expect(entry, `tool ${key} should have draft entry for ${loc}`).toBeDefined();
+        expect(entry?.reviewed, `tool ${key} ${loc} must have reviewed: false`).toBe(false);
+        expect(entry?.path).toBe(`/${loc}/${tool.id}/`);
+        expect(entry?.title).toBeTruthy();
+        expect(entry?.description).toBeTruthy();
+        expect(entry?.h1).toBeTruthy();
       }
       const published = publishedToolLocales(tool);
       expect(published.map(([l]) => l)).toEqual(['en']);
@@ -32,8 +36,16 @@ describe('routing and review gate', () => {
     }
   });
 
-  it('no non-English site page is reviewed in Phase 1', () => {
+  it('all non-English site pages have draft entries with reviewed: false and non-empty metadata', () => {
+    const nonEnLocales: Locale[] = ['es', 'pt', 'de', 'fr', 'ja'];
     for (const [id, page] of Object.entries(sitePages)) {
+      for (const loc of nonEnLocales) {
+        const entry = page.locales[loc];
+        expect(entry, `page ${id} should have draft entry for ${loc}`).toBeDefined();
+        expect(entry?.reviewed, `page ${id} ${loc} must have reviewed: false`).toBe(false);
+        expect(entry?.title).toBeTruthy();
+        expect(entry?.description).toBeTruthy();
+      }
       const published = publishedPageLocales(page);
       expect(published.map(([l]) => l), `page ${id} published locales`).toEqual(['en']);
     }
@@ -81,44 +93,96 @@ describe('routing and review gate', () => {
     expect(getPublishedPagePath('notFound', 'es')).toBe('/404.html');
   });
 
-  it('client translation helper throws on missing keys instead of returning the key name', () => {
-    // Simulate client string lookup helper in csv-to-sql, xml-to-json, dbf-to-excel
-    const createClientT = (strings: Record<string, string>) => (key: string, vars?: Record<string, string | number>) => {
-      const str = strings[key];
-      if (typeof str !== 'string') {
-        throw new Error(`Missing translation key: ${key}`);
-      }
-      if (!vars) return str;
-      let text = str;
-      for (const [k, v] of Object.entries(vars)) {
-        text = text.replaceAll(`{${k}}`, String(v));
-      }
-      return text;
+  it('supports per-item and per-locale approval and translated slugs: approved fixture builds and links while draft fixture emits no public route', () => {
+    // 1. Approved fixture: simulates a tool approved in Spanish with a translated slug differing from English
+    const approvedToolFixture: Tool = {
+      id: 'compress-pdf',
+      category: 'UtilitiesApplication',
+      locales: createToolLocales('compress-pdf', 'compressPdf', {
+        es: {
+          path: '/es/comprimir-pdf/',
+          reviewed: true,
+        },
+      }),
     };
 
-    const validStrings: Record<string, string> = {
-      'csvSql.errEmpty': 'Paste CSV data or choose a file first.',
-      'dbf.errInvalid': 'This file is not a valid DBF table.',
-      'xmlJson.errEmpty': 'Paste XML or choose a file first.',
+    // 2. Draft fixture: standard unreviewed draft tool
+    const draftToolFixture: Tool = {
+      id: 'compress-pdf-to-100kb',
+      category: 'UtilitiesApplication',
+      locales: createToolLocales('compress-pdf-to-100kb', 'compressPdf100kb'),
     };
 
-    const t = createClientT(validStrings);
-    expect(t('csvSql.errEmpty')).toBe('Paste CSV data or choose a file first.');
+    // Verify approved fixture route decisions and review status
+    expect(approvedToolFixture.locales.en?.reviewed).toBe(true);
+    expect(approvedToolFixture.locales.en?.path).toBe('/compress-pdf/');
+    expect(approvedToolFixture.locales.es?.reviewed).toBe(true);
+    // Translated slug differs from the English slug
+    expect(approvedToolFixture.locales.es?.path).toBe('/es/comprimir-pdf/');
+    expect(approvedToolFixture.locales.es?.path).not.toBe(`/${'es'}/${approvedToolFixture.id}/`);
+    // Other non-English locales remain draft with reviewed: false
+    expect(approvedToolFixture.locales.de?.reviewed).toBe(false);
+    expect(approvedToolFixture.locales.pt?.reviewed).toBe(false);
+    expect(approvedToolFixture.locales.fr?.reviewed).toBe(false);
+    expect(approvedToolFixture.locales.ja?.reviewed).toBe(false);
 
-    // Remove a required key: it must throw and CANNOT silently return the raw key name
-    const corruptedStrings = { ...validStrings };
-    delete corruptedStrings['csvSql.errEmpty'];
-    const corruptedT = createClientT(corruptedStrings);
+    // Published tool locales only includes reviewed entries (en and es)
+    const approvedPublished = publishedToolLocales(approvedToolFixture);
+    expect(approvedPublished.map(([loc]) => loc)).toEqual(['en', 'es']);
+    expect(approvedPublished.map(([, entry]) => entry.path)).toEqual([
+      '/compress-pdf/',
+      '/es/comprimir-pdf/',
+    ]);
 
-    expect(() => corruptedT('csvSql.errEmpty')).toThrow('Missing translation key: csvSql.errEmpty');
-    // Ensure it never returns the key string
-    let result: string | undefined;
-    try {
-      result = corruptedT('csvSql.errEmpty');
-    } catch {
-      // expected throw
+    // Verify draft fixture: only English is published
+    expect(draftToolFixture.locales.en?.reviewed).toBe(true);
+    expect(draftToolFixture.locales.es?.reviewed).toBe(false);
+    expect(draftToolFixture.locales.es?.path).toBe('/es/compress-pdf-to-100kb/');
+    const draftPublished = publishedToolLocales(draftToolFixture);
+    expect(draftPublished.map(([loc]) => loc)).toEqual(['en']);
+
+    // The real route builder used by src/pages/[...path].astro, fed only the two fixtures.
+    const generatedPaths = buildStaticPaths({
+      allowDrafts: false,
+      tools: { approved: approvedToolFixture, draft: draftToolFixture },
+      pages: {},
+    });
+
+    // Only 3 routes: both English pages plus the approved Spanish page at its translated slug.
+    // Nothing for the draft's non-English entries or the approved tool's de/pt/fr/ja entries.
+    expect(generatedPaths.map(route => [route.params.path, route.props.locale])).toEqual([
+      ['compress-pdf', 'en'],
+      ['es/comprimir-pdf', 'es'],
+      ['compress-pdf-to-100kb', 'en'],
+    ]);
+    expect(generatedPaths[1].props.entry).toBe(approvedToolFixture.locales.es);
+
+    // Verify link switcher / alternate generation:
+    // Only published routes are exposed in switcher / alternates
+    const alternatesForApproved: Partial<Record<Locale, string>> = {};
+    for (const [loc, entry] of publishedToolLocales(approvedToolFixture)) {
+      alternatesForApproved[loc] = entry.path;
     }
-    expect(result).not.toBe('csvSql.errEmpty');
+    expect(alternatesForApproved).toEqual({
+      en: '/compress-pdf/',
+      es: '/es/comprimir-pdf/',
+    });
+    expect(alternatesForApproved.de).toBeUndefined();
+    expect(alternatesForApproved.ja).toBeUndefined();
+
+    // Verify sitePage fixture with custom translated slug
+    const approvedPageFixture: SitePage = {
+      id: 'about',
+      locales: createPageLocales((loc) => loc === 'en' ? '/about/' : `/${loc}/about/`, 'about', {
+        es: {
+          path: '/es/acerca-de/',
+          reviewed: true,
+        },
+      }),
+    };
+    const publishedPages = publishedPageLocales(approvedPageFixture);
+    expect(publishedPages.map(([loc]) => loc)).toEqual(['en', 'es']);
+    expect(publishedPages.map(([, entry]) => entry.path)).toEqual(['/about/', '/es/acerca-de/']);
   });
 
   it('arranges localized 404 generation so a reviewed locale outputs /{locale}/404.html while drafts emit no public file', async () => {
@@ -128,8 +192,8 @@ describe('routing and review gate', () => {
     const { pathToFileURL } = await import('node:url');
     const { localized404Integration } = await import('../../astro.config.mjs');
 
-    // 1. Verify that in current Phase 1, drafts have no reviewed entry
-    expect(sitePages.notFound.locales.es).toBeUndefined();
+    // 1. Verify that in current Phase 2, drafts have reviewed: false and are excluded from published
+    expect(sitePages.notFound.locales.es?.reviewed).toBe(false);
     const publishedCurrent = publishedPageLocales(sitePages.notFound);
     expect(publishedCurrent.map(([l]) => l)).toEqual(['en']);
 
@@ -185,6 +249,27 @@ describe('routing and review gate', () => {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
-});
 
+  it('production routes contain only reviewed English pages; the draft preview adds every locale', () => {
+    const production = buildStaticPaths({ allowDrafts: false });
+    expect(production.every(route => route.props.locale === 'en')).toBe(true);
+    // 19 tools + home, about, contact, privacy, terms (English 404 is src/pages/404.astro).
+    expect(production).toHaveLength(Object.keys(tools).length + 5);
+    expect(production.find(route => route.params.path === undefined)?.props.kind).toBe('page');
+
+    const preview = buildStaticPaths({ allowDrafts: true });
+    expect(preview.filter(route => route.props.locale === 'ja')).toHaveLength(Object.keys(tools).length + 6);
+    expect(preview.some(route => route.params.path === 'ja/404')).toBe(true);
+    expect(preview.some(route => route.params.path === 'ja')).toBe(true);
+  });
+
+  it('rejects two entries that resolve to the same URL', () => {
+    const clash: Tool = {
+      id: 'compress-pdf',
+      category: 'UtilitiesApplication',
+      locales: createToolLocales('compress-pdf', 'compressPdf', { es: { path: '/compress-pdf/', reviewed: true } }),
+    };
+    expect(() => buildStaticPaths({ allowDrafts: false, tools: { clash }, pages: {} })).toThrow(/Duplicate route: \/compress-pdf/);
+  });
+});
 

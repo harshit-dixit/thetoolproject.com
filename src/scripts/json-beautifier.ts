@@ -1,18 +1,9 @@
 import type { JsonBeautifierError, JsonBeautifierResult, JsonIndent } from '../lib/json-beautifier';
 import type { JsonBeautifierRequest } from '../workers/json-beautifier';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.querySelector<HTMLElement>('#json-beautifier-tool')!;
-const strings = JSON.parse(root?.dataset.strings || '{}') as Record<string, string>;
-const locale = root?.dataset.locale || 'en';
-
-function t(key: string, values?: Record<string, string | number>): string {
-  const str = strings[key];
-  if (typeof str !== 'string') {
-    throw new Error(`Missing translation key: ${key}`);
-  }
-  if (!values) return str;
-  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
-}
+const { t, formatNumber, formatBytes } = i18nFrom(root);
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = $<HTMLTextAreaElement>('beautifier-input');
@@ -33,21 +24,13 @@ let fileName: string | undefined;
 let current: JsonBeautifierResult | undefined;
 let spacing: JsonIndent = 2;
 
-const formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-
-const formatSize = (bytes: number) => {
-  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
-  const amount = bytes >= 1048576 ? bytes / 1048576 : bytes >= 1024 ? bytes / 1024 : bytes;
-  return `${formatter.format(amount)} ${t(unit)}`;
-};
-
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
 function hideResult() { current = undefined; result.hidden = true; placeholder.hidden = false; output.value = ''; copyButton.textContent = t('jsonBeautifier.copy'); }
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; busy = false; formatButton.disabled = false; } }
 function showResult(data: JsonBeautifierResult) {
   current = data; output.value = data.json; result.hidden = false; placeholder.hidden = true;
-  $('beautifier-summary').textContent = t('jsonBeautifier.summary', { size: formatSize(data.bytes) });
+  $('beautifier-summary').textContent = t('jsonBeautifier.summary', { size: formatBytes(data.bytes) });
   copyButton.textContent = t('jsonBeautifier.copy'); clearStatus();
 }
 function errorMessage(error: JsonBeautifierError | { code: 'workerError' }) {
@@ -64,8 +47,8 @@ function errorMessage(error: JsonBeautifierError | { code: 'workerError' }) {
   };
   const detail = reasonMap[error.code] ?? reasonMap.syntax;
   return t('jsonBeautifier.errSyntax', {
-    line: formatter.format(error.line),
-    column: formatter.format(error.column),
+    line: formatNumber(error.line),
+    column: formatNumber(error.column),
     detail,
   });
 }
@@ -98,8 +81,8 @@ async function loadFile(file: File) {
     fileName = file.name;
     if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; $('beautifier-hint').textContent = t('jsonBeautifier.fileTooLarge', { name: file.name }); }
     else { input.value = content; fileText = undefined; $('beautifier-hint').textContent = t('jsonBeautifier.inputHint'); }
-    $('beautifier-file-name').textContent = file.name; $('beautifier-file-size').textContent = formatSize(file.size); $('beautifier-file-line').hidden = false;
-    hideResult(); announce(t('jsonBeautifier.fileLoaded', { name: file.name, size: formatSize(file.size) }));
+    $('beautifier-file-name').textContent = file.name; $('beautifier-file-size').textContent = formatBytes(file.size); $('beautifier-file-line').hidden = false;
+    hideResult(); announce(t('jsonBeautifier.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
   } catch { if (id === sequence) announce(t('jsonBeautifier.errRead')); }
 }
 function clearFile() { fileText = undefined; fileName = undefined; fileInput.value = ''; $('beautifier-file-line').hidden = true; $('beautifier-hint').textContent = t('jsonBeautifier.inputHint'); }

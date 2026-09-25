@@ -3,7 +3,15 @@ import { t, type TranslationKey } from '../i18n/utils';
 import type { Locale } from '../data/tools';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
-const clientKeys: TranslationKey[] = ['tool.convertTable','tool.convertList','tool.copied','tool.copy','tool.selectCode','tool.working','tool.reading','tool.fileLoaded','tool.summary','tool.rows.one','tool.rows.other','tool.columns.one','tool.columns.other','tool.previewCap','tool.codeCap','tool.unsafeWarning','tool.empty','tool.wrongType','tool.tooLarge','tool.readError','tool.workerError','tool.inputHintTouch','tool.largeFileHint','unit.bytes','unit.kb','unit.mb','error.trailingComma','error.singleQuote','error.unquotedKey','error.comment','error.jsonLines','error.syntax','error.depth','error.location'];
+const clientKeys: TranslationKey[] = [
+  'error.comment', 'error.depth', 'error.jsonLines', 'error.location', 'error.singleQuote',
+  'error.syntax', 'error.trailingComma', 'error.unquotedKey', 'tool.codeCap', 'tool.columns.one',
+  'tool.columns.other', 'tool.convertList', 'tool.convertTable', 'tool.copied', 'tool.copy',
+  'tool.empty', 'tool.fileLoaded', 'tool.inputHintTouch', 'tool.largeFileHint', 'tool.previewCap',
+  'tool.readError', 'tool.reading', 'tool.rows.one', 'tool.rows.other', 'tool.selectCode',
+  'tool.summary', 'tool.tooLarge', 'tool.unsafeWarning', 'tool.workerError', 'tool.working',
+  'tool.wrongType', 'unit.bytes', 'unit.kb', 'unit.mb'
+];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
 <div class="drop" id="json-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>

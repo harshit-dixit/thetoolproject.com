@@ -6,14 +6,12 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'xmlJson.copy', 'xmlJson.copied', 'xmlJson.copiedAria',
-  'xmlJson.working', 'xmlJson.reading', 'xmlJson.summary',
-  'xmlJson.elements.one', 'xmlJson.elements.other',
-  'xmlJson.errDoctype', 'xmlJson.errTooDeep', 'xmlJson.errEmpty',
-  'xmlJson.errSyntax', 'xmlJson.syntaxCheck', 'xmlJson.errWorker',
-  'xmlJson.errTooLarge', 'xmlJson.errWrongType', 'xmlJson.fileTooLargeText',
-  'xmlJson.fileLoaded', 'xmlJson.errRead', 'xmlJson.errClipboard',
-  'unit.bytes', 'unit.kb', 'unit.mb'
+  'unit.bytes', 'unit.kb', 'unit.mb', 'xmlJson.copied', 'xmlJson.copiedAria', 'xmlJson.copy',
+  'xmlJson.elements.one', 'xmlJson.elements.other', 'xmlJson.errClipboard', 'xmlJson.errDoctype',
+  'xmlJson.errEmpty', 'xmlJson.errNoRoot', 'xmlJson.errRead', 'xmlJson.errSyntax',
+  'xmlJson.errTooDeep', 'xmlJson.errTooLarge', 'xmlJson.errWorker', 'xmlJson.errWrongType',
+  'xmlJson.fileLoaded', 'xmlJson.fileTooLargeText', 'xmlJson.reading', 'xmlJson.summary',
+  'xmlJson.syntaxCheck', 'xmlJson.working'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---

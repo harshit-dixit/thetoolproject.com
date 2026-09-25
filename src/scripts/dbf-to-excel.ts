@@ -1,21 +1,9 @@
 import type { DbfEncoding, DbfError, DbfResult } from '../lib/dbf-to-excel';
 import type { DbfRequest } from '../workers/dbf-to-excel';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.querySelector<HTMLElement>('#dbf-tool')!;
-const locale = root.dataset.locale || 'en';
-const strings: Record<string, string> = JSON.parse(root.dataset.strings || '{}');
-const t = (key: string, vars?: Record<string, string | number>) => {
-  const str = strings[key];
-  if (typeof str !== 'string') {
-    throw new Error(`Missing translation key: ${key}`);
-  }
-  if (!vars) return str;
-  let text = str;
-  for (const [k, v] of Object.entries(vars)) {
-    text = text.replaceAll(`{${k}}`, String(v));
-  }
-  return text;
-};
+const { t, counted, formatBytes } = i18nFrom(root);
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = $<HTMLInputElement>('dbf-file');
@@ -23,7 +11,6 @@ const encoding = $<HTMLSelectElement>('dbf-encoding');
 const convert = $<HTMLButtonElement>('dbf-convert');
 const status = $('dbf-status');
 const result = $('dbf-result');
-const formatter = new Intl.NumberFormat(locale);
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const MAX_BYTES = 20 * 1024 * 1024;
 const errors: Record<string, string> = {
@@ -39,9 +26,6 @@ let worker: Worker | undefined;
 let sequence = 0;
 let output: Blob | undefined;
 const showStatus = (message: string) => { status.textContent = message; status.hidden = !message; };
-const size = (bytes: number) => bytes >= 1024 * 1024
-  ? `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bytes / 1024 / 1024)} ${t('unit.mb')}`
-  : `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bytes / 1024)} ${t('unit.kb')}`;
 function resetResult() { output = undefined; result.hidden = true; }
 function chooseFile(next: File) {
   if (!/\.dbf$/i.test(next.name)) { showStatus(t('dbf.errWrongType')); return; }
@@ -49,7 +33,7 @@ function chooseFile(next: File) {
   worker?.terminate(); worker = undefined; ++sequence; convert.disabled = false;
   file = next; resetResult(); showStatus('');
   $('dbf-name').textContent = next.name;
-  $('dbf-size').textContent = size(next.size);
+  $('dbf-size').textContent = formatBytes(next.size);
   $('dbf-empty').hidden = true; $('dbf-panel').hidden = false;
   void run();
 }
@@ -66,9 +50,9 @@ function run() {
     const data = event.data.result!;
     output = new Blob([data.xlsx], { type: XLSX_TYPE });
     $('dbf-summary').textContent = t('dbf.summary', {
-      rows: formatter.format(data.rows),
-      columns: formatter.format(data.columns),
-      size: size(output.size)
+      rows: counted('dbf.records', data.rows),
+      columns: counted('tool.columns', data.columns),
+      size: formatBytes(output.size)
     });
     const table = $<HTMLTableElement>('dbf-preview');
     const head = document.createElement('thead');
@@ -78,8 +62,8 @@ function run() {
     for (const row of data.preview.slice(1)) { const tr = body.insertRow(); for (const value of row) tr.insertCell().textContent = value; }
     table.replaceChildren(head, body);
     const notes = [t('dbf.noteEncoding', { encoding: data.encoding })];
-    if (data.skipped) notes.push(t('dbf.noteSkipped', { count: formatter.format(data.skipped) }));
-    if (data.textNumbers) notes.push(t('dbf.noteTextNumbers', { count: formatter.format(data.textNumbers) }));
+    if (data.skipped) notes.push(counted('dbf.noteSkipped', data.skipped));
+    if (data.textNumbers) notes.push(counted('dbf.noteTextNumbers', data.textNumbers));
     if (data.rows > data.preview.length - 1 || data.columns > data.preview[0].length) notes.push(t('dbf.notePreviewLimited'));
     $('dbf-note').textContent = notes.join(' ');
     result.hidden = false; showStatus(t('dbf.ready'));

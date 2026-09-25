@@ -24,6 +24,37 @@
   --row-hover: #f7f8fa;
   --font: Archivo, "Archivo Fallback", system-ui, sans-serif;
 }
+
+/* Japanese typography rules (DESIGN.md §3) */
+html:lang(ja) {
+  --font: "Archivo", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans JP", sans-serif;
+}
+html:lang(ja) body,
+html:lang(ja) .lead,
+html:lang(ja) .text-body {
+  line-height: 1.8;
+}
+html:lang(ja) * {
+  font-style: normal;
+}
+html:lang(ja) h1,
+html:lang(ja) h2,
+html:lang(ja) h3,
+html:lang(ja) h4,
+html:lang(ja) h5,
+html:lang(ja) h6,
+html:lang(ja) .page-title,
+html:lang(ja) .sec-head h2,
+html:lang(ja) .tool-head h1,
+html:lang(ja) .article-title,
+html:lang(ja) .drop-title,
+html:lang(ja) .panel-title,
+html:lang(ja) .card-title {
+  line-break: strict;
+  word-break: auto-phrase;
+  /* The Latin display line-heights (1–1.15) make wrapped CJK lines touch. */
+  line-height: 1.4;
+}
 * {
   box-sizing: border-box;
 }
@@ -483,18 +514,35 @@ footer .wrap {
 .language-picker {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
 }
-.language-select {
+.language-select,
+.language-go {
   font: inherit;
   font-size: 14px;
+  min-height: 40px;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.language-select {
   background: var(--paper);
   color: var(--ink);
   border: 1.5px solid var(--line);
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
 }
-.language-select:focus-visible {
+.language-go {
+  font-weight: 600;
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+.language-go:hover {
+  background: var(--ink);
+  color: #fff;
+}
+.language-select:focus-visible,
+.language-go:focus-visible {
   outline: 2px solid var(--cobalt);
   outline-offset: 3px;
 }

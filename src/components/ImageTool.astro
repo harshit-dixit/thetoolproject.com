@@ -7,26 +7,15 @@ const { mode, targetKb = 100, locale = 'en' } = Astro.props;
 const resize = mode === 'resize';
 
 const clientKeys: TranslationKey[] = [
-  'image.chooseHeading', 'image.chooseHeadingJpg', 'image.chooseSubheading',
-  'image.chooseSubheadingJpg', 'image.processedOnDevice', 'image.dropTitle',
-  'image.dropTitleJpg', 'image.dropHint', 'image.dropHintJpg', 'image.chooseButton',
-  'image.chooseButtonJpg', 'image.dropLimit', 'image.dropLimitJpg', 'image.selectedHeading',
-  'image.changeButton', 'image.changeButtonJpg', 'image.previewAlt', 'image.original',
-  'image.batchNote', 'image.jpgNote', 'image.resizeBy', 'image.modePixels',
-  'image.modePercent', 'image.modeCm', 'image.modeKb', 'image.width', 'image.height',
-  'image.dpi', 'image.scale', 'image.scaleAria', 'image.maxFileSize', 'image.lockAspect',
-  'image.noEnlarge', 'image.saveAs', 'image.formatOriginal', 'image.hintBox',
-  'image.hintCm', 'image.estimateButton', 'image.runButton', 'image.runButtonCompress',
-  'image.nothingUploaded', 'image.readyToDownload', 'image.downloadAllZip',
-  'image.errRead', 'image.errNoDimensions', 'image.errBatchLimit', 'image.errSingleJpg',
-  'image.errUnsupportedType', 'image.errReadGeneric', 'image.selectedCount.one',
-  'image.selectedCount.other', 'image.readyToProcess', 'image.previewing',
-  'image.errPercentRange', 'image.errDimPositive', 'image.errDpiRange',
-  'image.errOutputTooLarge', 'image.errCanvas', 'image.errSaveFormat',
-  'image.errFitLimit', 'image.errKbRange', 'image.processing', 'image.processedCount.one',
-  'image.processedCount.other', 'image.download', 'image.estimating', 'image.estimatedSize',
-  'image.estimatedForFile', 'image.estimatedOtherNote', 'image.errEstimate',
-  'image.errGenericProcess', 'unit.bytes', 'unit.kb', 'unit.mb'
+  'image.download', 'image.errBatchLimit', 'image.errCanvas', 'image.errDimPositive',
+  'image.errDpiRange', 'image.errEstimate', 'image.errFitLimit', 'image.errGenericProcess',
+  'image.errKbRange', 'image.errNoDimensions', 'image.errOutputTooLarge', 'image.errPercentRange',
+  'image.errRead', 'image.errReadGeneric', 'image.errSaveFormat', 'image.errSingleJpg',
+  'image.errUnsupportedType', 'image.estimatedForFile', 'image.estimatedOtherNote',
+  'image.estimatedSize', 'image.estimating', 'image.exactBytes', 'image.formatsResize',
+  'image.hintBox', 'image.hintCm', 'image.previewing', 'image.processedCount.one',
+  'image.processedCount.other', 'image.processing', 'image.readyToProcess',
+  'image.selectedCount.one', 'image.selectedCount.other', 'unit.bytes', 'unit.kb', 'unit.mb'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---

@@ -2,7 +2,7 @@ import { SaxesParser } from 'saxes';
 
 export type XmlCsvSeparator = 'comma' | 'semicolon' | 'tab';
 export type XmlCsvOptions = { separator: XmlCsvSeparator; bom: boolean; spreadsheetSafe: boolean; recordPath?: string };
-export type XmlCsvError = { code: 'empty' | 'invalidXml' | 'doctype' | 'noData' | 'tooManyColumns' | 'invalidPath'; line?: number; column?: number; detail?: string };
+export type XmlCsvError = { code: 'empty' | 'invalidXml' | 'doctype' | 'tooDeep' | 'noData' | 'tooManyColumns' | 'invalidPath'; line?: number; column?: number; detail?: string };
 export type XmlCsvConversion = { csv: string; rows: number; columns: number; headers: string[]; preview: string[][]; recordPath: string; paths: string[]; protectedCells: number };
 
 const PREVIEW_ROWS = 100;
@@ -19,7 +19,7 @@ function isObject(value: XmlValue): value is { [key: string]: XmlValue } {
 function label(parts: string[]) { return parts.map(part => part.replaceAll('\\', '\\\\').replaceAll('.', '\\.')).join('.'); }
 function column(part: string) { return part.startsWith('@_') ? `@${part.slice(2)}` : part; }
 function flatten(value: XmlValue, path: string[], row: Row, depth: number) {
-  if (depth > MAX_DEPTH) throw { code: 'invalidXml', detail: 'The XML is nested too deeply.' } satisfies XmlCsvError;
+  if (depth > MAX_DEPTH) throw { code: 'tooDeep' } satisfies XmlCsvError;
   if (isObject(value)) {
     const entries = Object.entries(value).filter(([key]) => key !== '@_xmlns' && !key.startsWith('@_xmlns:'));
     // Put attributes before child elements, independent of the parser's object order.
@@ -49,7 +49,7 @@ function parseXml(source: string): { name: string; value: XmlValue } {
   let root: { name: string; value: XmlValue } | undefined;
   parser.on('doctype', () => { throw { code: 'doctype' } satisfies XmlCsvError; });
   parser.on('opentag', tag => {
-    if (stack.length >= MAX_DEPTH) throw { code: 'invalidXml', detail: 'The XML is nested too deeply.' } satisfies XmlCsvError;
+    if (stack.length >= MAX_DEPTH) throw { code: 'tooDeep' } satisfies XmlCsvError;
     stack.push({ name: tag.name, children: {}, text: '', attributes: Object.fromEntries(Object.entries(tag.attributes).map(([name, value]) => [name, String(value)])) });
   });
   parser.on('text', value => { if (stack.length) stack[stack.length - 1].text += value; });

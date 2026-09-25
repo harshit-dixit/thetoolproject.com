@@ -6,25 +6,14 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'jsonBeautifier.inputLabel', 'jsonBeautifier.inputPlaceholder',
-  'jsonBeautifier.inputHint', 'jsonBeautifier.chooseFile',
-  'jsonBeautifier.tryExample', 'jsonBeautifier.indentation',
-  'jsonBeautifier.spaces2', 'jsonBeautifier.spaces4',
-  'jsonBeautifier.tabs', 'jsonBeautifier.compact',
-  'jsonBeautifier.formatButton', 'jsonBeautifier.placeholder',
-  'jsonBeautifier.outputLabel', 'jsonBeautifier.download',
-  'jsonBeautifier.copy', 'jsonBeautifier.startOver',
-  'jsonBeautifier.working', 'jsonBeautifier.copied',
-  'jsonBeautifier.summary', 'jsonBeautifier.errEmpty',
-  'jsonBeautifier.errTooLarge', 'jsonBeautifier.errWrongType',
-  'jsonBeautifier.errRead', 'jsonBeautifier.errWorker',
-  'jsonBeautifier.errSyntax', 'jsonBeautifier.reasonTrailingComma',
-  'jsonBeautifier.reasonSingleQuote', 'jsonBeautifier.reasonUnquotedKey',
-  'jsonBeautifier.reasonComment', 'jsonBeautifier.reasonJsonLines',
-  'jsonBeautifier.reasonSyntax', 'jsonBeautifier.reasonDepth',
-  'jsonBeautifier.reading', 'jsonBeautifier.fileTooLarge',
-  'jsonBeautifier.fileLoaded', 'jsonBeautifier.copiedClipboard',
-  'jsonBeautifier.errClipboard',
+  'jsonBeautifier.copied', 'jsonBeautifier.copiedClipboard', 'jsonBeautifier.copy',
+  'jsonBeautifier.errClipboard', 'jsonBeautifier.errEmpty', 'jsonBeautifier.errRead',
+  'jsonBeautifier.errSyntax', 'jsonBeautifier.errTooLarge', 'jsonBeautifier.errWorker',
+  'jsonBeautifier.errWrongType', 'jsonBeautifier.fileLoaded', 'jsonBeautifier.fileTooLarge',
+  'jsonBeautifier.inputHint', 'jsonBeautifier.reading', 'jsonBeautifier.reasonComment',
+  'jsonBeautifier.reasonDepth', 'jsonBeautifier.reasonJsonLines', 'jsonBeautifier.reasonSingleQuote',
+  'jsonBeautifier.reasonSyntax', 'jsonBeautifier.reasonTrailingComma',
+  'jsonBeautifier.reasonUnquotedKey', 'jsonBeautifier.summary', 'jsonBeautifier.working',
   'unit.bytes', 'unit.kb', 'unit.mb'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));

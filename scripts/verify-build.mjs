@@ -131,6 +131,22 @@ if (hasGuides) {
   assert.match(bracketsGuide, /What can go inside a JSON array\?/);
 }
 assert.match(notFound, /<meta name="robots" content="noindex"/);
+assert.match(notFound, /<h1 class="page-title">This page doesn&#39;t exist<\/h1>/);
+assert.match(notFound, /href="\/json-to-html\/"/);
+assert.doesNotMatch(notFound, /rel="canonical"|hreflang=/, 'An error page declares no canonical URL or alternates');
+// Copy that the i18n extraction once changed or broke; keep the original English.
+const xmlJsonPage = read('xml-to-json/index.html');
+assert.match(xmlJsonPage, /<code>&lt;empty\/&gt;<\/code> becomes an empty string/);
+assert.doesNotMatch(xmlJsonPage, /&amp;lt;/);
+const resizerPage = read('image-resizer/index.html');
+assert.match(resizerPage, /This mode saves a JPG/);
+assert.doesNotMatch(resizerPage, /JPEG and WebP output/);
+assert.match(read('csv-viewer/index.html'), /CSV downloads use commas and UTF-8/);
+assert.match(read('csv-to-json/index.html'), /Files are limited to 10 MB and 500 columns/);
+assert.match(read('qr-code-scanner/index.html'), /<code>https:\/\/<\/code> addresses can be opened from the result/);
+assert.match(read('compress-jpg-to-100kb/index.html'), /within 100KB \(102,400 bytes\)/);
+// Only one language is published, so no page shows a language picker.
+assert.doesNotMatch(home, /id="language-select"/);
 assert.ok(existsSync(new URL('../dist/404.html', import.meta.url)));
 assert.ok(!existsSync(new URL('../dist/404/index.html', import.meta.url)));
 for (const draft of ['es', 'pt', 'de', 'fr', 'ja']) {
@@ -169,14 +185,20 @@ const expectedUrls = [
 assert.deepEqual(sitemapUrls, expectedUrls);
 assert.ok(existsSync(new URL('../dist/404.html', import.meta.url)));
 const jsDir = new URL('../dist/_astro/', import.meta.url);
-// First-load JS is every module script the page itself references; workers and their chunks load later.
+// First-load JS is every module script the page itself references, plus the chunks those scripts import
+// statically (such as the shared translation helper); workers and dynamically imported chunks load later.
 const firstLoad = page => {
-  const files = [...read(page).matchAll(/<script type="module" src="\/_astro\/([^"]+)"/g)].map(match => readFileSync(new URL(match[1], jsDir)));
-  assert.ok(files.length, `${page} has a client script`);
+  const names = new Set([...read(page).matchAll(/<script type="module" src="\/_astro\/([^"]+)"/g)].map(match => match[1]));
+  assert.ok(names.size, `${page} has a client script`);
+  for (const name of names) {
+    for (const match of readFileSync(new URL(name, jsDir), 'utf8').matchAll(/(?:from|import)\s*"\.\/([^"]+\.js)"/g)) names.add(match[1]);
+  }
+  const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
-assert.match(dbfExcel, /<script type="module">/);
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+// The DBF script shares the translation helper chunk, so Astro references it as an external module.
+assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);
 assert.ok(readdirSync(jsDir).some(name => name.startsWith('cpexcel.') && name.endsWith('.js')), 'Legacy .xls code pages are a separate chunk');
 console.log(`Built output checks passed. First-load JS: ${Object.entries(sizes).map(([page, size]) => `${page} ${size.gzip} bytes gzip (${size.raw} raw)`).join(', ')}.`);

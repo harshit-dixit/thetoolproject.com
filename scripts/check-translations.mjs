@@ -1,12 +1,39 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { locales } from '../src/i18n/locales.mjs';
 
-export const CONFIGURED_LOCALES = ['en', 'es', 'pt', 'de', 'fr', 'ja'];
+export const CONFIGURED_LOCALES = [...locales];
 
 export function extractTokens(str) {
   if (typeof str !== 'string') return new Set();
   const matches = str.matchAll(/\{(\w+)\}/g);
   return new Set([...matches].map(m => m[1]));
 }
+
+// RichText markup: <code>, <strong> and <a:linkId>. Each translation must use the same tags.
+const MARKUP_TAG = /<\/?(?:code|strong|a:[\w-]+)>/g;
+
+export function extractMarkup(str) {
+  if (typeof str !== 'string') return [];
+  return [...str.matchAll(MARKUP_TAG)].map(m => m[0]).sort();
+}
+
+function markupIsBalanced(str) {
+  const stack = [];
+  for (const [tag] of str.matchAll(MARKUP_TAG)) {
+    if (tag[1] !== '/') stack.push(tag.slice(1, -1));
+    else if (stack.pop() !== tag.slice(2, -1)) return false;
+  }
+  return stack.length === 0;
+}
+
+// Numbers with their group/decimal separators removed, so 1,048,576 and 1.048.576 compare equal.
+export function extractNumbers(str) {
+  if (typeof str !== 'string') return [];
+  const ascii = str.replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
+  return [...ascii.matchAll(/\d+(?:[.,\u00a0\u202f ]\d+)*/g)].map(m => m[0].replace(/\D/g, ''));
+}
+
+const PLURAL_SUFFIX = /\.(zero|one|two|few|many|other)$/;
 
 /**
  * Validates translations dictionaries against source 'en' dictionary.
@@ -32,6 +59,11 @@ export function validateTranslations(dictByLocale, configuredLocales = CONFIGURE
     const val = en[key];
     if (typeof val !== 'string' || val.trim().length === 0) {
       errors.push(`en.json key "${key}" must be a non-empty string`);
+      continue;
+    }
+    if (!markupIsBalanced(val)) errors.push(`en.json key "${key}" has unbalanced markup`);
+    if (PLURAL_SUFFIX.test(key) && !extractTokens(val).has('count')) {
+      errors.push(`en.json plural key "${key}" must contain {count}`);
     }
   }
 
@@ -86,6 +118,22 @@ export function validateTranslations(dictByLocale, configuredLocales = CONFIGURE
           (missingTokens.length ? ` (missing: ${missingTokens.join(', ')})` : '') +
           (extraTokens.length ? ` (extra: ${extraTokens.join(', ')})` : '')
         );
+      }
+
+      const enMarkup = extractMarkup(en[key]).join(' ');
+      const fileMarkup = extractMarkup(val).join(' ');
+      if (enMarkup !== fileMarkup) {
+        errors.push(`${locale}.json key "${key}" markup mismatch. Expected [${enMarkup}], found [${fileMarkup}]`);
+      } else if (!markupIsBalanced(val)) {
+        errors.push(`${locale}.json key "${key}" has unbalanced markup`);
+      }
+
+      // Every number in the English copy (limits, sizes, examples) must survive translation.
+      // Extra numbers are allowed, e.g. a digit where English spells out "eight".
+      const fileNumbers = new Set(extractNumbers(val));
+      const lostNumbers = [...new Set(extractNumbers(en[key]))].filter(n => !fileNumbers.has(n));
+      if (lostNumbers.length > 0) {
+        errors.push(`${locale}.json key "${key}" is missing number(s) from English: ${lostNumbers.join(', ')}`);
       }
     }
   }

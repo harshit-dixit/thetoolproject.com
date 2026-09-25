@@ -1,6 +1,7 @@
 import { decodeCsv, type Encoding, type Separator } from '../lib/csv-viewer';
 import type { CsvJsonOptions, CsvJsonResult } from '../lib/csv-to-json';
 import type { CsvJsonRequest } from '../workers/csv-to-json';
+import { i18nFrom } from '../i18n/client';
 
 const get = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const root = get<HTMLDivElement>('csv-json-tool');
@@ -11,18 +12,9 @@ const status = get<HTMLParagraphElement>('csv-json-status');
 const copy = get<HTMLButtonElement>('csv-json-copy');
 const download = get<HTMLButtonElement>('csv-json-download');
 
-const strings = JSON.parse(root?.dataset.strings || '{}') as Record<string, string>;
-const locale = root?.dataset.locale || 'en';
-const formatter = new Intl.NumberFormat(locale);
-
-function t(key: string, values?: Record<string, string | number>): string {
-  const str = strings[key];
-  if (typeof str !== 'string') {
-    throw new Error(`Missing translation key: ${key}`);
-  }
-  if (!values) return str;
-  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
-}
+const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
+// Separator codes from the converter, shown as part of the result summary.
+const separatedLabels = { comma: 'csvJson.separatedComma', semicolon: 'csvJson.separatedSemicolon', tab: 'csvJson.separatedTab', pipe: 'csvJson.separatedPipe' } as const;
 
 const maxBytes = 10 * 1024 * 1024;
 const displayLimit = 100000;
@@ -35,11 +27,6 @@ let fileSource = '';
 let current: CsvJsonResult | undefined;
 
 function message(value: string) { status.textContent = value; status.hidden = !value; }
-function size(bytes: number) {
-  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
-  const amount = bytes >= 1048576 ? bytes / 1048576 : bytes >= 1024 ? bytes / 1024 : bytes;
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: unit === 'unit.bytes' ? 0 : 1 }).format(amount)} ${t(unit)}`;
-}
 
 function settings(): CsvJsonOptions {
   return {
@@ -61,32 +48,27 @@ function clearOutput() {
 
 function show(data: CsvJsonResult) {
   current = data;
-  code.textContent = data.json.length > displayLimit ? `${data.json.slice(0, displayLimit)}\n…` : data.json || '(No data rows)';
+  code.textContent = data.json.length > displayLimit ? `${data.json.slice(0, displayLimit)}\n…` : data.json || t('csvJson.noDataRows');
   const format = settings().format;
   get<HTMLElement>('csv-json-output-label').textContent = data.json.length > displayLimit
     ? t('csvJson.codeTruncated')
-    : t('csvJson.summaryRows', {
-        rows: formatter.format(data.rows),
-        columns: formatter.format(data.columns),
-        size: size(new Blob([data.json]).size)
-      });
+    : t(format === 'lines' ? 'csvJson.outputSizeLines' : 'csvJson.outputSize', { size: formatBytes(new Blob([data.json]).size) });
   copy.disabled = false; download.disabled = false;
   download.textContent = format === 'lines' ? t('csvJson.downloadJsonl') : t('csvJson.download');
-  get<HTMLElement>('csv-json-state').textContent = t('csvJson.stateReadyRows', {
-    rows: formatter.format(data.rows),
-    columns: formatter.format(data.columns)
-  });
+  get<HTMLElement>('csv-json-state').textContent = counted('csvJson.stateConverted', data.rows);
   get<HTMLElement>('csv-json-summary').textContent = t('csvJson.summaryMeta', {
-    rows: formatter.format(data.rows),
-    columns: formatter.format(data.columns),
-    separator: data.separator
+    rows: counted('tool.rows', data.rows),
+    columns: counted('tool.columns', data.columns),
+    separated: t(separatedLabels[data.separator])
   });
   const diagnostics: string[] = [];
   if (data.irregularRows) {
-    diagnostics.push(t('csvJson.diagDifferingWidths', { count: formatter.format(data.irregularRows) }));
+    // The converter reports the first five irregular rows.
+    const list = data.irregularIndices.map(index => formatNumber(index + 1)).join(', ') + (data.irregularRows > data.irregularIndices.length ? ', …' : '');
+    diagnostics.push(counted('csvJson.diagDifferingWidths', data.irregularRows, { list }));
   }
   if (data.renamedHeaders) {
-    diagnostics.push(t('csvJson.diagRenamedHeaders'));
+    diagnostics.push(counted('csvJson.diagRenamedHeaders', data.renamedHeaders));
   }
   get<HTMLElement>('csv-json-diagnostics').textContent = diagnostics.join(' ');
   get<HTMLElement>('csv-json-diagnostics').hidden = !diagnostics.length;
@@ -96,10 +78,7 @@ function show(data: CsvJsonResult) {
   const body = document.createElement('tbody');
   data.preview.forEach(row => { const tr = body.insertRow(); row.slice(0, 25).forEach(value => { const td = tr.insertCell(); td.textContent = value; td.title = value; }); });
   get<HTMLTableElement>('csv-json-table').replaceChildren(head, body);
-  get<HTMLElement>('csv-json-preview-note').textContent = t('csvJson.previewNote', {
-    shown: formatter.format(data.preview.length),
-    total: formatter.format(data.rows)
-  });
+  get<HTMLElement>('csv-json-preview-note').textContent = counted(data.columns > 25 ? 'csvJson.previewNoteColumns' : 'csvJson.previewNote', data.rows, { shown: formatNumber(data.preview.length) });
   get<HTMLElement>('csv-json-details').hidden = false;
   message('');
 }
@@ -120,7 +99,7 @@ function convert() {
       message(error?.code === 'tooManyColumns'
         ? t('csvJson.errTooManyColumns')
         : error?.code === 'invalid'
-          ? t('csvJson.errInvalidQuote', { row: formatter.format(error.row ?? 1) })
+          ? t('csvJson.errInvalidQuote', { row: formatNumber(error.row ?? 1) })
           : t('csvJson.errWorker'));
     }
   };
@@ -137,7 +116,7 @@ function decodeFile() {
     fileSource = decoded.text;
     if (fileBuffer.byteLength <= 2 * 1024 * 1024) input.value = fileSource;
     else input.value = '';
-    get<HTMLElement>('csv-json-source-label').textContent = `${fileName} · ${size(fileBuffer.byteLength)} · ${decoded.encoding.toUpperCase()}${input.value ? '' : ` · ${t('csvJson.tooLargeEditor')}`}`;
+    get<HTMLElement>('csv-json-source-label').textContent = `${fileName} · ${formatBytes(fileBuffer.byteLength)} · ${decoded.encoding.toUpperCase()}${input.value ? '' : ` · ${t('csvJson.tooLargeEditor')}`}`;
     schedule();
   } catch { message(t('csvJson.errDecode')); }
 }

@@ -1,6 +1,7 @@
 import type { CsvTable, Encoding, Separator } from '../lib/csv-viewer';
 import type { CsvViewerRequest } from '../workers/csv-viewer';
 import { serializeCsv } from '../lib/csv-viewer';
+import { i18nFrom } from '../i18n/client';
 
 const get = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const root = get<HTMLDivElement>('csv-viewer');
@@ -23,19 +24,8 @@ const encoding = get<HTMLSelectElement>('viewer-encoding');
 const headers = get<HTMLInputElement>('viewer-headers');
 const exportScope = get<HTMLSelectElement>('viewer-export-scope');
 
-const strings = JSON.parse(root?.dataset.strings || '{}') as Record<string, string>;
-const locale = root?.dataset.locale || 'en';
-const number = new Intl.NumberFormat(locale);
+const { locale, t, counted, formatNumber } = i18nFrom(root);
 const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
-
-function t(key: string, values?: Record<string, string | number>): string {
-  const str = strings[key];
-  if (typeof str !== 'string') {
-    throw new Error(`Missing translation key: ${key}`);
-  }
-  if (!values) return str;
-  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
-}
 
 const rowHeight = 38;
 const maxBytes = 10 * 1024 * 1024;
@@ -64,7 +54,7 @@ function labelSeparator(value: string) {
 function errorText(code: string, row?: number) {
   if (code === 'empty') return t('csvViewer.errEmpty');
   if (code === 'tooManyColumns') return t('csvViewer.errTooManyColumns');
-  if (row) return t('csvViewer.errReadRow', { row: number.format(row) });
+  if (row) return t('csvViewer.errReadRow', { row: formatNumber(row) });
   return t('csvViewer.errReadGeneric');
 }
 
@@ -90,13 +80,11 @@ function parseSource(source: string | ArrayBuffer, name: string) {
     get<HTMLElement>('viewer-irregular-wrap').hidden = table.irregularRows === 0;
     fillColumnOptions();
     get<HTMLElement>('viewer-filename').textContent = name;
-    const irregularText = table.irregularRows
-      ? ` · ${table.irregularRows === 1 ? t('csvViewer.metaIrregular.one', { count: number.format(table.irregularRows) }) : t('csvViewer.metaIrregular.other', { count: number.format(table.irregularRows) })}`
-      : '';
+    const irregularText = table.irregularRows ? ` · ${counted('csvViewer.metaIrregular', table.irregularRows)}` : '';
     const encodingText = fileEncoding === 'pasted' ? t('csvViewer.metaPasted') : fileEncoding.toUpperCase();
     get<HTMLElement>('viewer-filemeta').textContent = `${t('csvViewer.metaSeparated', { separator: labelSeparator(table.separator) })} · ${encodingText}${irregularText}`;
-    get<HTMLElement>('viewer-row-count').textContent = number.format(table.rows.length);
-    get<HTMLElement>('viewer-column-count').textContent = number.format(table.headers.length);
+    get<HTMLElement>('viewer-row-count').textContent = formatNumber(table.rows.length);
+    get<HTMLElement>('viewer-column-count').textContent = formatNumber(table.headers.length);
     scroll.style.height = `${Math.min(440, Math.max(180, (table.rows.length + 1) * rowHeight + 2))}px`;
     updateEditCount();
     buildHeader();
@@ -105,6 +93,14 @@ function parseSource(source: string | ArrayBuffer, name: string) {
     message(importStatus, ''); message(status, '');
     scroll.scrollTop = 0;
     scheduleRender();
+  };
+  // A worker that runs out of memory dies without a message, so re-enable the import buttons and say so.
+  worker.onerror = () => {
+    worker?.terminate(); worker = undefined;
+    if (id !== requestId) return;
+    get<HTMLButtonElement>('viewer-choose').disabled = false;
+    get<HTMLButtonElement>('viewer-open-paste').disabled = false;
+    message(importStatus, t('csvViewer.errWorker'));
   };
   const request: CsvViewerRequest = { id, source, separator: separator.value as Separator, encoding: encoding.value as Encoding, firstRowHeaders: headers.checked };
   worker.postMessage(request);
@@ -152,10 +148,7 @@ function applyFilters() {
     visible.push(index);
   });
   if (sortColumn >= 0) visible.sort((a, b) => sortDirection * (collator.compare(table!.rows[a][sortColumn], table!.rows[b][sortColumn]) || a - b));
-  get<HTMLElement>('viewer-showing').textContent = t('csvViewer.showingRows', {
-    shown: number.format(visible.length),
-    total: number.format(table.rows.length)
-  });
+  get<HTMLElement>('viewer-showing').textContent = counted('csvViewer.showingRows', table.rows.length, { shown: formatNumber(visible.length) });
   get<HTMLElement>('viewer-empty').hidden = visible.length !== 0;
   profile();
   scheduleRender();
@@ -183,14 +176,14 @@ function renderRows() {
   for (let display = start; display < end; display++) {
     const rowIndex = visible[display]; const values = table.rows[rowIndex];
     const tr = document.createElement('tr');
-    const numberCell = document.createElement('td'); numberCell.textContent = number.format(rowIndex + 1); tr.append(numberCell);
+    const numberCell = document.createElement('td'); numberCell.textContent = formatNumber(rowIndex + 1); tr.append(numberCell);
     values.forEach((value, column) => {
       const td = document.createElement('td');
       if (originals.has(`${rowIndex}:${column}`)) { td.dataset.edited = ''; tr.dataset.edited = ''; }
       const button = document.createElement('button'); button.type = 'button'; button.textContent = value || ' ';
       button.title = value || t('csvViewer.emptyCell');
       button.setAttribute('aria-label', t('csvViewer.cellAria', {
-        row: number.format(rowIndex + 1),
+        row: formatNumber(rowIndex + 1),
         header: table!.headers[column],
         value: value || t('csvViewer.cellEmpty')
       }));
@@ -206,7 +199,7 @@ function renderRows() {
 function editCell(cell: HTMLTableCellElement, row: number, column: number) {
   if (!table) return;
   const input = document.createElement('input'); input.type = 'text'; input.value = table.rows[row][column];
-  input.setAttribute('aria-label', t('csvViewer.editCellAria', { row: number.format(row + 1), header: table.headers[column] }));
+  input.setAttribute('aria-label', t('csvViewer.editCellAria', { row: formatNumber(row + 1), header: table.headers[column] }));
   let done = false;
   const finish = (save: boolean) => {
     if (done || !table) return; done = true;
@@ -224,7 +217,7 @@ function editCell(cell: HTMLTableCellElement, row: number, column: number) {
 }
 
 function updateEditCount() {
-  get<HTMLElement>('viewer-edit-count').textContent = number.format(originals.size);
+  get<HTMLElement>('viewer-edit-count').textContent = formatNumber(originals.size);
   get<HTMLButtonElement>('viewer-revert').disabled = originals.size === 0;
 }
 
@@ -237,9 +230,9 @@ function profile() {
   const examples = [...new Set(values.filter(Boolean))].slice(0, 3).join(' · ') || t('csvViewer.profileNone');
   const dl = get<HTMLDListElement>('viewer-profile'); dl.replaceChildren();
   for (const [term, value] of [
-    [t('csvViewer.profileValues'), number.format(values.length)],
-    [t('csvViewer.profileBlanks'), number.format(blanks)],
-    [t('csvViewer.profileDistinct'), number.format(distinct)],
+    [t('csvViewer.profileValues'), formatNumber(values.length)],
+    [t('csvViewer.profileBlanks'), formatNumber(blanks)],
+    [t('csvViewer.profileDistinct'), formatNumber(distinct)],
     [t('csvViewer.profileExamples'), examples]
   ]) {
     const item = document.createElement('div'); const dt = document.createElement('dt'); dt.textContent = term;
@@ -269,7 +262,7 @@ get<HTMLButtonElement>('viewer-paste-toggle').addEventListener('click', event =>
 get<HTMLButtonElement>('viewer-open-paste').addEventListener('click', () => parseSource(paste.value, 'pasted.csv'));
 get<HTMLButtonElement>('viewer-example').addEventListener('click', () => parseSource('order_id,customer,city,amount,status\n1001,Ada Lovelace,London,125.50,Paid\n1002,Grace Hopper,New York,89.00,Pending\n1003,Alan Turing,Manchester,210.75,Paid\n1004,Katherine Johnson,White Sulphur Springs,156.20,Refunded\n1005,Radia Perlman,Portsmouth,42.99,Paid', 'sample-orders.csv'));
 get<HTMLButtonElement>('viewer-replace').addEventListener('click', () => {
-  if (originals.size && !window.confirm(t('csvViewer.confirmRevert', { count: number.format(originals.size) }))) return;
+  if (originals.size && !window.confirm(t('csvViewer.confirmDiscard'))) return;
   workspace.hidden = true; importPanel.hidden = false; fileInput.value = ''; table = undefined; originals.clear();
   get<HTMLButtonElement>('viewer-choose').focus();
 });
@@ -309,7 +302,7 @@ drop.addEventListener('drop', async event => {
   drop.classList.remove('over');
   const file = event.dataTransfer?.files[0]; if (!file) return;
   event.preventDefault();
-  if (originals.size && !window.confirm(t('csvViewer.confirmRevert', { count: number.format(originals.size) }))) return;
+  if (originals.size && !window.confirm(t('csvViewer.confirmDiscard'))) return;
   if (file.size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); return; }
   workspace.hidden = true; importPanel.hidden = false;
   parseSource(await file.arrayBuffer(), file.name);

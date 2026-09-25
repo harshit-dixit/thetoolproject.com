@@ -6,25 +6,19 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'csvJson.inputTitle', 'csvJson.stateReady', 'csvJson.outputTitle',
-  'csvJson.inputAria', 'csvJson.sourceLabel', 'csvJson.chooseFile',
-  'csvJson.tryExample', 'csvJson.clear', 'csvJson.codeAria',
-  'csvJson.codePlaceholder', 'csvJson.outputLabel', 'csvJson.copy',
-  'csvJson.download', 'csvJson.separator', 'csvJson.autoDetect',
-  'csvJson.encoding', 'csvJson.jsonFormat', 'csvJson.formatPretty',
-  'csvJson.formatCompact', 'csvJson.formatLines', 'csvJson.firstRowHeaders',
-  'csvJson.detectTypes', 'csvJson.emptyAsNull', 'csvJson.checkResult',
-  'csvJson.tableAria', 'csvJson.stateWorking', 'csvJson.stateReadyRows',
-  'csvJson.copied', 'csvJson.summaryRows', 'csvJson.previewNote',
-  'csvJson.diagDifferingWidths', 'csvJson.diagRenamedHeaders',
-  'csvJson.errEmpty', 'csvJson.errTooLarge', 'csvJson.errTooManyColumns',
-  'csvJson.errRead', 'csvJson.errWorker', 'csvJson.defaultColumn',
-  'csvJson.codeTruncated', 'csvJson.downloadJsonl', 'csvJson.summaryMeta',
-  'csvJson.errInvalidQuote', 'csvJson.tooLargeEditor', 'csvJson.errDecode',
-  'csvJson.errFileType', 'csvJson.reading', 'csvJson.pastedCsv',
-  'csvJson.exampleCsv', 'csvJson.errClipboard',
-  'csvJson.delimiterComma', 'csvJson.delimiterSemicolon', 'csvJson.delimiterTab', 'csvJson.delimiterPipe',
-  'unit.bytes', 'unit.kb', 'unit.mb'
+  'csvJson.codePlaceholder', 'csvJson.codeTruncated', 'csvJson.copied', 'csvJson.copy',
+  'csvJson.diagDifferingWidths.one', 'csvJson.diagDifferingWidths.other',
+  'csvJson.diagRenamedHeaders.one', 'csvJson.diagRenamedHeaders.other', 'csvJson.download',
+  'csvJson.downloadJsonl', 'csvJson.errClipboard', 'csvJson.errDecode', 'csvJson.errFileType',
+  'csvJson.errInvalidQuote', 'csvJson.errRead', 'csvJson.errTooLarge', 'csvJson.errTooManyColumns',
+  'csvJson.errWorker', 'csvJson.exampleCsv', 'csvJson.noDataRows', 'csvJson.outputLabel',
+  'csvJson.outputSize', 'csvJson.outputSizeLines', 'csvJson.pastedCsv', 'csvJson.previewNote.one',
+  'csvJson.previewNote.other', 'csvJson.previewNoteColumns.one', 'csvJson.previewNoteColumns.other',
+  'csvJson.reading', 'csvJson.separatedComma', 'csvJson.separatedPipe', 'csvJson.separatedSemicolon',
+  'csvJson.separatedTab', 'csvJson.sourceLabel', 'csvJson.stateConverted.one',
+  'csvJson.stateConverted.other', 'csvJson.stateReady', 'csvJson.stateWorking',
+  'csvJson.summaryMeta', 'csvJson.tooLargeEditor', 'tool.columns.one', 'tool.columns.other',
+  'tool.rows.one', 'tool.rows.other', 'unit.bytes', 'unit.kb', 'unit.mb'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---

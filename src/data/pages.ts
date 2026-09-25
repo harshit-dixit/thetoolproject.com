@@ -1,4 +1,5 @@
-import { type Locale } from './tools';
+import { locales, type Locale } from './tools';
+import { dictionaries } from '../i18n/dictionaries';
 
 export type PageLocale = {
   path: string;
@@ -14,72 +15,57 @@ export type SitePage = {
   locales: Partial<Record<Locale, PageLocale>>;
 };
 
+export type PageRouteOverride = {
+  path?: string;
+  reviewed?: boolean;
+};
+export type PageRouteOverrides = Partial<Record<Locale, PageRouteOverride>>;
+
+export function createPageLocales(
+  pathGen: (locale: Locale) => string,
+  prefix: string,
+  overrides?: PageRouteOverrides
+): Record<Locale, PageLocale> {
+  const result: Partial<Record<Locale, PageLocale>> = {};
+  for (const locale of locales) {
+    const d = dictionaries[locale];
+    const defaultPath = pathGen(locale);
+    const defaultReviewed = locale === 'en';
+    const override = overrides?.[locale];
+    result[locale] = {
+      path: override?.path ?? defaultPath,
+      title: d[`${prefix}.title`],
+      description: d[`${prefix}.description`],
+      reviewed: override?.reviewed ?? defaultReviewed,
+    };
+  }
+  return result as Record<Locale, PageLocale>;
+}
+
 export const sitePages: Record<SitePageId, SitePage> = {
   home: {
     id: 'home',
-    locales: {
-      en: {
-        path: '/',
-        title: 'Free, open source file tools | thetoolproject',
-        description: 'Convert CSV to JSON, JSON to HTML, Excel or CSV, XML to JSON or CSV, and spreadsheets to CSV in your browser. Free, open source tools that keep your files on your device.',
-        reviewed: true,
-      },
-    },
+    locales: createPageLocales((locale) => (locale === 'en' ? '/' : `/${locale}/`), 'home'),
   },
   about: {
     id: 'about',
-    locales: {
-      en: {
-        path: '/about/',
-        title: 'About us | thetoolproject',
-        description: 'Learn why thetoolproject makes free, open source browser tools and how you can help improve them.',
-        reviewed: true,
-      },
-    },
+    locales: createPageLocales((locale) => (locale === 'en' ? '/about/' : `/${locale}/about/`), 'about'),
   },
   contact: {
     id: 'contact',
-    locales: {
-      en: {
-        path: '/contact/',
-        title: 'Contact us | thetoolproject',
-        description: 'Contact thetoolproject about a tool, a bug, or a question. Email us or open a GitHub issue.',
-        reviewed: true,
-      },
-    },
+    locales: createPageLocales((locale) => (locale === 'en' ? '/contact/' : `/${locale}/contact/`), 'contact'),
   },
   privacy: {
     id: 'privacy',
-    locales: {
-      en: {
-        path: '/privacy/',
-        title: 'Privacy policy | thetoolproject',
-        description: 'How thetoolproject handles files, contact emails, and basic website request data.',
-        reviewed: true,
-      },
-    },
+    locales: createPageLocales((locale) => (locale === 'en' ? '/privacy/' : `/${locale}/privacy/`), 'privacy'),
   },
   terms: {
     id: 'terms',
-    locales: {
-      en: {
-        path: '/terms/',
-        title: 'Terms of use | thetoolproject',
-        description: "Terms for using thetoolproject's free browser tools, guides, and open source code.",
-        reviewed: true,
-      },
-    },
+    locales: createPageLocales((locale) => (locale === 'en' ? '/terms/' : `/${locale}/terms/`), 'terms'),
   },
   notFound: {
     id: 'notFound',
-    locales: {
-      en: {
-        path: '/404.html',
-        title: "This page doesn't exist | thetoolproject",
-        description: 'The page you requested could not be found. Browse the available tools.',
-        reviewed: true,
-      },
-    },
+    locales: createPageLocales((locale) => (locale === 'en' ? '/404.html' : `/${locale}/404.html`), 'notFound'),
   },
 };
 
@@ -98,5 +84,5 @@ export function getPublishedPagePath(pageId: SitePageId, locale: Locale): string
   if (localized?.reviewed) return localized.path;
   const english = page.locales.en;
   if (english?.reviewed) return english.path;
-  return '/';
+  throw new Error(`Page ${pageId} has no published route`);
 }

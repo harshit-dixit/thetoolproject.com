@@ -21,37 +21,16 @@ import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
 import ImageTool from '../components/ImageTool.astro';
 import CompressPdfTool from '../components/CompressPdfTool.astro';
-import { tools, publishedToolLocales, getPublishedToolPath, type Locale, type Tool, type ToolLocale } from '../data/tools';
-import { sitePages, publishedPageLocales, type SitePage, type PageLocale } from '../data/pages';
-import { t, type TranslationKey } from '../i18n/utils';
+import { publishedToolLocales, getPublishedToolPath } from '../data/tools';
+import { buildStaticPaths, type RouteProps } from '../data/routes';
+import { t, formatNumber, type TranslationKey } from '../i18n/utils';
 
 export function getStaticPaths() {
-  const toolPaths = Object.values(tools).flatMap(tool =>
-    publishedToolLocales(tool).map(([locale, entry]) => ({
-      params: { path: entry.path.replace(/^\/|\/$/g, '') || undefined },
-      props: { kind: 'tool' as const, locale, entry, tool }
-    }))
-  );
-
-  const pagePaths = Object.values(sitePages).flatMap(page =>
-    publishedPageLocales(page)
-      .filter(([locale]) => !(page.id === 'notFound' && locale === 'en'))
-      .map(([locale, entry]) => ({
-        params: {
-          path: page.id === 'notFound'
-            ? `${locale}/404`
-            : entry.path.replace(/^\/|\/$/g, '') || undefined
-        },
-        props: { kind: 'page' as const, locale, entry, page }
-      }))
-  );
-
-  return [...toolPaths, ...pagePaths];
+  const allowDrafts = import.meta.env.DEV && process.env.PREVIEW_DRAFTS === 'true';
+  return buildStaticPaths({ allowDrafts });
 }
 
-type Props =
-  | { kind: 'tool'; locale: Locale; entry: ToolLocale; tool: Tool }
-  | { kind: 'page'; locale: Locale; entry: PageLocale; page: SitePage };
+type Props = RouteProps;
 
 const props = Astro.props;
 const locale = props.locale;
@@ -108,9 +87,9 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
               pdf500: getPublishedToolPath('compressPdf500kb', locale)
             }}
             params={{
-              pdf100Label: '100KB',
-              pdf200Label: '200KB',
-              pdf500Label: '500KB'
+              pdf100Label: t('unit.kbTarget', locale, { n: 100 }),
+              pdf200Label: t('unit.kbTarget', locale, { n: 200 }),
+              pdf500Label: t('unit.kbTarget', locale, { n: 500 })
             }}
           /></p>
           <h3>{t('compressPdf.faqTitle', locale)}</h3>
@@ -137,8 +116,8 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
               main: getPublishedToolPath('compressPdf', locale)
             }}
             params={{
-              target1Label: pdfTarget === 100 ? '200KB' : '100KB',
-              target2Label: pdfTarget === 500 ? '200KB' : '500KB',
+              target1Label: t('unit.kbTarget', locale, { n: pdfTarget === 100 ? 200 : 100 }),
+              target2Label: t('unit.kbTarget', locale, { n: pdfTarget === 500 ? 200 : 500 }),
               mainLabel: t('compressPdf.target.generalLinkText', locale)
             }}
           /></p>
@@ -150,19 +129,15 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         <section aria-labelledby="image-how-title"><div class="sec-head"><h2 id="image-how-title">{t('imageResizer.howTitle', locale)}</h2><p>{t('imageResizer.howSubtitle', locale)}</p></div><div class="how-copy">
           <p>{t('imageResizer.howIntro', locale)}</p>
           <h3>{t('imageResizer.howBatchTitle', locale)}</h3>
-          <p><RichText text={t('imageResizer.howBatchP', locale, { zipButton: t('image.downloadAllZip', locale) })} /></p>
+          <p><RichText text={t('imageResizer.howBatchP', locale, { lockAspect: t('image.lockAspect', locale), noEnlarge: t('image.noEnlarge', locale), estimate: t('image.estimateButton', locale) })} /></p>
           <h3>{t('imageResizer.howCmTitle', locale)}</h3>
-          <p><RichText text={t('imageResizer.howCmP', locale)} /></p>
+          <p><RichText text={t('imageResizer.howCmP', locale, { cmMode: t('image.modeCm', locale) })} /></p>
           <h3>{t('imageResizer.howKbTitle', locale)}</h3>
           <p><RichText
-            text={t('imageResizer.howKbP', locale)}
+            text={t('imageResizer.howKbP', locale, { kbMode: t('image.modeKb', locale), jpg50Label: t('compressJpg50kb.h1', locale), jpg100Label: t('compressJpg100kb.h1', locale) })}
             links={{
               jpg100: getPublishedToolPath('compressJpg100kb', locale),
               jpg50: getPublishedToolPath('compressJpg50kb', locale)
-            }}
-            params={{
-              jpg100Label: t('compressJpg100kb.h1', locale),
-              jpg50Label: t('compressJpg50kb.h1', locale)
             }}
           /></p>
           <h3>{t('imageResizer.howFormatsTitle', locale)}</h3>
@@ -173,18 +148,11 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('compressJpg.leadStrong', locale, { target: 100 })}</strong> {t('compressJpg.lead', locale, { target: 100 })}</p><p class="caption">{t('compressJpg.caption', locale)}</p></div></div>
         <ImageTool locale={locale} mode="compress" targetKb={100} />
         <section aria-labelledby="jpg-how-title"><div class="sec-head"><h2 id="jpg-how-title">{t('compressJpg.howTitle', locale, { target: 100 })}</h2></div><div class="how-copy">
-          <p>{t('compressJpg.howP1', locale, { target: 100, bytes: '102,400', fileSizeText: t('compressJpg.fileSizePlain', locale) })}</p>
+          <p>{t('compressJpg.howP1', locale, { target: 100, bytes: formatNumber(102400, locale), fileSizeText: t('compressJpg.fileSizePlain', locale) })}</p>
           <p>{t('compressJpg.howP2', locale, { target: 100 })}</p>
           <p><RichText
             text={t('compressJpg.how100Other', locale)}
-            links={{
-              jpg50: getPublishedToolPath('compressJpg50kb', locale),
-              resizer: getPublishedToolPath('imageResizer', locale)
-            }}
-            params={{
-              jpg50Label: t('compressJpg50kb.h1', locale),
-              resizerLabel: t('imageResizer.h1', locale).toLowerCase()
-            }}
+            links={{ resizer: getPublishedToolPath('imageResizer', locale) }}
           /></p>
         </div></section>
       </>}
@@ -192,7 +160,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('compressJpg.leadStrong', locale, { target: 50 })}</strong> {t('compressJpg.lead', locale, { target: 50 })}</p><p class="caption">{t('compressJpg.caption', locale)}</p></div></div>
         <ImageTool locale={locale} mode="compress" targetKb={50} />
         <section aria-labelledby="jpg-50-how-title"><div class="sec-head"><h2 id="jpg-50-how-title">{t('compressJpg.howTitle', locale, { target: 50 })}</h2></div><div class="how-copy">
-          <p>{t('compressJpg.howP1', locale, { target: 50, bytes: '51,200', fileSizeText: t('compressJpg.fileSizeExact', locale) })}</p>
+          <p>{t('compressJpg.howP1', locale, { target: 50, bytes: formatNumber(51200, locale), fileSizeText: t('compressJpg.fileSizeExact', locale) })}</p>
           <p>{t('compressJpg.howP2', locale, { target: 50 })}</p>
           <p><RichText
             text={t('compressJpg.how50Other', locale)}
@@ -200,10 +168,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
               jpg100: getPublishedToolPath('compressJpg100kb', locale),
               resizer: getPublishedToolPath('imageResizer', locale)
             }}
-            params={{
-              jpg100Label: t('compressJpg100kb.h1', locale),
-              resizerLabel: t('imageResizer.h1', locale).toLowerCase()
-            }}
+            params={{ jpg100Label: t('compressJpg100kb.h1', locale) }}
           /></p>
         </div></section>
       </>}
@@ -214,7 +179,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <h3>{t('qrScanner.howCameraTitle', locale)}</h3>
           <p>{t('qrScanner.howCameraP', locale)}</p>
           <h3>{t('qrScanner.howImageTitle', locale)}</h3>
-          <p><RichText text={t('qrScanner.howImageP', locale, { imageTab: t('qr.imageTab', locale).split(' ')[0] })} /></p>
+          <p><RichText text={t('qrScanner.howImageP', locale)} /></p>
           <h3>{t('qrScanner.howResultTitle', locale)}</h3>
           <p><RichText text={t('qrScanner.howResultP1', locale)} /></p>
           <p>{t('qrScanner.howResultP2', locale)}</p>
@@ -233,7 +198,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('csvJson.howInput', locale)}</th><th scope="col">{t('csvJson.howResult', locale)}</th></tr></thead><tbody>
             <tr><td>{t('csvJson.howFirstRow', locale)}</td><td>{t('csvJson.howFirstRowResult', locale)}</td></tr>
             <tr><td>{t('csvJson.howNoHeader', locale)}</td><td><RichText text={t('csvJson.howNoHeaderResult', locale, { col1: 'Column 1', col2: 'Column 2' })} /></td></tr>
-            <tr><td><code>001</code>, <code>true</code>, empty cell</td><td><RichText text={t('csvJson.howValuesResult', locale)} /></td></tr>
+            <tr><td><RichText text={t('csvJson.howValues', locale)} /></td><td><RichText text={t('csvJson.howValuesResult', locale)} /></td></tr>
             <tr><td>{t('csvJson.howQuotes', locale)}</td><td>{t('csvJson.howQuotesResult', locale)}</td></tr>
           </tbody></table></div>
           <p>{t('csvJson.howSeparators', locale)}</p>
@@ -241,13 +206,10 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><RichText
             text={t('csvJson.howLimits', locale)}
             links={{
-              csvSql: getPublishedToolPath('csvToSql', locale),
-              csvViewer: getPublishedToolPath('csvViewer', locale)
+              csvViewer: getPublishedToolPath('csvViewer', locale),
+              jsonCsv: getPublishedToolPath('jsonToCsv', locale)
             }}
-            params={{
-              csvSqlLabel: t('csvSql.h1', locale),
-              csvViewerLabel: t('csvViewer.h1', locale)
-            }}
+            params={{ jsonCsvLabel: t('jsonCsv.h1', locale) }}
           /></p>
         </div></section>
       </>}
@@ -282,7 +244,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('csvSql.howInput', locale)}</th><th scope="col">{t('csvSql.howOutput', locale)}</th></tr></thead><tbody>
             <tr><td><code>001</code></td><td><RichText text={t('csvSql.howExample1Desc', locale)} /></td></tr>
             <tr><td><code>O'Neil</code></td><td><RichText text={t('csvSql.howExample2Desc', locale)} /></td></tr>
-            <tr><td>An empty field</td><td><RichText text={t('csvSql.howExample3Desc', locale)} /></td></tr>
+            <tr><td>{t('csvSql.howExample3', locale)}</td><td><RichText text={t('csvSql.howExample3Desc', locale)} /></td></tr>
             <tr><td>{t('csvSql.howExample4', locale)}</td><td>{t('csvSql.howExample4Desc', locale)}</td></tr>
           </tbody></table></div>
           <p>{t('csvSql.howSeparators', locale)}</p>
@@ -367,7 +329,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
               <tr><td>{t('jsonCsv.howGrid', locale)}</td><td>{t('jsonCsv.howGridResult', locale)}</td></tr>
             </tbody></table></div>
             <p>{t('jsonCsv.howFormat', locale)}</p><p>{t('jsonCsv.howSafety', locale)}</p><p>{t('jsonCsv.howLimits', locale)}</p>
-            <p><a href="/guides/json-to-csv/">{t('jsonCsv.guideLink', locale)}</a></p>
+            <p><a href="/guides/json-to-csv/" hreflang={locale === 'en' ? undefined : 'en'}>{t('jsonCsv.guideLink', locale)}</a>{locale !== 'en' && <> {t('guide.inEnglish', locale)}</>}</p>
           </div>
         </section>
       </>}
@@ -402,7 +364,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
             <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('xmlJson.howInput', locale)}</th><th scope="col">{t('xmlJson.howOutput', locale)}</th></tr></thead><tbody>
               <tr><td><code>&lt;name&gt;Maya&lt;/name&gt;</code></td><td><RichText text={t('xmlJson.howRule1Desc', locale)} /></td></tr>
               <tr><td><code>&lt;order id="A-104"&gt;</code></td><td><RichText text={t('xmlJson.howRule2Desc', locale)} /></td></tr>
-              <tr><td>{t('xmlJson.howRule3', locale)}</td><td><RichText text={t('xmlJson.howRule3Desc', locale)} /></td></tr>
+              <tr><td><RichText text={t('xmlJson.howRule3', locale)} /></td><td><RichText text={t('xmlJson.howRule3Desc', locale)} /></td></tr>
               <tr><td>{t('xmlJson.howRule4', locale)}</td><td><RichText text={t('xmlJson.howRule4Desc', locale)} /></td></tr>
               <tr><td>{t('xmlJson.howRule5', locale)}</td><td><RichText text={t('xmlJson.howRule5Desc', locale)} /></td></tr>
             </tbody></table></div>

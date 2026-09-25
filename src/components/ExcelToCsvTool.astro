@@ -3,10 +3,21 @@ import { t, type TranslationKey } from '../i18n/utils';
 import type { Locale } from '../data/tools';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
-const clientKeys: TranslationKey[] = ['excel.dropTitleTouch','excel.dropHintTouch','excel.chooseAgain','excel.reading','excel.working','excel.zipping','excel.fileLoaded','excel.sheets.one','excel.sheets.other','excel.hiddenSheet','excel.summary','excel.rows.one','excel.rows.other','excel.columns.one','excel.columns.other','excel.previewCap','excel.columnsCap','excel.emptySheet','excel.download','excel.downloadTsv','excel.downloadZip','excel.wrongTypeTitle','excel.wrongType','excel.tooLargeTitle','excel.tooLarge','excel.passwordProtectedTitle','excel.passwordProtected','excel.unreadableTitle','excel.unreadable','excel.noSheetsTitle','excel.noSheets','excel.workerErrorTitle','excel.workerError','unit.bytes','unit.kb','unit.mb'];
+const clientKeys: TranslationKey[] = [
+  'excel.chooseAgain', 'excel.columns.one', 'excel.columns.other', 'excel.columnsCap',
+  'excel.download', 'excel.downloadTsv', 'excel.downloadZip', 'excel.dropHintTouch',
+  'excel.dropTitleTouch', 'excel.emptySheet', 'excel.fileLoaded', 'excel.hiddenSheet',
+  'excel.noSheets', 'excel.noSheetsTitle', 'excel.passwordProtected', 'excel.passwordProtectedTitle',
+  'excel.previewCap', 'excel.reading', 'excel.rows.one', 'excel.rows.other', 'excel.sheets.one',
+  'excel.sheets.other', 'excel.summary', 'excel.tooLarge', 'excel.tooLargeTitle', 'excel.unreadable',
+  'excel.unreadableTitle', 'excel.workerError', 'excel.workerErrorTitle', 'excel.working',
+  'excel.wrongType', 'excel.wrongTypeTitle', 'excel.zipping', 'unit.bytes', 'unit.kb', 'unit.mb'
+];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
-const separator = t('excel.defaultSeparator', locale);
 const separators = [['comma', 'excel.comma'], ['semicolon', 'excel.semicolon'], ['tab', 'excel.tab']] as const;
+// PLAN.md: the default follows the locale's Excel list separator (semicolon where Excel uses decimal commas).
+const separator = t('excel.defaultSeparator', locale);
+if (!separators.some(([value]) => value === separator)) throw new Error(`excel.defaultSeparator must be comma, semicolon or tab in "${locale}", not "${separator}"`);
 ---
 <div class="drop excel-drop" id="excel-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
   <input class="visually-hidden" type="file" id="excel-file" accept=".xlsx,.xlsm,.xlsb,.xls,.ods,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet" tabindex="-1" aria-label={t('excel.fileInput', locale)} />

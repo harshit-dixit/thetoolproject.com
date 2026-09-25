@@ -6,17 +6,12 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'qr.heading', 'qr.subheading', 'qr.private', 'qr.modesAria', 'qr.cameraTab',
-  'qr.imageTab', 'qr.videoAria', 'qr.cameraPreviewPlaceholder', 'qr.startCamera',
-  'qr.stopCamera', 'qr.switchCamera', 'qr.torchOn', 'qr.torchOff', 'qr.cameraTip',
-  'qr.dropTitle', 'qr.dropHint', 'qr.chooseImage', 'qr.imageTip', 'qr.foundBadge',
-  'qr.typeText', 'qr.typeLink', 'qr.typeWifi', 'qr.typeContact', 'qr.scanAnother',
-  'qr.fullResult', 'qr.copyResult', 'qr.copied', 'qr.openLink', 'qr.noteDefault',
-  'qr.noteUnencrypted', 'qr.destination', 'qr.errSecureContext', 'qr.waitingPermission',
-  'qr.startingReader', 'qr.looking', 'qr.errReaderStopped', 'qr.errPermissionDenied',
-  'qr.errNotFound', 'qr.errStartFailed', 'qr.errImageType', 'qr.errImageTooLarge',
-  'qr.readingImage', 'qr.pastedImage', 'qr.errNotFoundInImage', 'qr.errImageRead',
-  'qr.cameraStopped', 'qr.cameraHidden', 'qr.errTorch', 'qr.clipboardSelected'
+  'qr.cameraHidden', 'qr.cameraStopped', 'qr.clipboardSelected', 'qr.copied', 'qr.copyResult',
+  'qr.destination', 'qr.errImageRead', 'qr.errImageTooLarge', 'qr.errImageType', 'qr.errNotFound',
+  'qr.errNotFoundInImage', 'qr.errPermissionDenied', 'qr.errReaderStopped', 'qr.errSecureContext',
+  'qr.errStartFailed', 'qr.errTorch', 'qr.looking', 'qr.noteDefault', 'qr.noteUnencrypted',
+  'qr.pastedImage', 'qr.readingImage', 'qr.startingReader', 'qr.torchOff', 'qr.torchOn',
+  'qr.typeContact', 'qr.typeLink', 'qr.typeText', 'qr.typeWifi', 'qr.waitingPermission'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---

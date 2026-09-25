@@ -6,17 +6,14 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'csvSql.inputHint', 'csvSql.chooseFile', 'csvSql.tryExample',
-  'csvSql.convertButton', 'csvSql.viewSql', 'csvSql.viewTable',
-  'csvSql.download', 'csvSql.copy', 'csvSql.copied', 'csvSql.sqlCopied',
-  'csvSql.startOver', 'csvSql.working', 'csvSql.reading',
-  'csvSql.summary', 'csvSql.noteSqlFull', 'csvSql.noteSqlTruncated',
-  'csvSql.noteTable', 'csvSql.errEmpty', 'csvSql.errInvalidCsv',
-  'csvSql.errNoRows', 'csvSql.errTooManyColumns', 'csvSql.errInvalidTable',
-  'csvSql.errWorker', 'csvSql.errTooLarge', 'csvSql.errWrongType',
-  'csvSql.loadedTooLarge', 'csvSql.editHint', 'csvSql.exampleHint',
-  'csvSql.loadedReady', 'csvSql.errRead', 'csvSql.errClipboard',
-  'unit.bytes', 'unit.kb', 'unit.mb'
+  'csvSql.copied', 'csvSql.copy', 'csvSql.editHint', 'csvSql.errClipboard', 'csvSql.errEmpty',
+  'csvSql.errInvalidCsv', 'csvSql.errInvalidTable', 'csvSql.errNoRows', 'csvSql.errRead',
+  'csvSql.errTooLarge', 'csvSql.errTooManyColumns', 'csvSql.errWorker', 'csvSql.errWrongType',
+  'csvSql.exampleHint', 'csvSql.inputComma', 'csvSql.inputHint', 'csvSql.inputPipe',
+  'csvSql.inputSemicolon', 'csvSql.inputTab', 'csvSql.loadedReady', 'csvSql.loadedTooLarge',
+  'csvSql.noteSqlFull', 'csvSql.noteSqlTruncated', 'csvSql.noteTable', 'csvSql.reading',
+  'csvSql.sqlCopied', 'csvSql.summary', 'csvSql.working', 'tool.columns.one', 'tool.columns.other',
+  'tool.rows.one', 'tool.rows.other', 'unit.bytes', 'unit.kb', 'unit.mb'
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---

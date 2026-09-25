@@ -1,9 +1,9 @@
 import type { XmlCsvConversion, XmlCsvError, XmlCsvOptions, XmlCsvSeparator } from '../lib/xml-to-csv';
 import type { XmlCsvRequest } from '../workers/xml-to-csv';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.querySelector<HTMLElement>('#xml-csv-tool')!;
-const strings = JSON.parse(root.dataset.strings!) as Record<string, string>;
-const locale = root.dataset.locale || 'en';
+const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const textarea = $<HTMLTextAreaElement>('xml-input');
 const fileInput = $<HTMLInputElement>('xml-file');
@@ -19,8 +19,6 @@ const codeNote = $('xml-code-note');
 const conversionNote = $('xml-conversion-note');
 const copy = $<HTMLButtonElement>('xml-copy');
 const hint = $('xml-input-hint');
-const formatter = new Intl.NumberFormat(locale);
-const plurals = new Intl.PluralRules(locale);
 const MAX_BYTES = 10 * 1024 * 1024;
 const TEXTAREA_LIMIT = 2 * 1024 * 1024;
 const TEXT_VIEW_LIMIT = 100000;
@@ -32,16 +30,9 @@ let fileName: string | undefined;
 let current: XmlCsvConversion | undefined;
 let view: 'table' | 'text' = 'table';
 let options: XmlCsvOptions = { separator: 'comma', bom: false, spreadsheetSafe: true };
-const substitute = (template: string, values: Record<string, string | number>) => template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
-const counted = (key: string, count: number) => substitute(strings[`${key}.${plurals.select(count)}`] ?? strings[`${key}.other`], { count: formatter.format(count) });
-const size = (bytes: number) => {
-  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
-  const n = unit === 'unit.mb' ? bytes / 1048576 : unit === 'unit.kb' ? bytes / 1024 : bytes;
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: unit === 'unit.bytes' ? 0 : 1 }).format(n)} ${strings[unit]}`;
-};
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
-function setWorking(working: boolean) { busy = working; convert.disabled = working; if (working) announce(strings['xmlCsv.working']); }
+function setWorking(working: boolean) { busy = working; convert.disabled = working; if (working) announce(t('xmlCsv.working')); }
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; setWorking(false); clearStatus(); } }
 function hideResult() { result.hidden = true; placeholder.hidden = false; current = undefined; csvView.textContent = ''; }
 function useTextarea() { fileText = undefined; hint.textContent = defaultHint; }
@@ -62,7 +53,7 @@ function showResult(data: XmlCsvConversion) {
   }));
   recordPath.value = data.paths.includes(selectedPath) && options.recordPath ? selectedPath : data.recordPath;
   $('xml-record-group').hidden = data.paths.length < 2;
-  $('xml-summary').textContent = substitute(strings[options.separator === 'tab' ? 'xmlCsv.summaryTsv' : 'xmlCsv.summary'], { rows: counted('tool.rows', data.rows), columns: counted('tool.columns', data.columns), size: size(new Blob([data.csv]).size) });
+  $('xml-summary').textContent = t(options.separator === 'tab' ? 'xmlCsv.summaryTsv' : 'xmlCsv.summary', { rows: counted('tool.rows', data.rows), columns: counted('tool.columns', data.columns), size: formatBytes(new Blob([data.csv]).size) });
   const head = document.createElement('thead');
   const tr = head.insertRow();
   for (const value of data.headers) { const th = document.createElement('th'); th.scope = 'col'; th.textContent = value; tr.append(th); }
@@ -73,22 +64,23 @@ function showResult(data: XmlCsvConversion) {
   csvView.textContent = data.csv.slice(data.csv.charCodeAt(0) === 0xfeff ? 1 : 0, TEXT_VIEW_LIMIT);
   csvView.scrollTo(0, 0);
   const notes: string[] = [];
-  if (data.rows > data.preview.length) notes.push(substitute(strings['xmlCsv.previewCap'], { shown: formatter.format(data.preview.length), total: formatter.format(data.rows) }));
-  if (data.columns > data.headers.length) notes.push(substitute(strings['xmlCsv.columnsCap'], { shown: formatter.format(data.headers.length), total: formatter.format(data.columns) }));
+  if (data.rows > data.preview.length) notes.push(t('xmlCsv.previewCap', { shown: formatNumber(data.preview.length), total: formatNumber(data.rows) }));
+  if (data.columns > data.headers.length) notes.push(t('xmlCsv.columnsCap', { shown: formatNumber(data.headers.length), total: formatNumber(data.columns) }));
   previewNote.textContent = notes.join(' ');
-  conversionNote.textContent = data.protectedCells ? substitute(strings['xmlCsv.protectedNote'], { count: formatter.format(data.protectedCells) }) : '';
+  conversionNote.textContent = data.protectedCells ? counted('xmlCsv.protectedNote', data.protectedCells) : '';
   conversionNote.hidden = !data.protectedCells;
-  copy.textContent = strings[options.separator === 'tab' ? 'xmlCsv.copyTsv' : 'xmlCsv.copy'];
+  copy.textContent = t(options.separator === 'tab' ? 'xmlCsv.copyTsv' : 'xmlCsv.copy');
   showView('table'); clearStatus();
 }
 function errorMessage(error: XmlCsvError | { code: 'workerError' }) {
-  if (error.code === 'invalidXml' && error.line) return `Line ${formatter.format(error.line)}, column ${formatter.format(error.column ?? 1)}: ${error.detail || strings['xmlCsv.invalidXml']}`;
-  return strings[`xmlCsv.${error.code}`] || strings['xmlCsv.workerError'];
+  // The parser's own message is English, so only the position is shown with a translated reason.
+  if (error.code === 'invalidXml' && error.line) return t('error.location', { line: formatNumber(error.line), column: formatNumber(error.column ?? 1), reason: t('xmlCsv.invalidXml') });
+  return t(`xmlCsv.${error.code}`);
 }
 function run() {
   const source = fileText ?? textarea.value;
-  if (!source.trim()) { announce(strings['xmlCsv.empty']); hideResult(); textarea.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { announce(strings['xmlCsv.tooLarge']); hideResult(); return; }
+  if (!source.trim()) { announce(t('xmlCsv.empty')); hideResult(); textarea.focus(); return; }
+  if (new Blob([source]).size > MAX_BYTES) { announce(t('xmlCsv.tooLarge')); hideResult(); return; }
   stopWorker(); setWorking(true);
   const id = ++sequence;
   worker ??= new Worker(new URL('../workers/xml-to-csv.ts', import.meta.url), { type: 'module' });
@@ -98,24 +90,24 @@ function run() {
     if (event.data.result) { showResult(event.data.result); return; }
     hideResult(); announce(errorMessage(event.data.error ?? { code: 'workerError' }));
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(strings['xmlCsv.workerError']); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('xmlCsv.workerError')); };
   worker.postMessage({ id, source, options } satisfies XmlCsvRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(xml|txt)$/i.test(file.name)) { announce(strings['xmlCsv.wrongType']); return; }
-  if (file.size > MAX_BYTES) { announce(strings['xmlCsv.tooLarge']); return; }
+  if (!/\.(xml|txt)$/i.test(file.name)) { announce(t('xmlCsv.wrongType')); return; }
+  if (file.size > MAX_BYTES) { announce(t('xmlCsv.tooLarge')); return; }
   const id = ++sequence;
-  stopWorker(); announce(strings['tool.reading']);
+  stopWorker(); announce(t('tool.reading'));
   try {
     const content = await file.text();
     if (id !== sequence) return;
     options = { ...options, recordPath: undefined };
     $('xml-record-group').hidden = true;
-    if (file.size > TEXTAREA_LIMIT) { textarea.value = ''; fileText = content; hint.textContent = substitute(strings['tool.largeFileHint'], { name: file.name }); }
+    if (file.size > TEXTAREA_LIMIT) { textarea.value = ''; fileText = content; hint.textContent = t('tool.largeFileHint', { name: file.name }); }
     else { textarea.value = content; useTextarea(); }
-    fileName = file.name; $('xml-file-name').textContent = file.name; $('xml-file-size').textContent = size(file.size); $('xml-file-line').hidden = false;
-    hideResult(); announce(substitute(strings['tool.fileLoaded'], { name: file.name, size: size(file.size) }));
-  } catch { if (id === sequence) announce(strings['tool.readError']); }
+    fileName = file.name; $('xml-file-name').textContent = file.name; $('xml-file-size').textContent = formatBytes(file.size); $('xml-file-line').hidden = false;
+    hideResult(); announce(t('tool.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
+  } catch { if (id === sequence) announce(t('tool.readError')); }
 }
 $('xml-choose-file').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
@@ -129,9 +121,9 @@ recordPath.addEventListener('change', () => { options = { ...options, recordPath
 root.querySelectorAll<HTMLButtonElement>('[data-xml-separator]').forEach(button => button.addEventListener('click', () => {
   options = { ...options, separator: button.dataset.xmlSeparator as XmlCsvSeparator };
   root.querySelectorAll<HTMLButtonElement>('[data-xml-separator]').forEach(x => x.setAttribute('aria-pressed', String(x === button)));
-  $('xml-download').textContent = strings[options.separator === 'tab' ? 'xmlCsv.downloadTsv' : 'xmlCsv.download'];
-  copy.textContent = strings[options.separator === 'tab' ? 'xmlCsv.copyTsv' : 'xmlCsv.copy'];
-  root.querySelector<HTMLButtonElement>('[data-xml-view="text"]')!.textContent = strings[options.separator === 'tab' ? 'xmlCsv.tsvText' : 'xmlCsv.textView'];
+  $('xml-download').textContent = t(options.separator === 'tab' ? 'xmlCsv.downloadTsv' : 'xmlCsv.download');
+  copy.textContent = t(options.separator === 'tab' ? 'xmlCsv.copyTsv' : 'xmlCsv.copy');
+  root.querySelector<HTMLButtonElement>('[data-xml-view="text"]')!.textContent = t(options.separator === 'tab' ? 'xmlCsv.tsvText' : 'xmlCsv.textView');
   if (current || busy) run();
 }));
 root.querySelectorAll<HTMLButtonElement>('[data-xml-bom]').forEach(button => button.addEventListener('click', () => {
@@ -158,16 +150,16 @@ copy.addEventListener('click', async () => {
     if (!navigator.clipboard?.writeText) throw Error();
     await navigator.clipboard.writeText(fullText);
     if (current !== copiedResult) return;
-    copy.textContent = strings['xmlCsv.copied']; announce(strings['xmlCsv.copied']);
+    copy.textContent = t('xmlCsv.copied'); announce(t('xmlCsv.copied'));
   } catch {
     if (current !== copiedResult) return;
     showView('text'); csvView.textContent = fullText;
     const selection = window.getSelection(); const range = document.createRange(); range.selectNodeContents(csvView);
-    selection?.removeAllRanges(); selection?.addRange(range); announce(strings['xmlCsv.selectText']);
+    selection?.removeAllRanges(); selection?.addRange(range); announce(t('xmlCsv.selectText'));
   }
 });
 $('xml-start-over').addEventListener('click', () => { ++sequence; stopWorker(); useTextarea(); options = { ...options, recordPath: undefined }; textarea.value = ''; fileInput.value = ''; fileName = undefined; hideResult(); $('xml-file-line').hidden = true; $('xml-record-group').hidden = true; clearStatus(); textarea.focus(); });
-const defaultHint = matchMedia('(pointer: coarse)').matches ? strings['tool.inputHintTouch'] : hint.textContent!;
+const defaultHint = matchMedia('(pointer: coarse)').matches ? t('tool.inputHintTouch') : hint.textContent!;
 hint.textContent = defaultHint;
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });
 root.addEventListener('dragleave', event => { if (!root.contains(event.relatedTarget as Node)) root.classList.remove('over'); });

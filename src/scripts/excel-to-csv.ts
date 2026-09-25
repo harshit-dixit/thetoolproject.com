@@ -1,13 +1,13 @@
 import type { ExcelErrorCode, NumberMode, Separator, SheetInfo } from '../lib/excel-to-csv';
 import type { ConvertedSheet, ExcelRequest } from '../workers/excel-to-csv';
+import { i18nFrom } from '../i18n/client';
 
 type ErrorKey = ExcelErrorCode | 'wrongType' | 'tooLarge' | 'workerError';
 type Pending = { resolve: (data: any) => void; reject: (code: ErrorKey) => void };
 type Draft<T> = T extends unknown ? Omit<T, 'id'> : never;
 
 const root = document.querySelector<HTMLElement>('#excel-tool')!;
-const strings = JSON.parse(root.dataset.strings!) as Record<string, string>;
-const locale = root.dataset.locale || 'en';
+const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const fileInput = $<HTMLInputElement>('excel-file');
 const empty = $('excel-empty');
@@ -39,15 +39,6 @@ let bom = false;
 let result: ConvertedSheet | undefined;
 let blob: Blob | undefined;
 
-const formatter = new Intl.NumberFormat(locale);
-const plurals = new Intl.PluralRules(locale);
-const substitute = (template: string, values: Record<string, string | number>) => template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
-const count = (key: string, n: number) => substitute(strings[`${key}.${plurals.select(n)}`] ?? strings[`${key}.other`], { count: formatter.format(n) });
-const size = (bytes: number) => {
-  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
-  const n = unit === 'unit.mb' ? bytes / 1048576 : unit === 'unit.kb' ? bytes / 1024 : bytes;
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: unit === 'unit.bytes' ? 0 : 1 }).format(n)} ${strings[unit]}`;
-};
 const extension = () => (separator === 'tab' ? 'tsv' : 'csv');
 const baseName = () => fileName.replace(/\.[^.]+$/, '') || 'converted';
 const safeName = (name: string) => {
@@ -84,6 +75,10 @@ function resetWorker() {
   pending.clear();
 }
 
+const ERROR_KEYS: readonly ErrorKey[] = ['passwordProtected', 'unreadable', 'noSheets', 'wrongType', 'tooLarge', 'workerError'];
+// A rejected promise can also carry an unexpected exception; show that as a stopped conversion.
+const errorKey = (value: unknown): ErrorKey => ERROR_KEYS.includes(value as ErrorKey) ? value as ErrorKey : 'workerError';
+
 function showError(code: ErrorKey) {
   ++generation;
   result = undefined;
@@ -91,10 +86,10 @@ function showError(code: ErrorKey) {
   setReady(false);
   panel.hidden = true;
   empty.hidden = false;
-  $('drop-title').textContent = strings[`excel.${code}Title`];
-  $('drop-hint').textContent = strings[`excel.${code}`];
-  $('choose-file').textContent = strings['excel.chooseAgain'];
-  announce(`${strings[`excel.${code}Title`]}. ${strings[`excel.${code}`]}`);
+  $('drop-title').textContent = t(`excel.${code}Title`);
+  $('drop-hint').textContent = t(`excel.${code}`);
+  $('choose-file').textContent = t('excel.chooseAgain');
+  announce(`${t(`excel.${code}Title`)}. ${t(`excel.${code}`)}`);
 }
 
 function setReady(ready: boolean) {
@@ -113,18 +108,18 @@ async function loadFile(file: File) {
   fileName = file.name;
   sheets = [];
   $('file-name').textContent = file.name;
-  $('file-size').textContent = size(file.size);
+  $('file-size').textContent = formatBytes(file.size);
   $('sheet-chips').replaceChildren();
   downloadZip.hidden = true;
   table.replaceChildren();
   csvView.textContent = '';
-  $('result-summary').textContent = strings['excel.reading'];
+  $('result-summary').textContent = t('excel.reading');
   note.textContent = '';
   setReady(false);
   // Show the panel straight away, while the click still counts as input, so the layout change isn't a shift.
   empty.hidden = true;
   panel.hidden = false;
-  announce(strings['excel.reading']);
+  announce(t('excel.reading'));
   try {
     const data = await send<{ sheets: SheetInfo[] }>({ type: 'open', file });
     if (ticket !== generation) return;
@@ -132,12 +127,12 @@ async function loadFile(file: File) {
     sheet = (sheets.find(item => !item.hidden) ?? sheets[0]).name;
     renderSheetChips();
     downloadZip.hidden = sheets.length < 2;
-    downloadZip.textContent = substitute(strings['excel.downloadZip'], { count: formatter.format(sheets.length) });
-    announce(substitute(strings['excel.fileLoaded'], { name: file.name, sheets: count('excel.sheets', sheets.length) }));
+    downloadZip.textContent = t('excel.downloadZip', { count: formatNumber(sheets.length) });
+    announce(t('excel.fileLoaded', { name: file.name, sheets: counted('excel.sheets', sheets.length) }));
     $('panel-title').focus({ preventScroll: true });
     await convert(false);
   } catch (code) {
-    if (ticket === generation) showError(code as ErrorKey);
+    if (ticket === generation) showError(errorKey(code));
   }
 }
 
@@ -147,7 +142,7 @@ function renderSheetChips() {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.sheet = item.name;
-    button.textContent = item.hidden ? substitute(strings['excel.hiddenSheet'], { name: item.name }) : item.name;
+    button.textContent = item.hidden ? t('excel.hiddenSheet', { name: item.name }) : item.name;
     button.setAttribute('aria-pressed', String(item.name === sheet));
     button.addEventListener('click', () => { sheet = item.name; press('[data-sheet]', x => x.dataset.sheet === sheet); void convert(); });
     return button;
@@ -161,7 +156,7 @@ async function convert(announceResult = true) {
   blob = undefined;
   setReady(false);
   // Most sheets convert in a few milliseconds; only say "Converting" when it takes long enough to notice.
-  const slow = setTimeout(() => { if (ticket === generation) { announce(strings['excel.working']); $('result-summary').textContent = strings['excel.working']; } }, 200);
+  const slow = setTimeout(() => { if (ticket === generation) { announce(t('excel.working')); $('result-summary').textContent = t('excel.working'); } }, 200);
   try {
     const data = await send<{ result: ConvertedSheet }>({ type: 'convert', sheet, options: { separator, numbers } });
     if (ticket !== generation) return;
@@ -169,14 +164,14 @@ async function convert(announceResult = true) {
     renderResult();
     if (announceResult) announce($('result-summary').textContent!);
   } catch (code) {
-    if (ticket === generation) showError(code as ErrorKey);
+    if (ticket === generation) showError(errorKey(code));
   } finally { clearTimeout(slow); }
 }
 
 function renderResult() {
   if (!result) return;
   blob = new Blob([bom ? BOM : '', result.csv], { type: separator === 'tab' ? 'text/tab-separated-values;charset=utf-8' : 'text/csv;charset=utf-8' });
-  $('result-summary').textContent = substitute(strings['excel.summary'], { rows: count('excel.rows', result.rows), columns: count('excel.columns', result.columns), size: size(blob.size) });
+  $('result-summary').textContent = t('excel.summary', { rows: counted('excel.rows', result.rows), columns: counted('excel.columns', result.columns), size: formatBytes(blob.size) });
   const body = document.createElement('tbody');
   for (const row of result.preview) {
     const tr = body.insertRow();
@@ -185,11 +180,11 @@ function renderResult() {
   table.replaceChildren(body);
   csvView.textContent = result.previewText;
   const notes = [];
-  if (!result.rows) notes.push(strings['excel.emptySheet']);
-  if (result.rows > result.preview.length) notes.push(substitute(strings['excel.previewCap'], { shown: formatter.format(result.preview.length), total: formatter.format(result.rows) }));
-  if (result.columns > (result.preview[0]?.length ?? 0) && result.rows) notes.push(substitute(strings['excel.columnsCap'], { shown: formatter.format(result.preview[0].length), total: formatter.format(result.columns) }));
+  if (!result.rows) notes.push(t('excel.emptySheet'));
+  if (result.rows > result.preview.length) notes.push(t('excel.previewCap', { shown: formatNumber(result.preview.length), total: formatNumber(result.rows) }));
+  if (result.columns > (result.preview[0]?.length ?? 0) && result.rows) notes.push(t('excel.columnsCap', { shown: formatNumber(result.preview[0].length), total: formatNumber(result.columns) }));
   note.textContent = notes.join(' ');
-  download.textContent = strings[separator === 'tab' ? 'excel.downloadTsv' : 'excel.download'];
+  download.textContent = t(separator === 'tab' ? 'excel.downloadTsv' : 'excel.download');
   setReady(true);
 }
 
@@ -210,14 +205,14 @@ downloadZip.addEventListener('click', async () => {
   const file = fileId;
   const version = settingsVersion;
   downloadZip.disabled = true;
-  announce(strings['excel.zipping']);
+  announce(t('excel.zipping'));
   try {
     const data = await send<{ zip: Uint8Array<ArrayBuffer> }>({ type: 'zip', options: { separator, numbers }, bom });
     if (file !== fileId) return;
     if (version !== settingsVersion) { announce($('result-summary').textContent ?? ''); return; }
     save(new Blob([data.zip], { type: 'application/zip' }), `${baseName()}-${extension()}.zip`);
     announce('');
-  } catch (code) { if (file === fileId && version === settingsVersion) showError(code as ErrorKey); }
+  } catch (code) { if (file === fileId && version === settingsVersion) showError(errorKey(code)); }
   finally { downloadZip.disabled = !result; }
 });
 root.querySelectorAll<HTMLButtonElement>('[data-separator]').forEach(button => button.addEventListener('click', () => {
@@ -250,8 +245,8 @@ $('choose-file').addEventListener('click', choose);
 $('choose-again').addEventListener('click', choose);
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
 if (matchMedia('(pointer: coarse)').matches) {
-  $('drop-title').textContent = strings['excel.dropTitleTouch'];
-  $('drop-hint').textContent = strings['excel.dropHintTouch'];
+  $('drop-title').textContent = t('excel.dropTitleTouch');
+  $('drop-hint').textContent = t('excel.dropHintTouch');
 }
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });
 root.addEventListener('dragleave', event => { if (!root.contains(event.relatedTarget as Node)) root.classList.remove('over'); });

@@ -1,17 +1,9 @@
 import wasmUrl from '../../node_modules/zxing-wasm/dist/reader/zxing_reader.wasm?url';
 import type { ReaderOptions } from 'zxing-wasm/reader';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.getElementById('qr-tool') as HTMLElement;
-const strings = JSON.parse(root?.dataset.strings || '{}') as Record<string, string>;
-
-function t(key: string, values?: Record<string, string | number>): string {
-  const str = strings[key];
-  if (typeof str !== 'string') {
-    throw new Error(`Missing translation key: ${key}`);
-  }
-  if (!values) return str;
-  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
-}
+const { t } = i18nFrom(root);
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const cameraTab = byId<HTMLButtonElement>('qr-camera-tab');

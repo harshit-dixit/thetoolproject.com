@@ -1,9 +1,9 @@
 import type { CsvConversion, CsvError, CsvOptions, CsvSeparator } from '../lib/json-to-csv';
 import type { CsvRequest } from '../workers/json-to-csv';
+import { i18nFrom } from '../i18n/client';
 
 const root = document.querySelector<HTMLElement>('#json-csv-tool')!;
-const strings = JSON.parse(root.dataset.strings!) as Record<string, string>;
-const locale = root.dataset.locale || 'en';
+const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const textarea = $<HTMLTextAreaElement>('json-input');
 const fileInput = $<HTMLInputElement>('json-file');
@@ -18,8 +18,6 @@ const codeNote = $('code-note');
 const conversionNote = $('conversion-note');
 const copy = $<HTMLButtonElement>('copy');
 const hint = $('input-hint');
-const formatter = new Intl.NumberFormat(locale);
-const plurals = new Intl.PluralRules(locale);
 const TEXTAREA_LIMIT = 2 * 1024 * 1024;
 const TEXT_VIEW_LIMIT = 100000;
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -31,16 +29,9 @@ let fileName: string | undefined;
 let current: CsvConversion | undefined;
 let view: 'table' | 'text' = 'table';
 let options: CsvOptions = { separator: 'comma', bom: false, spreadsheetSafe: true };
-const substitute = (template: string, values: Record<string, string | number>) => template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
-const counted = (key: string, count: number) => substitute(strings[`${key}.${plurals.select(count)}`] ?? strings[`${key}.other`], { count: formatter.format(count) });
-const size = (bytes: number) => {
-  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
-  const n = unit === 'unit.mb' ? bytes / 1048576 : unit === 'unit.kb' ? bytes / 1024 : bytes;
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: unit === 'unit.bytes' ? 0 : 1 }).format(n)} ${strings[unit]}`;
-};
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
-function setWorking(working: boolean) { busy = working; convert.disabled = working; if (working) announce(strings['jsonCsv.working']); }
+function setWorking(working: boolean) { busy = working; convert.disabled = working; if (working) announce(t('jsonCsv.working')); }
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; setWorking(false); clearStatus(); } }
 function hideResult() { result.hidden = true; placeholder.hidden = false; current = undefined; csvView.textContent = ''; }
 function useTextarea() { fileText = undefined; hint.textContent = defaultHint; }
@@ -57,7 +48,7 @@ function showResult(data: CsvConversion) {
   current = data;
   placeholder.hidden = true; result.hidden = false;
   const bytes = new Blob([data.csv]).size;
-  $('result-summary').textContent = substitute(strings[options.separator === 'tab' ? 'jsonCsv.summaryTsv' : 'jsonCsv.summary'], { rows: counted('tool.rows', data.rows), columns: counted('tool.columns', data.columns), size: size(bytes) });
+  $('result-summary').textContent = t(options.separator === 'tab' ? 'jsonCsv.summaryTsv' : 'jsonCsv.summary', { rows: counted('tool.rows', data.rows), columns: counted('tool.columns', data.columns), size: formatBytes(bytes) });
   const head = document.createElement('thead');
   if (!data.headerless) {
     const tr = head.insertRow();
@@ -72,27 +63,27 @@ function showResult(data: CsvConversion) {
   csvView.scrollTo(0, 0);
   const previewNotes: string[] = [];
   const conversionNotes: string[] = [];
-  if (data.jsonLines) conversionNotes.push(strings['jsonCsv.jsonLinesNote']);
-  if (data.rows > data.preview.length) previewNotes.push(substitute(strings['jsonCsv.previewCap'], { shown: formatter.format(data.preview.length), total: formatter.format(data.rows) }));
-  if (data.columns > data.headers.length) previewNotes.push(substitute(strings['jsonCsv.columnsCap'], { shown: formatter.format(data.headers.length), total: formatter.format(data.columns) }));
-  if (data.protectedCells) conversionNotes.push(substitute(strings['jsonCsv.protectedNote'], { count: formatter.format(data.protectedCells) }));
-  if (data.unsafeNumberFallback) conversionNotes.push(strings['jsonCsv.largeIntegerNote']);
+  if (data.jsonLines) conversionNotes.push(t('jsonCsv.jsonLinesNote'));
+  if (data.rows > data.preview.length) previewNotes.push(t('jsonCsv.previewCap', { shown: formatNumber(data.preview.length), total: formatNumber(data.rows) }));
+  if (data.columns > data.headers.length) previewNotes.push(t('jsonCsv.columnsCap', { shown: formatNumber(data.headers.length), total: formatNumber(data.columns) }));
+  if (data.protectedCells) conversionNotes.push(counted('jsonCsv.protectedNote', data.protectedCells));
+  if (data.unsafeNumberFallback) conversionNotes.push(t('jsonCsv.largeIntegerNote'));
   previewNote.textContent = previewNotes.join(' ');
   conversionNote.textContent = conversionNotes.join(' ');
   conversionNote.hidden = !conversionNotes.length;
-  copy.textContent = strings[options.separator === 'tab' ? 'jsonCsv.copyTsv' : 'jsonCsv.copy'];
+  copy.textContent = t(options.separator === 'tab' ? 'jsonCsv.copyTsv' : 'jsonCsv.copy');
   showView('table');
   clearStatus();
 }
 function errorMessage(error: CsvError | { code: 'workerError' }) {
-  if (error.code === 'empty') return strings['tool.empty'];
-  if (error.code === 'noData' || error.code === 'tooManyColumns' || error.code === 'workerError') return strings[`jsonCsv.${error.code}`];
-  if ('line' in error) return substitute(strings['error.location'], { line: formatter.format(error.line), column: formatter.format(error.column), reason: strings[`error.${error.code}`] || strings['error.syntax'] });
-  return strings['jsonCsv.workerError'];
+  if (error.code === 'empty') return t('tool.empty');
+  if (error.code === 'noData' || error.code === 'tooManyColumns' || error.code === 'workerError') return t(`jsonCsv.${error.code}`);
+  if ('line' in error) return t('error.location', { line: formatNumber(error.line), column: formatNumber(error.column), reason: t(`error.${error.code}`) });
+  return t('jsonCsv.workerError');
 }
 function run() {
   const source = fileText ?? textarea.value;
-  if (!source.trim()) { announce(strings['tool.empty']); hideResult(); textarea.focus(); return; }
+  if (!source.trim()) { announce(t('tool.empty')); hideResult(); textarea.focus(); return; }
   stopWorker(); setWorking(true);
   const id = ++sequence;
   worker ??= new Worker(new URL('../workers/json-to-csv.ts', import.meta.url), { type: 'module' });
@@ -102,23 +93,23 @@ function run() {
     if (event.data.result) { showResult(event.data.result); return; }
     hideResult();
     const error = event.data.error;
-    announce(error ? errorMessage(error) : strings['jsonCsv.workerError']);
+    announce(error ? errorMessage(error) : t('jsonCsv.workerError'));
     if (fileText === undefined && error && 'position' in error && error.code !== 'depth') { textarea.focus(); textarea.setSelectionRange(error.position, error.position); }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(strings['jsonCsv.workerError']); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('jsonCsv.workerError')); };
   worker.postMessage({ id, source, options } satisfies CsvRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(json|jsonl|ndjson|txt)$/i.test(file.name)) { announce(strings['jsonCsv.wrongType']); return; }
-  if (file.size > MAX_BYTES) { announce(strings['jsonCsv.tooLarge']); return; }
-  stopWorker(); announce(strings['tool.reading']);
+  if (!/\.(json|jsonl|ndjson|txt)$/i.test(file.name)) { announce(t('jsonCsv.wrongType')); return; }
+  if (file.size > MAX_BYTES) { announce(t('jsonCsv.tooLarge')); return; }
+  stopWorker(); announce(t('tool.reading'));
   try {
     const content = await file.text();
-    if (file.size > TEXTAREA_LIMIT) { textarea.value = ''; fileText = content; hint.textContent = substitute(strings['tool.largeFileHint'], { name: file.name }); }
+    if (file.size > TEXTAREA_LIMIT) { textarea.value = ''; fileText = content; hint.textContent = t('tool.largeFileHint', { name: file.name }); }
     else { textarea.value = content; useTextarea(); }
-    fileName = file.name; $('file-name').textContent = file.name; $('file-size').textContent = size(file.size); $('file-line').hidden = false;
-    hideResult(); announce(substitute(strings['tool.fileLoaded'], { name: file.name, size: size(file.size) }));
-  } catch { announce(strings['tool.readError']); }
+    fileName = file.name; $('file-name').textContent = file.name; $('file-size').textContent = formatBytes(file.size); $('file-line').hidden = false;
+    hideResult(); announce(t('tool.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
+  } catch { announce(t('tool.readError')); }
 }
 $('choose-file').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
@@ -134,9 +125,9 @@ textarea.addEventListener('input', () => { stopWorker(); useTextarea(); fileName
 root.querySelectorAll<HTMLButtonElement>('[data-separator]').forEach(button => button.addEventListener('click', () => {
   options = { ...options, separator: button.dataset.separator as CsvSeparator };
   root.querySelectorAll<HTMLButtonElement>('[data-separator]').forEach(x => x.setAttribute('aria-pressed', String(x === button)));
-  $('download').textContent = strings[options.separator === 'tab' ? 'jsonCsv.downloadTsv' : 'jsonCsv.download'];
-  copy.textContent = strings[options.separator === 'tab' ? 'jsonCsv.copyTsv' : 'jsonCsv.copy'];
-  root.querySelector<HTMLButtonElement>('[data-view="text"]')!.textContent = strings[options.separator === 'tab' ? 'jsonCsv.tsvText' : 'jsonCsv.textView'];
+  $('download').textContent = t(options.separator === 'tab' ? 'jsonCsv.downloadTsv' : 'jsonCsv.download');
+  copy.textContent = t(options.separator === 'tab' ? 'jsonCsv.copyTsv' : 'jsonCsv.copy');
+  root.querySelector<HTMLButtonElement>('[data-view="text"]')!.textContent = t(options.separator === 'tab' ? 'jsonCsv.tsvText' : 'jsonCsv.textView');
   if (current || busy) run();
 }));
 root.querySelectorAll<HTMLButtonElement>('[data-bom]').forEach(button => button.addEventListener('click', () => {
@@ -163,8 +154,8 @@ copy.addEventListener('click', async () => {
     if (!navigator.clipboard?.writeText) throw Error();
     await navigator.clipboard.writeText(fullText);
     if (current !== copiedResult) return;
-    copy.textContent = strings['jsonCsv.copied'];
-    announce(strings['jsonCsv.copied']);
+    copy.textContent = t('jsonCsv.copied');
+    announce(t('jsonCsv.copied'));
   } catch {
     if (current !== copiedResult) return;
     showView('text');
@@ -174,11 +165,11 @@ copy.addEventListener('click', async () => {
     range.selectNodeContents(csvView);
     selection?.removeAllRanges();
     selection?.addRange(range);
-    announce(strings['jsonCsv.selectText']);
+    announce(t('jsonCsv.selectText'));
   }
 });
 $('start-over').addEventListener('click', () => { ++sequence; stopWorker(); useTextarea(); textarea.value = ''; fileInput.value = ''; fileName = undefined; hideResult(); $('file-line').hidden = true; clearStatus(); textarea.focus(); });
-const defaultHint = matchMedia('(pointer: coarse)').matches ? strings['tool.inputHintTouch'] : hint.textContent!;
+const defaultHint = matchMedia('(pointer: coarse)').matches ? t('tool.inputHintTouch') : hint.textContent!;
 hint.textContent = defaultHint;
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });
 root.addEventListener('dragleave', event => { if (!root.contains(event.relatedTarget as Node)) root.classList.remove('over'); });
