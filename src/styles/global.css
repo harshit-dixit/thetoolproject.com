@@ -745,6 +745,18 @@ footer .wrap {
   color: var(--ink);
 }
 #xml-record-group { flex-basis: 100%; }
+/* CSV to SQL keeps the target database and table visible above the conversion choices. */
+.csv-sql-options { margin-block: 28px 22px; }
+.csv-sql-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.csv-sql-fields label { min-width: 0; }
+.csv-sql-fields .tool-select { width: 100%; }
+.csv-sql-checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin-block-start: 20px; }
+.csv-sql-checks label { display: flex; align-items: flex-start; gap: 9px; line-height: 1.4; cursor: pointer; }
+.csv-sql-checks input { width: 18px; height: 18px; margin: 3px 0 0; flex: none; accent-color: var(--cobalt); }
+.csv-sql-options > .input-hint { margin-block-start: 14px; max-width: 70ch; }
+.csv-sql-drop .sheet-preview { height: 360px; }
+@media (max-width: 700px) { .csv-sql-fields { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .csv-sql-checks { grid-template-columns: 1fr; } .csv-sql-drop .sheet-preview { height: 300px; } }
 /* A long second column squeezed the first down to one word per line. */
 .how-copy .mapping-table th:first-child,
 .how-copy .mapping-table td:first-child {

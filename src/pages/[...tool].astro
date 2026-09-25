@@ -6,6 +6,7 @@ import JsonToExcelTool from '../components/JsonToExcelTool.astro';
 import JsonToCsvTool from '../components/JsonToCsvTool.astro';
 import XmlToCsvTool from '../components/XmlToCsvTool.astro';
 import XmlToJsonTool from '../components/XmlToJsonTool.astro';
+import CsvToSqlTool from '../components/CsvToSqlTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -32,6 +33,22 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
 ---
 <Tool {locale} {entry} category={tool.category} {alternates}>
   <main class="wrap">
+    {tool.id === 'csv-to-sql' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Turn CSV rows into SQL INSERT statements.</strong> Paste data or choose a file, select your database, then copy or download the generated SQL. Conversion happens in your browser.</p><p class="caption">.csv, .tsv and .txt files up to 10 MB</p></div></div>
+      <CsvToSqlTool />
+      <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">How CSV becomes SQL</h2></div><div class="how-copy">
+        <p>The first CSV row becomes column names by default. Each remaining row becomes values in an INSERT statement. You can include a CREATE TABLE statement, combine up to 500 rows per INSERT, and choose PostgreSQL, MySQL, SQLite or SQL Server quoting.</p>
+        <h3>What happens to values</h3>
+        <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">CSV input</th><th scope="col">SQL output</th></tr></thead><tbody>
+          <tr><td><code>001</code></td><td><code>'001'</code> by default, so leading zeros survive. Turn on type detection only if the destination column expects a number.</td></tr>
+          <tr><td><code>O'Neil</code></td><td><code>'O''Neil'</code>. Apostrophes are escaped, and identifiers are quoted for the chosen database.</td></tr>
+          <tr><td>An empty field</td><td><code>''</code> by default. Choose “Convert empty fields to NULL” when missing values should be SQL <code>NULL</code>.</td></tr>
+          <tr><td>A quoted field with a comma or line break</td><td>One text value. The CSV parser keeps quoted fields together and decodes doubled quotes.</td></tr>
+        </tbody></table></div>
+        <p>Auto detect checks comma, semicolon, tab and pipe separators. If the preview looks wrong, choose the separator explicitly. Blank and duplicate column names get unique names so the SQL remains usable. Type detection recognizes booleans and conservative integer or decimal values; dates stay text because date formats vary by database.</p>
+        <p>The full result is available through Copy SQL or Download .sql. The on-page SQL preview shows its beginning when output is long, and the table preview shows the first 100 rows and 30 columns. Large files can take longer on a phone. For MySQL, backslashes are escaped using its usual string syntax; review that output if your server uses <code>NO_BACKSLASH_ESCAPES</code>.</p>
+      </div></section>
+    </>}
     {tool.id === 'json-to-html' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('tool.leadStrong', locale)}</strong> {t('tool.lead', locale)}</p><p class="caption">{t('tool.caption', locale)}</p></div></div>
       <TextToolFrame {locale} />

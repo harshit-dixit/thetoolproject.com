@@ -7,6 +7,19 @@ export type ToolLocale = { path: string; title: string; description: string; h1:
 export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesApplication'; locales: Partial<Record<Locale, ToolLocale>> };
 
 export const tools: Record<string, Tool> = {
+  csvToSql: {
+    id: 'csv-to-sql',
+    category: 'DeveloperApplication',
+    locales: {
+      en: {
+        path: '/csv-to-sql/',
+        title: 'CSV to SQL converter: generate INSERT statements | thetoolproject',
+        description: 'Convert CSV to SQL INSERT statements in your browser. Choose PostgreSQL, MySQL, SQLite or SQL Server, preview the result, and copy or download SQL. Nothing is uploaded.',
+        h1: 'CSV to SQL',
+        reviewed: true,
+      },
+    },
+  },
   jsonToHtml: {
     id: 'json-to-html',
     category: 'DeveloperApplication',
