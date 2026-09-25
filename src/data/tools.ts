@@ -59,6 +59,19 @@ export const tools: Record<string, Tool> = {
       },
     },
   },
+  xmlToJson: {
+    id: 'xml-to-json',
+    category: 'DeveloperApplication',
+    locales: {
+      en: {
+        path: '/xml-to-json/',
+        title: en['xmlJson.title'],
+        description: en['xmlJson.description'],
+        h1: en['xmlJson.h1'],
+        reviewed: true,
+      },
+    },
+  },
   excelToCsv: {
     id: 'excel-to-csv',
     category: 'UtilitiesApplication',

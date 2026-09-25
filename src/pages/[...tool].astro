@@ -5,6 +5,7 @@ import ExcelToCsvTool from '../components/ExcelToCsvTool.astro';
 import JsonToExcelTool from '../components/JsonToExcelTool.astro';
 import JsonToCsvTool from '../components/JsonToCsvTool.astro';
 import XmlToCsvTool from '../components/XmlToCsvTool.astro';
+import XmlToJsonTool from '../components/XmlToJsonTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -115,6 +116,28 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <h3>{t('xmlCsv.howStepsTitle', locale)}</h3>
           <p>{t('xmlCsv.howSteps', locale)}</p>
           <p>{t('xmlCsv.howFormat', locale)}</p><p>{t('xmlCsv.howSafety', locale)}</p><p>{t('xmlCsv.howLimits', locale)}</p>
+        </div>
+      </section>
+    </>}
+    {tool.id === 'xml-to-json' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('xmlJson.leadStrong', locale)}</strong> {t('xmlJson.lead', locale)}</p><p class="caption">{t('xmlJson.caption', locale)}</p></div></div>
+      <XmlToJsonTool />
+      <section aria-labelledby="how-title">
+        <div class="sec-head"><h2 id="how-title">How XML becomes JSON</h2></div>
+        <div class="how-copy">
+          <p>Paste XML or choose a local file, then convert it into valid JSON. The document root remains the top-level key. Conversion runs in a Web Worker in your browser; the XML is not uploaded.</p>
+          <h3>Mapping rules</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">XML input</th><th scope="col">JSON output</th></tr></thead><tbody>
+            <tr><td><code>&lt;name&gt;Maya&lt;/name&gt;</code></td><td><code>"name": "Maya"</code>. Text values stay strings, including numbers such as <code>001</code>.</td></tr>
+            <tr><td><code>&lt;order id="A-104"&gt;</code></td><td>The attribute becomes <code>"@_id": "A-104"</code>. Choose <code>@id</code> if your importer uses that convention.</td></tr>
+            <tr><td>Two or more sibling <code>&lt;tag&gt;</code> elements</td><td>They become a <code>"tag"</code> array, in source order. Turn on “Always use arrays” for consistent arrays even when one element appears.</td></tr>
+            <tr><td>Text and child elements together</td><td><code>#text</code> holds the combined text; <code>#content</code> keeps text and child elements in source order.</td></tr>
+            <tr><td>An empty element or CDATA</td><td><code>&lt;empty/&gt;</code> becomes an empty string. CDATA becomes ordinary text. XML entities are decoded.</td></tr>
+          </tbody></table></div>
+          <h3>Example</h3>
+          <p><code>&lt;person id="7"&gt;&lt;name&gt;Maya&lt;/name&gt;&lt;name&gt;Luis&lt;/name&gt;&lt;/person&gt;</code> becomes <code>{'{"person":{"@_id":"7","name":["Maya","Luis"]}}'}</code>. Use Pretty print to make the output easier to read, or turn it off for compact JSON.</p>
+          <p>XML has attributes, namespaces, comments and mixed content; JSON has no single standard way to represent them. This converter keeps namespace prefixes in names and omits comments and processing instructions. Simple text and <code>#text</code> are trimmed; <code>#content</code> retains the spaces around inline elements. It rejects DOCTYPE declarations and malformed XML, with a line and column for syntax errors.</p>
+          <p>Choose a .xml or .txt file up to 10 MB. Copy the complete JSON or download a .json file. Large inputs can take longer on a phone. Need spreadsheet rows instead? Try <a href="/xml-to-csv/">XML to CSV</a>.</p>
         </div>
       </section>
     </>}

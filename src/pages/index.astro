@@ -6,6 +6,7 @@ const tool = tools.jsonToHtml.locales.en!;
 const jsonExcel = tools.jsonToExcel.locales.en!;
 const jsonCsv = tools.jsonToCsv.locales.en!;
 const xmlCsv = tools.xmlToCsv.locales.en!;
+const xmlJson = tools.xmlToJson.locales.en!;
 const excel = tools.excelToCsv.locales.en!;
 ---
 <Base locale="en" title={t('home.title')} description={t('home.description')} path="/">
@@ -17,6 +18,7 @@ const excel = tools.excelToCsv.locales.en!;
         <tr><td><a href={jsonExcel.path}>{jsonExcel.h1}</a></td><td class="fmt">{t('home.jsonExcelInput')}</td><td class="fmt">{t('home.xlsxOutput')}</td><td class="note">{t('home.jsonExcelGoodFor')}</td></tr>
         <tr><td><a href={jsonCsv.path}>{jsonCsv.h1}</a></td><td class="fmt">{t('home.jsonInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.jsonCsvGoodFor')}</td></tr>
         <tr><td><a href={xmlCsv.path}>{xmlCsv.h1}</a></td><td class="fmt">{t('home.xmlInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.xmlCsvGoodFor')}</td></tr>
+        <tr><td><a href={xmlJson.path}>{xmlJson.h1}</a></td><td class="fmt">{t('home.xmlInput')}</td><td class="fmt">{t('home.xmlJsonOutput')}</td><td class="note">{t('home.xmlJsonGoodFor')}</td></tr>
         <tr><td><a href={excel.path}>{excel.h1}</a></td><td class="fmt">{t('home.excelInput')}</td><td class="fmt">{t('home.csvOutput')}</td><td class="note">{t('home.excelGoodFor')}</td></tr></tbody></table></div>
     </section>
     <section aria-labelledby="json-guides"><div class="sec-head"><h2 id="json-guides">{t('home.guidesTitle')}</h2><p>{t('home.guidesIntro')}</p></div>
