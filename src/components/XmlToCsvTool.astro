@@ -1,0 +1,53 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const clientKeys: TranslationKey[] = ['xmlCsv.working','xmlCsv.summary','xmlCsv.summaryTsv','xmlCsv.previewCap','xmlCsv.columnsCap','xmlCsv.codeCap','xmlCsv.protectedNote','xmlCsv.empty','xmlCsv.wrongType','xmlCsv.tooLarge','xmlCsv.invalidXml','xmlCsv.doctype','xmlCsv.noData','xmlCsv.tooManyColumns','xmlCsv.invalidPath','xmlCsv.workerError','xmlCsv.download','xmlCsv.downloadTsv','xmlCsv.copy','xmlCsv.copyTsv','xmlCsv.copied','xmlCsv.selectText','xmlCsv.textView','xmlCsv.tsvText','tool.reading','tool.fileLoaded','tool.rows.one','tool.rows.other','tool.columns.one','tool.columns.other','tool.readError','tool.inputHintTouch','tool.largeFileHint','unit.bytes','unit.kb','unit.mb'];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="drop" id="xml-csv-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <label class="field-label" for="xml-input">{t('xmlCsv.inputLabel', locale)}</label>
+    <textarea id="xml-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <p id="xml-input-hint" class="input-hint">{t('xmlCsv.inputHint', locale)}</p>
+    <div class="actions input-actions">
+      <input class="visually-hidden" type="file" id="xml-file" accept=".xml,.txt,text/xml,application/xml" tabindex="-1" />
+      <button class="btn alt" type="button" id="xml-choose-file">{t('xmlCsv.choose', locale)}</button>
+      <button class="text-button" type="button" id="xml-example">{t('tool.example', locale)}</button>
+    </div>
+    <div class="file-line" id="xml-file-line" hidden><span class="file-name" id="xml-file-name"></span><span class="file-size" id="xml-file-size"></span></div>
+    <div class="option-row">
+      <fieldset id="xml-record-group" hidden><legend>{t('xmlCsv.recordLabel', locale)}</legend><select class="tool-select" id="xml-record-path" aria-label={t('xmlCsv.recordLabel', locale)}></select><p class="input-hint">{t('xmlCsv.recordHint', locale)}</p></fieldset>
+      <fieldset><legend>{t('jsonCsv.separator', locale)}</legend><div class="chips" role="group" aria-label={t('jsonCsv.separator', locale)}>
+        <button type="button" data-xml-separator="comma" aria-pressed="true">{t('excel.comma', locale)}</button>
+        <button type="button" data-xml-separator="semicolon" aria-pressed="false">{t('excel.semicolon', locale)}</button>
+        <button type="button" data-xml-separator="tab" aria-pressed="false">{t('excel.tab', locale)}</button>
+      </div></fieldset>
+      <fieldset><legend>{t('jsonCsv.encoding', locale)}</legend><div class="chips" role="group" aria-label={t('jsonCsv.encoding', locale)}>
+        <button type="button" data-xml-bom="false" aria-pressed="true">{t('excel.utf8', locale)}</button>
+        <button type="button" data-xml-bom="true" aria-pressed="false">{t('excel.utf8Bom', locale)}</button>
+      </div></fieldset>
+    </div>
+    <label class="csv-safety"><input id="xml-spreadsheet-safe" type="checkbox" checked /> <span>{t('jsonCsv.safeLabel', locale)}</span></label>
+    <p class="input-hint csv-safety-hint">{t('jsonCsv.safeHint', locale)}</p>
+    <button class="btn" id="xml-convert" type="button">{t('xmlCsv.convert', locale)}</button>
+    <p id="xml-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+    <div id="xml-placeholder" class="preview-placeholder excel-placeholder"><p>{t('tool.previewPlaceholder', locale)}</p></div>
+    <div id="xml-result" class="result excel-result" hidden>
+      <div class="result-head"><div class="chips" role="group" aria-label={t('jsonCsv.resultView', locale)}>
+        <button type="button" data-xml-view="table" aria-pressed="true">{t('excel.previewTable', locale)}</button>
+        <button type="button" data-xml-view="text" aria-pressed="false">{t('jsonCsv.textView', locale)}</button>
+      </div><p class="result-summary" id="xml-summary" aria-live="polite" aria-atomic="true"></p></div>
+      <div class="result-view">
+        <div class="sheet-preview" id="xml-preview" tabindex="0" role="region" aria-label={t('xmlCsv.previewLabel', locale)}><table id="xml-preview-table"></table></div>
+        <pre class="code-view" id="xml-csv-view" tabindex="0" hidden></pre>
+      </div>
+      <p class="result-note" id="xml-preview-note"></p>
+      <p class="result-note" id="xml-code-note" hidden>{t('xmlCsv.codeCap', locale)}</p>
+      <p class="result-note" id="xml-conversion-note" hidden></p>
+      <div class="actions"><button class="btn" id="xml-download" type="button">{t('xmlCsv.download', locale)}</button><button class="btn alt" id="xml-copy" type="button">{t('xmlCsv.copy', locale)}</button><button class="btn alt" id="xml-start-over" type="button">{t('tool.startOver', locale)}</button></div>
+    </div>
+  </div>
+</div>
+<script src="../scripts/xml-to-csv.ts"></script>

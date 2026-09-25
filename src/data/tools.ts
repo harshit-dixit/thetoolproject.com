@@ -33,6 +33,32 @@ export const tools: Record<string, Tool> = {
       },
     },
   },
+  jsonToCsv: {
+    id: 'json-to-csv',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/json-to-csv/',
+        title: en['jsonCsv.title'],
+        description: en['jsonCsv.description'],
+        h1: en['jsonCsv.h1'],
+        reviewed: true,
+      },
+    },
+  },
+  xmlToCsv: {
+    id: 'xml-to-csv',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/xml-to-csv/',
+        title: en['xmlCsv.title'],
+        description: en['xmlCsv.description'],
+        h1: en['xmlCsv.h1'],
+        reviewed: true,
+      },
+    },
+  },
   excelToCsv: {
     id: 'excel-to-csv',
     category: 'UtilitiesApplication',

@@ -464,6 +464,9 @@ footer .wrap {
   border-block-start: 1px solid var(--line);
   padding-block-start: 24px;
 }
+.csv-safety { display: inline-flex; align-items: flex-start; gap: 9px; font-weight: 600; margin-block-end: 4px; cursor: pointer; }
+.csv-safety input { width: 18px; height: 18px; accent-color: var(--cobalt); margin: 3px 0 0; flex: none; }
+.csv-safety-hint { margin-block: 0 20px; }
 .footer-inner {
   display: flex;
   justify-content: space-between;
@@ -731,6 +734,17 @@ footer .wrap {
   color: var(--slate);
   margin-block-end: 8px;
 }
+.tool-select {
+  font: inherit;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 7px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+}
+#xml-record-group { flex-basis: 100%; }
 /* A long second column squeezed the first down to one word per line. */
 .how-copy .mapping-table th:first-child,
 .how-copy .mapping-table td:first-child {

@@ -3,6 +3,8 @@ import Tool from '../layouts/Tool.astro';
 import TextToolFrame from '../components/TextToolFrame.astro';
 import ExcelToCsvTool from '../components/ExcelToCsvTool.astro';
 import JsonToExcelTool from '../components/JsonToExcelTool.astro';
+import JsonToCsvTool from '../components/JsonToCsvTool.astro';
+import XmlToCsvTool from '../components/XmlToCsvTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
@@ -73,6 +75,46 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('jsonExcel.howYourJson', locale)}</th><th scope="col">{t('jsonExcel.howInWorkbook', locale)}</th></tr></thead>
             <tbody>{jsonExcelRows.map(([what, result]) => <tr><td>{t(what, locale)}</td><td>{t(result, locale)}</td></tr>)}</tbody></table></div>
           <p>{t('jsonExcel.howValues', locale)}</p><p>{t('jsonExcel.howNested', locale)}</p><p>{t('jsonExcel.howLimits', locale)}</p><p>{t('jsonExcel.howErrors', locale)}</p>
+        </div>
+      </section>
+    </>}
+    {tool.id === 'json-to-csv' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('jsonCsv.leadStrong', locale)}</strong> {t('jsonCsv.lead', locale)}</p><p class="caption">{t('jsonCsv.caption', locale)}</p></div></div>
+      <JsonToCsvTool {locale} />
+      <section aria-labelledby="how-title">
+        <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+        <div class="how-copy">
+          <p>{t('jsonCsv.howIntro', locale)}</p>
+          <h3>{t('jsonCsv.howMapTitle', locale)}</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('jsonCsv.howYourJson', locale)}</th><th scope="col">{t('jsonCsv.howInCsv', locale)}</th></tr></thead><tbody>
+            <tr><td>{t('jsonCsv.howArray', locale)}</td><td>{t('jsonCsv.howArrayResult', locale)}</td></tr>
+            <tr><td>{t('jsonCsv.howObject', locale)}</td><td>{t('jsonCsv.howObjectResult', locale)}</td></tr>
+            <tr><td>{t('jsonCsv.howNested', locale)}</td><td>{t('jsonCsv.howNestedResult', locale)}</td></tr>
+            <tr><td>{t('jsonCsv.howList', locale)}</td><td>{t('jsonCsv.howListResult', locale)}</td></tr>
+            <tr><td>{t('jsonCsv.howGrid', locale)}</td><td>{t('jsonCsv.howGridResult', locale)}</td></tr>
+          </tbody></table></div>
+          <p>{t('jsonCsv.howFormat', locale)}</p><p>{t('jsonCsv.howSafety', locale)}</p><p>{t('jsonCsv.howLimits', locale)}</p>
+          <p><a href="/guides/json-to-csv/">{t('jsonCsv.guideLink', locale)}</a></p>
+        </div>
+      </section>
+    </>}
+    {tool.id === 'xml-to-csv' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('xmlCsv.leadStrong', locale)}</strong> {t('xmlCsv.lead', locale)}</p><p class="caption">{t('xmlCsv.caption', locale)}</p></div></div>
+      <XmlToCsvTool {locale} />
+      <section aria-labelledby="how-title">
+        <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+        <div class="how-copy">
+          <p>{t('xmlCsv.howIntro', locale)}</p>
+          <h3>{t('xmlCsv.howMapTitle', locale)}</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('xmlCsv.howYourXml', locale)}</th><th scope="col">{t('xmlCsv.howInCsv', locale)}</th></tr></thead><tbody>
+            <tr><td>{t('xmlCsv.howRecords', locale)}</td><td>{t('xmlCsv.howRecordsResult', locale)}</td></tr>
+            <tr><td>{t('xmlCsv.howAttributes', locale)}</td><td>{t('xmlCsv.howAttributesResult', locale)}</td></tr>
+            <tr><td>{t('xmlCsv.howNested', locale)}</td><td>{t('xmlCsv.howNestedResult', locale)}</td></tr>
+            <tr><td>{t('xmlCsv.howRepeated', locale)}</td><td>{t('xmlCsv.howRepeatedResult', locale)}</td></tr>
+          </tbody></table></div>
+          <h3>{t('xmlCsv.howStepsTitle', locale)}</h3>
+          <p>{t('xmlCsv.howSteps', locale)}</p>
+          <p>{t('xmlCsv.howFormat', locale)}</p><p>{t('xmlCsv.howSafety', locale)}</p><p>{t('xmlCsv.howLimits', locale)}</p>
         </div>
       </section>
     </>}

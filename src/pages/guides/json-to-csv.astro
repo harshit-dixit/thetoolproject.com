@@ -1,0 +1,108 @@
+---
+import Guide from '../../layouts/Guide.astro';
+
+const input = `[
+  { "name": "Asha", "age": 28, "city": "Delhi" },
+  { "name": "Luis", "age": 31, "city": "Austin" }
+]`;
+const output = `name,age,city\r\nAsha,28,Delhi\r\nLuis,31,Austin`;
+const python = `import csv
+import json
+
+with open("input.json", encoding="utf-8") as source:
+    rows = json.load(source)
+
+if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+    raise ValueError("Expected a JSON array of objects")
+if not rows:
+    raise ValueError("No records to write")
+
+fields = list(dict.fromkeys(key for row in rows for key in row))
+with open("output.csv", "w", encoding="utf-8", newline="") as target:
+    writer = csv.DictWriter(target, fieldnames=fields)
+    writer.writeheader()
+    writer.writerows(rows)`;
+const reverse = `import csv
+import json
+
+with open("input.csv", encoding="utf-8-sig", newline="") as source:
+    rows = list(csv.DictReader(source))
+
+with open("output.json", "w", encoding="utf-8") as target:
+    json.dump(rows, target, ensure_ascii=False, indent=2)`;
+const node = `import { readFile, writeFile } from 'node:fs/promises';
+import { parse } from 'csv-parse/sync';
+
+const csv = await readFile('input.csv', 'utf8');
+const rows = parse(csv, { columns: true, bom: true });
+await writeFile('output.json', JSON.stringify(rows, null, 2));`;
+---
+<Guide
+  title="How to convert JSON to CSV: online, Excel and Python | thetoolproject"
+  description="Convert a JSON file to CSV with a browser tool, Excel or Python. See examples for nested JSON, CSV to JSON, encoding, and common conversion problems."
+  path="/guides/json-to-csv/"
+  heading="How to convert JSON to CSV"
+  updated="2026-09-25"
+>
+  <p slot="intro" class="guide-intro">A CSV file is a table: one row per record and one column per field. To turn JSON into CSV, first decide which JSON objects should become rows. Then write their keys as headers and their values as cells. You can do that in your browser, in Excel, or with a short Python script.</p>
+
+  <h2 id="example">What does JSON to CSV conversion look like?</h2>
+  <p>This JSON array has two records. Each object becomes a CSV row; its keys become the header columns.</p>
+  <p class="example-label">input.json</p><pre><code>{input}</code></pre>
+  <p class="example-label">output.csv</p><pre><code>{output}</code></pre>
+  <p>The visible line breaks above represent CSV records. The downloadable file uses CRLF line endings. Commas inside values are enclosed in double quotes, and a double quote inside a value is doubled, following the common CSV format described by <a href="https://www.rfc-editor.org/rfc/rfc4180#section-2">RFC 4180</a>.</p>
+
+  <h2 id="online">How do I convert a JSON file to CSV online?</h2>
+  <ol>
+    <li>Open the <a href="/json-to-csv/">JSON to CSV converter</a>.</li>
+    <li>Paste JSON, choose a <code>.json</code> file, or drop the file onto the tool.</li>
+    <li>Choose a separator: comma for standard CSV, semicolon if your importer expects it, or tab for TSV.</li>
+    <li>Select <strong>Convert to CSV</strong>, inspect the row preview or CSV text, then copy or download the result.</li>
+  </ol>
+  <p>The conversion runs in your browser. The file is not uploaded. You can also use <strong>Try an example</strong> to see how nested fields are handled before choosing your own file.</p>
+  <aside class="guide-tool" aria-labelledby="try-csv-tool">
+    <h2 id="try-csv-tool">Convert your JSON now</h2>
+    <p>Paste records or choose a file, inspect the preview, and download a CSV or TSV file.</p>
+    <a href="/json-to-csv/">Open JSON to CSV converter</a>
+  </aside>
+
+  <h2 id="shapes">Which JSON shapes convert cleanly to CSV?</h2>
+  <table class="guide-table"><thead><tr><th scope="col">JSON shape</th><th scope="col">CSV result in our tool</th></tr></thead><tbody>
+    <tr><td>Array of objects</td><td>One row per object, with the union of all keys as columns. Missing fields are blank.</td></tr>
+    <tr><td>One object</td><td>One row. An object whose only field is an array of objects uses that array as the rows.</td></tr>
+    <tr><td>Nested object</td><td>Columns use paths such as <code>shipping.city</code>.</td></tr>
+    <tr><td>Array inside a record</td><td>The complete array is kept as JSON text in one cell.</td></tr>
+    <tr><td>Array of arrays</td><td>Each inner array becomes a row, without a generated header.</td></tr>
+    <tr><td>JSON Lines</td><td>Each line becomes a row, like an array of records.</td></tr>
+  </tbody></table>
+  <p>CSV cannot represent nested objects or lists as native values. Flattening or storing JSON text is a choice, and the receiver must know how to read it. If you need nested items in separate, related tables, use the <a href="/json-to-excel/">JSON to Excel converter</a> instead.</p>
+
+  <h2 id="excel">How do I convert JSON to CSV in Excel?</h2>
+  <ol>
+    <li>In a supported Excel version, choose <strong>Data → Get Data → From File → From JSON</strong> and open the JSON file.</li>
+    <li>In Power Query, turn a top-level list into a table, then expand the record columns you need. Expand nested records or lists deliberately so each final row has the fields you want.</li>
+    <li>Load the table to a worksheet. Review the columns and data types, especially IDs with leading zeros and long numbers.</li>
+    <li>Choose <strong>File → Save As</strong> and select a CSV format. Excel saves the active sheet as CSV.</li>
+  </ol>
+  <p>Microsoft documents the <a href="https://support.microsoft.com/en-us/excel/import-data-from-data-sources-power-query">From JSON command in Power Query</a> and <a href="https://support.microsoft.com/en-us/excel/import-or-export-text-txt-or-csv-files">saving the active worksheet as CSV</a>. The exact expansion steps depend on whether your JSON starts with a list or a record. If you only need CSV, the browser converter skips the worksheet setup.</p>
+
+  <h2 id="python">How do I convert JSON to CSV in Python?</h2>
+  <p>For a JSON array of flat objects, Python’s standard <code>json</code> and <code>csv</code> modules are enough. Save this as <code>convert.py</code> beside <code>input.json</code>, then run <code>python convert.py</code>:</p>
+  <pre><code>{python}</code></pre>
+  <p><code>json.load</code> reads the file. <code>csv.DictWriter</code> writes a header and records. The field list includes keys from every object, so a field that first appears later is retained. <code>newline=""</code> prevents extra blank lines on some systems. This example expects flat values; flatten nested objects or serialize lists before writing them. It writes raw text, so guard formula-like values if the CSV will be opened in a spreadsheet. See the <a href="https://docs.python.org/3/library/json.html">Python JSON documentation</a> and <a href="https://docs.python.org/3/library/csv.html">CSV documentation</a> for the module behavior.</p>
+
+  <h2 id="choices">What is the best tool for converting JSON to CSV?</h2>
+  <p>For a one-off file, choose a tool that shows the rows before download, explains what it does with nested data, supports the separator your importer expects, and handles data at a size your device can process. For repeatable jobs, Python is useful because the conversion rules live in a script you can rerun and review. For manual cleanup after import, Excel’s Power Query gives you a visual way to select and expand fields.</p>
+  <p>When the CSV will be opened in a spreadsheet, keep the converter’s formula protection on. It adds an apostrophe before text that could be interpreted as a formula. Turn it off for an exact raw-data import, and check the receiving app’s own safety rules.</p>
+
+  <h2 id="reverse">How do I convert CSV to JSON?</h2>
+  <p>CSV to JSON is the reverse mapping: the first CSV row supplies the field names, and each later row becomes an object. In Python:</p>
+  <pre><code>{reverse}</code></pre>
+  <p><code>DictReader</code> reads the header and rows. All CSV cell values come back as strings; convert numbers, dates, or booleans explicitly if your JSON needs those types. <code>utf-8-sig</code> also handles CSV files that start with a UTF-8 byte order mark.</p>
+  <h3 id="reverse-excel">Can I convert CSV to JSON in Excel?</h3>
+  <p>Excel can import CSV through <strong>Data → Get Data → From File → From Text/CSV</strong>, but its ordinary Save As formats do not provide a direct JSON export. For JSON output, use a script or a dedicated CSV to JSON converter after reviewing the columns. Microsoft’s <a href="https://support.microsoft.com/en-us/excel/import-data-from-data-sources-power-query">Power Query import guide</a> covers CSV import.</p>
+  <h3 id="reverse-node">Can I convert a CSV file to JSON in Node.js?</h3>
+  <p>Yes. In an ES module project, this example uses the <a href="https://csv.js.org/parse/api/sync/"><code>csv-parse</code> package</a>, installed with <code>npm install csv-parse</code>, because CSV quoting and embedded line breaks need a proper parser. Save it as <code>convert.mjs</code>:</p>
+  <pre><code>{node}</code></pre>
+  <p>If a CSV cell itself contains JSON text, parse that particular cell after reading the CSV. CSV is not JSON, so a Java program reading a CSV file likewise needs a CSV parser first, then a JSON parser for any cells that actually contain JSON.</p>
+</Guide>
