@@ -1,11 +1,48 @@
 ---
 import '../styles/global.css';
 import { t } from '../i18n/utils';
-import type { Locale } from '../data/tools';
-interface Props { locale: Locale; title: string; description: string; path: string; alternates?: Partial<Record<Locale, string>>; noindex?: boolean }
+import { locales, type Locale } from '../data/tools';
+import { getPublishedHomePath, getPublishedPagePath } from '../data/pages';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  path: string;
+  alternates?: Partial<Record<Locale, string>>;
+  noindex?: boolean;
+}
+
 const { locale, title, description, path, alternates = { en: path }, noindex = false } = Astro.props;
 const canonical = new URL(path, 'https://thetoolproject.com').href;
 const alternateEntries = Object.entries(alternates);
+
+const languageNames: Record<Locale, string> = {
+  en: 'English',
+  es: 'Español',
+  pt: 'Português',
+  de: 'Deutsch',
+  fr: 'Français',
+  ja: '日本語',
+};
+
+const switcherOptions: { locale: Locale; url: string; label: string }[] = [];
+for (const loc of locales) {
+  const targetPath = alternates[loc] ?? (loc !== locale ? getPublishedHomePath(loc) : undefined);
+  if (targetPath) {
+    switcherOptions.push({
+      locale: loc,
+      url: targetPath,
+      label: languageNames[loc],
+    });
+  }
+}
+
+const homeUrl = getPublishedHomePath(locale) ?? '/';
+const aboutUrl = getPublishedPagePath('about', locale);
+const contactUrl = getPublishedPagePath('contact', locale);
+const privacyUrl = getPublishedPagePath('privacy', locale);
+const termsUrl = getPublishedPagePath('terms', locale);
 ---
 <!doctype html>
 <html lang={locale}>
@@ -23,8 +60,33 @@ const alternateEntries = Object.entries(alternates);
     <slot name="head" />
   </head>
   <body>
-    <header class="site-header"><div class="wrap"><a class="logo" href="/" aria-label={t('brand', locale)}>thetool<b>project</b></a></div></header>
+    <header class="site-header"><div class="wrap"><a class="logo" href={homeUrl} aria-label={t('brand', locale)}>thetool<b>project</b></a></div></header>
     <slot />
-    <footer><div class="wrap footer-inner"><span>{t('footer.tagline', locale)}</span><nav aria-label="Footer"><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/harshit-dixit/thetoolproject.com">GitHub</a></nav></div></footer>
+    <footer>
+      <div class="wrap footer-inner">
+        <span>{t('footer.tagline', locale)}</span>
+        <div class="footer-actions">
+          {switcherOptions.length > 0 && (
+            <div class="language-picker">
+              <label for="language-select" class="visually-hidden">{t('footer.language', locale)}</label>
+              <select id="language-select" class="language-select" aria-label={t('footer.language', locale)} onchange="if(this.value)window.location.href=this.value">
+                {switcherOptions.map((opt) => (
+                  <option value={opt.url} selected={opt.locale === locale} lang={opt.locale}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <nav aria-label={t('footer.navLabel', locale)}>
+            <a href={aboutUrl}>{t('footer.nav.about', locale)}</a>
+            <a href={contactUrl}>{t('footer.nav.contact', locale)}</a>
+            <a href={privacyUrl}>{t('footer.nav.privacy', locale)}</a>
+            <a href={termsUrl}>{t('footer.nav.terms', locale)}</a>
+            <a href="https://github.com/harshit-dixit/thetoolproject.com">{t('footer.nav.github', locale)}</a>
+          </nav>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>

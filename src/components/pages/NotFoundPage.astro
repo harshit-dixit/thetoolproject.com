@@ -1,0 +1,27 @@
+---
+import Base from '../../layouts/Base.astro';
+import { t } from '../../i18n/utils';
+import { sitePages, publishedPageLocales, getPublishedPagePath } from '../../data/pages';
+import type { Locale } from '../../data/tools';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const entry = sitePages.notFound.locales[locale] || sitePages.notFound.locales.en!;
+const alternates = Object.fromEntries(publishedPageLocales(sitePages.notFound).map(([lang, item]) => [lang, item.path]));
+---
+<Base locale={locale} title={entry.title} description={entry.description} path={entry.path} alternates={alternates} noindex={true}>
+  <main class="wrap">
+    <div class="hero">
+      <h1 class="page-title">{t('notFound.title', locale)}</h1>
+      <div class="hero-row">
+        <p class="lead"><strong>{t('notFound.h1', locale)}</strong> {t('notFound.lead', locale)}</p>
+      </div>
+      <div class="actions" style="margin-block-start: 24px;">
+        <a class="btn" href={getPublishedPagePath('home', locale)}>{t('notFound.home', locale)}</a>
+      </div>
+    </div>
+  </main>
+</Base>

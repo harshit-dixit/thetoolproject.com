@@ -3,6 +3,18 @@ import { createZip } from '../lib/zip';
 const root = document.getElementById('image-tool') as HTMLDivElement;
 const resize = root.dataset.mode === 'resize';
 const targetKb = Number(root.dataset.targetKb) || 100;
+const strings = JSON.parse(root.dataset.strings || '{}') as Record<string, string>;
+const locale = root.dataset.locale || 'en';
+
+function t(key: string, values?: Record<string, string | number>): string {
+  const str = strings[key];
+  if (typeof str !== 'string') {
+    throw new Error(`Missing translation key: ${key}`);
+  }
+  if (!values) return str;
+  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
+}
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const drop = $<HTMLDivElement>('image-drop');
 const input = $<HTMLInputElement>('image-files');
@@ -33,6 +45,17 @@ let originalHeight = 0;
 let updatingDimensions = false;
 let estimateVersion = 0;
 
+const formatter = new Intl.NumberFormat(locale);
+const plurals = new Intl.PluralRules(locale);
+const count = (key: string, n: number) => {
+  const pluralKey = `${key}.${plurals.select(n)}`;
+  const template = strings[pluralKey] ?? strings[`${key}.other`];
+  if (typeof template !== 'string') {
+    throw new Error(`Missing plural translation key: ${key}`);
+  }
+  return template.replace(/\{(\w+)\}/g, (_, k: string) => k === 'count' ? formatter.format(n) : '');
+};
+
 function clearEstimate() {
   estimateVersion++;
   if (resize) {
@@ -57,7 +80,10 @@ function clearOutputs() {
 }
 
 function formatBytes(bytes: number) {
-  return bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
+  const amount = bytes >= 1048576 ? bytes / 1048576 : bytes >= 1024 ? bytes / 1024 : bytes;
+  const digits = unit === 'unit.mb' ? 2 : unit === 'unit.kb' ? 1 : 0;
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? 1 : 0 }).format(amount)} ${t(unit)}`;
 }
 
 function selectedMode() {
@@ -77,9 +103,7 @@ function updateMode() {
   const unit = mode === 'cm' ? 'cm' : 'px';
   $('image-width-unit').textContent = unit;
   $('image-height-unit').textContent = unit;
-  $('image-mode-hint').textContent = mode === 'cm'
-    ? 'Centimetres are converted to pixels using PPI. The JPG, PNG or WebP file will not contain a print-size setting.'
-    : 'With aspect ratio on, width and height form a maximum-size box for each image.';
+  $('image-mode-hint').textContent = mode === 'cm' ? t('image.hintCm') : t('image.hintBox');
   if (mode === 'cm') {
     const dpi = Number(dpiInput.value) || 300;
     widthInput.value = (originalWidth / dpi * 2.54).toFixed(2);
@@ -109,7 +133,9 @@ function syncDimension(changed: 'width' | 'height') {
 
 async function decode(file: File): Promise<ImageBitmap> {
   try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
-  catch { throw new Error(`Could not read ${file.name}. Choose a valid JPG, PNG or WebP image.`); }
+  catch {
+    throw new Error(t('image.errRead', { name: file.name }));
+  }
 }
 
 async function setFiles(next: File[]) {
@@ -120,28 +146,37 @@ async function setFiles(next: File[]) {
   files = [];
   workspace.hidden = true;
   drop.hidden = false;
-  if ((!resize && next.length !== 1) || (resize && next.length > 20)) { message(resize ? 'Choose no more than 20 images at once.' : 'Choose one JPG at a time.', true); return; }
+  if ((!resize && next.length !== 1) || (resize && next.length > 20)) {
+    message(resize ? t('image.errBatchLimit') : t('image.errSingleJpg'), true);
+    return;
+  }
   const allowed = resize ? ['image/jpeg', 'image/png', 'image/webp'] : ['image/jpeg'];
   const bad = next.find(file => !allowed.includes(file.type) || file.size > 25 * 1024 * 1024);
-  if (bad) { message(`${bad.name} is not a supported ${resize ? 'JPG, PNG or WebP' : 'JPG'} image under 25MB.`, true); return; }
+  if (bad) {
+    message(t('image.errUnsupportedType', {
+      name: bad.name,
+      formats: resize ? 'JPG, PNG or WebP' : 'JPG'
+    }), true);
+    return;
+  }
   try {
     const bitmap = await decode(next[0]);
     originalWidth = bitmap.width;
     originalHeight = bitmap.height;
     bitmap.close();
-    if (!originalWidth || !originalHeight) throw new Error('This image has no usable dimensions.');
+    if (!originalWidth || !originalHeight) throw new Error(t('image.errNoDimensions'));
     files = next;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     previewUrl = URL.createObjectURL(next[0]);
     preview.src = previewUrl;
-    $('image-selection-title').textContent = next.length === 1 ? next[0].name : `${next.length} images selected`;
-    $('image-selection-detail').textContent = next.length === 1 ? 'Ready to process' : `Previewing ${next[0].name}`;
+    $('image-selection-title').textContent = next.length === 1 ? next[0].name : count('image.selectedCount', next.length);
+    $('image-selection-detail').textContent = next.length === 1 ? t('image.readyToProcess') : t('image.previewing', { name: next[0].name });
     $('image-original-size').textContent = formatBytes(next[0].size);
-    $('image-original-dimensions').textContent = `${originalWidth} × ${originalHeight} px`;
+    $('image-original-dimensions').textContent = `${formatter.format(originalWidth)} × ${formatter.format(originalHeight)} px`;
     drop.hidden = true;
     workspace.hidden = false;
     if (resize) updateMode();
-  } catch (error) { message(error instanceof Error ? error.message : 'Could not read the image.', true); }
+  } catch (error) { message(error instanceof Error ? error.message : t('image.errReadGeneric'), true); }
 }
 
 function dimensions(sourceWidth: number, sourceHeight: number) {
@@ -151,15 +186,15 @@ function dimensions(sourceWidth: number, sourceHeight: number) {
   let height: number;
   if (mode === 'percent') {
     const scale = Number($<HTMLInputElement>('image-percent').value) / 100;
-    if (!Number.isFinite(scale) || scale < .01 || scale > 5) throw new Error('Enter a percentage from 1 to 500.');
+    if (!Number.isFinite(scale) || scale < .01 || scale > 5) throw new Error(t('image.errPercentRange'));
     width = Math.round(sourceWidth * scale);
     height = Math.round(sourceHeight * scale);
   } else {
     const w = Number(widthInput.value);
     const h = Number(heightInput.value);
-    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) throw new Error('Enter a width and height greater than zero.');
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) throw new Error(t('image.errDimPositive'));
     const dpi = Number(dpiInput.value);
-    if (mode === 'cm' && (!Number.isFinite(dpi) || dpi < 1 || dpi > 1200)) throw new Error('Enter a resolution from 1 to 1200 PPI.');
+    if (mode === 'cm' && (!Number.isFinite(dpi) || dpi < 1 || dpi > 1200)) throw new Error(t('image.errDpiRange'));
     const factor = mode === 'cm' ? dpi / 2.54 : 1;
     const targetWidth = Math.round(w * factor);
     const targetHeight = Math.round(h * factor);
@@ -179,7 +214,7 @@ function dimensions(sourceWidth: number, sourceHeight: number) {
   }
   width = Math.max(1, width);
   height = Math.max(1, height);
-  if (width > 16000 || height > 16000 || width * height > 40_000_000) throw new Error('The output is too large. Choose dimensions under 16,000 px and 40 megapixels.');
+  if (width > 16000 || height > 16000 || width * height > 40_000_000) throw new Error(t('image.errOutputTooLarge'));
   return { width, height };
 }
 
@@ -188,7 +223,7 @@ function canvasFor(bitmap: ImageBitmap, width: number, height: number, mime: str
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('This browser could not create an image canvas.');
+  if (!context) throw new Error(t('image.errCanvas'));
   if (mime === 'image/jpeg') { context.fillStyle = '#ffffff'; context.fillRect(0, 0, width, height); }
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
@@ -197,7 +232,7 @@ function canvasFor(bitmap: ImageBitmap, width: number, height: number, mime: str
 }
 
 function encode(canvas: HTMLCanvasElement, mime: string, quality?: number): Promise<Blob> {
-  return new Promise((resolve, reject) => canvas.toBlob(blob => blob && blob.type === mime ? resolve(blob) : reject(new Error(`Your browser could not save ${mime.split('/')[1].toUpperCase()}.`)), mime, quality));
+  return new Promise((resolve, reject) => canvas.toBlob(blob => blob && blob.type === mime ? resolve(blob) : reject(new Error(t('image.errSaveFormat', { format: mime.split('/')[1].toUpperCase() }))), mime, quality));
 }
 
 async function fitJpeg(bitmap: ImageBitmap, maxBytes: number) {
@@ -224,7 +259,7 @@ async function fitJpeg(bitmap: ImageBitmap, maxBytes: number) {
     width = Math.max(1, Math.floor(width * .8));
     height = Math.max(1, Math.floor(height * .8));
   }
-  throw new Error('This image could not be reduced to the requested file size. Try a larger KB limit.');
+  throw new Error(t('image.errFitLimit'));
 }
 
 function extension(mime: string) { return mime === 'image/jpeg' ? 'jpg' : mime === 'image/png' ? 'png' : 'webp'; }
@@ -240,7 +275,7 @@ async function process(file: File): Promise<Output> {
     if (!resize || selectedMode() === 'kb') {
       mime = 'image/jpeg';
       const limit = resize ? Number($<HTMLInputElement>('image-kb').value) : targetKb;
-      if (!Number.isInteger(limit) || limit < 1 || limit > 20000) throw new Error('Enter a file size from 1 to 20,000 KB.');
+      if (!Number.isInteger(limit) || limit < 1 || limit > 20000) throw new Error(t('image.errKbRange'));
       if (file.type === mime && file.size <= limit * 1024) {
         blob = file;
         width = bitmap.width;
@@ -264,13 +299,13 @@ async function run() {
   if (resize) estimateButton.disabled = true;
   try {
     for (let i = 0; i < files.length; i++) {
-      message(`Processing ${i + 1} of ${files.length}…`);
+      message(t('image.processing', { current: i + 1, total: files.length }));
       // Let the status paint before canvas work starts on the main thread.
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       outputs.push(await process(files[i]));
     }
     message('');
-    $('image-results-summary').textContent = `${outputs.length} ${outputs.length === 1 ? 'image' : 'images'} processed`;
+    $('image-results-summary').textContent = count('image.processedCount', outputs.length);
     outputs.forEach(item => {
       const row = document.createElement('div');
       row.className = 'image-result-row';
@@ -281,12 +316,12 @@ async function run() {
       const name = document.createElement('strong');
       name.textContent = item.name;
       const meta = document.createElement('span');
-      meta.textContent = `${item.width} × ${item.height} px · ${formatBytes(item.blob.size)}${resize ? '' : ` (${item.blob.size.toLocaleString()} bytes)`}`;
+      meta.textContent = `${formatter.format(item.width)} × ${formatter.format(item.height)} px · ${formatBytes(item.blob.size)}${resize ? '' : ` (${formatter.format(item.blob.size)} ${t('unit.bytes')})`}`;
       detail.append(name, meta);
       const link = document.createElement('a');
       link.href = item.url;
       link.download = item.name;
-      link.textContent = 'Download';
+      link.textContent = t('image.download');
       row.append(image, detail, link);
       resultList.append(row);
     });
@@ -295,7 +330,7 @@ async function run() {
     results.scrollIntoView({ block: 'nearest' });
   } catch (error) {
     clearOutputs();
-    message(error instanceof Error ? error.message : 'The image could not be processed.', true);
+    message(error instanceof Error ? error.message : t('image.errGenericProcess'), true);
   } finally {
     runButton.disabled = false;
     if (resize) estimateButton.disabled = false;
@@ -307,7 +342,7 @@ async function estimateSize() {
   const revision = ++estimateVersion;
   const file = files[0];
   delete estimateResult.dataset.bytes;
-  estimateResult.textContent = `Estimating ${file.name}…`;
+  estimateResult.textContent = t('image.estimating', { name: file.name });
   estimateResult.hidden = false;
   message('');
   estimateButton.disabled = true;
@@ -318,11 +353,20 @@ async function estimateSize() {
     URL.revokeObjectURL(output.url);
     if (revision !== estimateVersion) return;
     estimateResult.dataset.bytes = String(output.blob.size);
-    estimateResult.textContent = `Estimated size${files.length > 1 ? ` for ${file.name}` : ''}: ${formatBytes(file.size)} → ${formatBytes(output.blob.size)} (${output.width} × ${output.height} px).${files.length > 1 ? ' Other images may have different sizes.' : ''}`;
+    const forFile = files.length > 1 ? t('image.estimatedForFile', { name: file.name }) : '';
+    const otherNote = files.length > 1 ? t('image.estimatedOtherNote') : '';
+    estimateResult.textContent = t('image.estimatedSize', {
+      forFile,
+      original: formatBytes(file.size),
+      estimated: formatBytes(output.blob.size),
+      width: formatter.format(output.width),
+      height: formatter.format(output.height),
+      otherNote
+    });
   } catch (error) {
     if (revision !== estimateVersion) return;
     estimateResult.hidden = true;
-    message(error instanceof Error ? error.message : 'Could not estimate this image.', true);
+    message(error instanceof Error ? error.message : t('image.errEstimate'), true);
   } finally {
     estimateButton.disabled = false;
     runButton.disabled = false;

@@ -1,6 +1,18 @@
 import wasmUrl from '../../node_modules/zxing-wasm/dist/reader/zxing_reader.wasm?url';
 import type { ReaderOptions } from 'zxing-wasm/reader';
 
+const root = document.getElementById('qr-tool') as HTMLElement;
+const strings = JSON.parse(root?.dataset.strings || '{}') as Record<string, string>;
+
+function t(key: string, values?: Record<string, string | number>): string {
+  const str = strings[key];
+  if (typeof str !== 'string') {
+    throw new Error(`Missing translation key: ${key}`);
+  }
+  if (!values) return str;
+  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
+}
+
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const cameraTab = byId<HTMLButtonElement>('qr-camera-tab');
 const imageTab = byId<HTMLButtonElement>('qr-image-tab');
@@ -61,7 +73,7 @@ function clearResult() {
   openLink.hidden = true;
   openLink.removeAttribute('href');
   destination.hidden = true;
-  copyButton.textContent = 'Copy result';
+  copyButton.textContent = t('qr.copyResult');
 }
 
 function stopCamera() {
@@ -78,7 +90,7 @@ function stopCamera() {
   switchButton.hidden = true;
   torchButton.hidden = true;
   torchButton.setAttribute('aria-pressed', 'false');
-  torchButton.textContent = 'Turn on light';
+  torchButton.textContent = t('qr.torchOn');
   torchOn = false;
 }
 
@@ -87,27 +99,27 @@ function showResult(value: string) {
   showStatus('');
   result.hidden = false;
   output.value = value;
-  resultType.textContent = 'Scanned text';
+  resultType.textContent = t('qr.typeText');
   destination.hidden = true;
   openLink.hidden = true;
   openLink.removeAttribute('href');
-  resultNote.textContent = 'Check the full result before opening a link.';
+  resultNote.textContent = t('qr.noteDefault');
   if (/^https?:\/\//i.test(value)) {
     try {
       const url = new URL(value);
       if ((url.protocol === 'http:' || url.protocol === 'https:') && !url.username && !url.password) {
-        resultType.textContent = 'Website link';
-        destination.textContent = `Destination: ${url.hostname}${url.port ? `:${url.port}` : ''}`;
+        resultType.textContent = t('qr.typeLink');
+        destination.textContent = t('qr.destination', { host: `${url.hostname}${url.port ? `:${url.port}` : ''}` });
         destination.hidden = false;
         openLink.href = url.href;
         openLink.hidden = false;
-        if (url.protocol === 'http:') resultNote.textContent = 'This link uses an unencrypted connection. Check the full address before opening it.';
+        if (url.protocol === 'http:') resultNote.textContent = t('qr.noteUnencrypted');
       }
     } catch { /* Malformed URLs stay as plain text. */ }
   } else if (/^WIFI:/i.test(value)) {
-    resultType.textContent = 'Wi-Fi details';
+    resultType.textContent = t('qr.typeWifi');
   } else if (/^BEGIN:VCARD/i.test(value)) {
-    resultType.textContent = 'Contact details';
+    resultType.textContent = t('qr.typeContact');
   }
   result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -116,12 +128,12 @@ async function startCamera() {
   stopCamera();
   clearResult();
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-    showStatus('Camera access needs HTTPS or localhost in a supported browser. Use an image instead.', true);
+    showStatus(t('qr.errSecureContext'), true);
     return;
   }
   const run = cameraRun;
   startButton.hidden = true;
-  showStatus('Waiting for camera permission…');
+  showStatus(t('qr.waitingPermission'));
   try {
     const requested = navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
     const acquired = await requested;
@@ -135,10 +147,10 @@ async function startCamera() {
     if (run !== cameraRun) return;
     view.classList.add('active');
     stopButton.hidden = false;
-    showStatus('Starting QR reader…');
+    showStatus(t('qr.startingReader'));
     const decode = await decoder();
     if (run !== cameraRun) return;
-    showStatus('Looking for a QR code…');
+    showStatus(t('qr.looking'));
     try {
       const cameras = (await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'videoinput');
       if (run === cameraRun) switchButton.hidden = cameras.length < 2;
@@ -166,7 +178,7 @@ async function startCamera() {
         } catch {
           if (run !== cameraRun) return;
           stopCamera();
-          showStatus('The QR reader stopped. Try the camera again or scan an image.', true);
+          showStatus(t('qr.errReaderStopped'), true);
           return;
         }
       }
@@ -177,7 +189,7 @@ async function startCamera() {
     if (run !== cameraRun) return;
     stopCamera();
     const name = error instanceof DOMException ? error.name : '';
-    showStatus(name === 'NotAllowedError' ? 'Camera permission was denied. Allow access in your browser settings or scan an image.' : name === 'NotFoundError' ? 'No camera was found. Scan an image instead.' : 'The camera could not start. Try another camera or scan an image.', true);
+    showStatus(name === 'NotAllowedError' ? t('qr.errPermissionDenied') : name === 'NotFoundError' ? t('qr.errNotFound') : t('qr.errStartFailed'), true);
   } finally {
     if (run === cameraRun) startButton.disabled = false;
   }
@@ -204,14 +216,14 @@ async function scanImage(file: File) {
   const supportedMime = /^image\/(png|jpeg|webp|gif|bmp)$/i.test(file.type);
   const supportedExtension = /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name);
   if ((file.type && !supportedMime) || (!supportedMime && !supportedExtension)) {
-    showStatus('Choose a PNG, JPG, WebP, GIF or BMP image.', true);
+    showStatus(t('qr.errImageType'), true);
     return;
   }
   if (file.size > 20 * 1024 * 1024) {
-    showStatus('This image is over 20 MB. Choose a smaller image.', true);
+    showStatus(t('qr.errImageTooLarge'), true);
     return;
   }
-  showStatus(`Reading ${file.name || 'pasted image'}…`);
+  showStatus(t('qr.readingImage', { name: file.name || t('qr.pastedImage') }));
   try {
     if (!context) throw new Error('Canvas is unavailable');
     const [decode, bitmap] = await Promise.all([decoder(), createImageBitmap(file)]);
@@ -225,16 +237,16 @@ async function scanImage(file: File) {
     const found = (await decode.readBarcodes(pixels, scanOptions)).find(item => item.isValid);
     if (run !== imageRun) return;
     if (found) showResult(found.text);
-    else showStatus('No QR code was found. Try a sharper image with the entire code and its border visible.', true);
+    else showStatus(t('qr.errNotFoundInImage'), true);
   } catch {
-    if (run === imageRun) showStatus('This image could not be read. Try a different PNG or JPG file.', true);
+    if (run === imageRun) showStatus(t('qr.errImageRead'), true);
   }
 }
 
 cameraTab.addEventListener('click', () => setMode('camera'));
 imageTab.addEventListener('click', () => setMode('image'));
 startButton.addEventListener('click', startCamera);
-stopButton.addEventListener('click', () => { stopCamera(); showStatus('Camera stopped.'); });
+stopButton.addEventListener('click', () => { stopCamera(); showStatus(t('qr.cameraStopped')); });
 switchButton.addEventListener('click', () => { facing = facing === 'environment' ? 'user' : 'environment'; void startCamera(); });
 torchButton.addEventListener('click', async () => {
   const track = stream?.getVideoTracks()[0];
@@ -242,9 +254,9 @@ torchButton.addEventListener('click', async () => {
   try {
     await track.applyConstraints({ advanced: [{ torch: !torchOn } as MediaTrackConstraintSet] });
     torchOn = !torchOn;
-    torchButton.textContent = torchOn ? 'Turn off light' : 'Turn on light';
+    torchButton.textContent = torchOn ? t('qr.torchOff') : t('qr.torchOn');
     torchButton.setAttribute('aria-pressed', String(torchOn));
-  } catch { showStatus('This camera could not turn on its light.', true); }
+  } catch { showStatus(t('qr.errTorch'), true); }
 });
 chooseButton.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => { const file = fileInput.files?.[0]; if (file) void scanImage(file); fileInput.value = ''; });
@@ -258,14 +270,14 @@ window.addEventListener('paste', event => {
 copyButton.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.value);
-    copyButton.textContent = 'Copied';
+    copyButton.textContent = t('qr.copied');
   } catch {
     output.focus();
     output.select();
-    showStatus('Clipboard access is unavailable. The result is selected; copy it with your keyboard.');
+    showStatus(t('qr.clipboardSelected'));
   }
 });
 clearButton.addEventListener('click', () => { imageRun++; clearResult(); showStatus(''); if (currentMode === 'camera') void startCamera(); else chooseButton.focus(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && stream) { stopCamera(); showStatus('Camera stopped while this page was hidden.'); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden && stream) { stopCamera(); showStatus(t('qr.cameraHidden')); } });
 window.addEventListener('pagehide', stopCamera);
 void startCamera();

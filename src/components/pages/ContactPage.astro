@@ -1,0 +1,49 @@
+---
+import Text from '../../layouts/Text.astro';
+import RichText from '../RichText.astro';
+import { t } from '../../i18n/utils';
+import { sitePages, publishedPageLocales } from '../../data/pages';
+import type { Locale } from '../../data/tools';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const entry = sitePages.contact.locales[locale] || sitePages.contact.locales.en!;
+const alternates = Object.fromEntries(publishedPageLocales(sitePages.contact).map(([lang, item]) => [lang, item.path]));
+---
+<Text locale={locale} title={entry.title} description={entry.description} heading={t('contact.heading', locale)} lead={t('contact.lead', locale)} path={entry.path} alternates={alternates}>
+  <h2>{t('contact.h2Email', locale)}</h2>
+  <p>
+    <RichText
+      text={t('contact.pEmail', locale)}
+      links={{ email: "mailto:hello@thetoolproject.com" }}
+      params={{ emailLink: "hello@thetoolproject.com" }}
+    />
+  </p>
+
+  <h2>{t('contact.h2Report', locale)}</h2>
+  <p>
+    <RichText
+      text={t('contact.pReport', locale)}
+      links={{
+        newIssue: "https://github.com/harshit-dixit/thetoolproject.com/issues/new",
+        existingIssues: "https://github.com/harshit-dixit/thetoolproject.com/issues"
+      }}
+      params={{
+        newIssueLink: t('contact.newIssueLink', locale),
+        existingIssuesLink: t('contact.existingIssuesLink', locale)
+      }}
+    />
+  </p>
+
+  <h2>{t('contact.h2Contribute', locale)}</h2>
+  <p>
+    <RichText
+      text={t('contact.pContribute', locale)}
+      links={{ source: "https://github.com/harshit-dixit/thetoolproject.com" }}
+      params={{ sourceLink: t('contact.sourceLink', locale) }}
+    />
+  </p>
+</Text>

@@ -1,34 +1,54 @@
 ---
-interface Props { targetKb?: 100 | 200 | 500 }
-const { targetKb } = Astro.props;
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { targetKb?: 100 | 200 | 500; locale?: Locale }
+const { targetKb, locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'pdf.chooseHeading', 'pdf.chooseSubheading', 'pdf.processedOnDevice',
+  'pdf.dropTitle', 'pdf.dropHint', 'pdf.chooseButton', 'pdf.dropLimit',
+  'pdf.changeButton', 'pdf.howCompress', 'pdf.makeSmaller', 'pdf.makeSmallerDesc',
+  'pdf.keepText', 'pdf.keepTextDesc', 'pdf.levelLabel', 'pdf.levelLight',
+  'pdf.levelBalanced', 'pdf.levelStrong', 'pdf.targetLabel', 'pdf.targetNone',
+  'pdf.target100', 'pdf.target200', 'pdf.target500', 'pdf.targetHint',
+  'pdf.compressButton', 'pdf.original', 'pdf.compressed', 'pdf.saved',
+  'pdf.download', 'pdf.errTooLarge', 'pdf.errNotPdf', 'pdf.opening',
+  'pdf.checkingStructure', 'pdf.compressingPage', 'pdf.noteVisual',
+  'pdf.noteOptimized', 'pdf.noteOriginal', 'pdf.targetReached',
+  'pdf.targetNotReached', 'pdf.errGeneral', 'pdf.errInvalidPdf',
+  'pdf.errPasswordOrDamaged', 'pdf.errNoPages', 'pdf.errPageLimit',
+  'pdf.errRender', 'pdf.errCanvas', 'pdf.errEncode', 'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
-<div class="pdf-tool" id="pdf-tool" data-target-kb={targetKb ?? ''}>
-  <div class="pdf-tool-head"><div><h2>Choose a PDF</h2><p>Compress one file and check its exact size before downloading.</p></div><span>Processed on your device</span></div>
+<div class="pdf-tool" id="pdf-tool" data-target-kb={targetKb ?? ''} data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="pdf-tool-head"><div><h2>{t('pdf.chooseHeading', locale)}</h2><p>{t('pdf.chooseSubheading', locale)}</p></div><span>{t('pdf.processedOnDevice', locale)}</span></div>
   <div class="pdf-drop" id="pdf-drop">
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M15 5h24l11 11v42H15zM39 5v12h11M23 34h19M23 42h15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <h3>Drop your PDF here</h3><p>or choose a file from your device</p>
+    <h3>{t('pdf.dropTitle', locale)}</h3><p>{t('pdf.dropHint', locale)}</p>
     <input type="file" id="pdf-file" accept="application/pdf,.pdf" class="visually-hidden" tabindex="-1" />
-    <button class="btn" id="pdf-choose" type="button">Choose PDF</button>
-    <small>PDF only · up to 30MB · up to 60 pages</small>
+    <button class="btn" id="pdf-choose" type="button">{t('pdf.chooseButton', locale)}</button>
+    <small>{t('pdf.dropLimit', locale)}</small>
   </div>
   <div class="pdf-workspace" id="pdf-workspace" hidden>
-    <div class="pdf-selected"><div><strong id="pdf-name"></strong><span id="pdf-original-size"></span></div><button type="button" id="pdf-change">Change PDF</button></div>
+    <div class="pdf-selected"><div><strong id="pdf-name"></strong><span id="pdf-original-size"></span></div><button type="button" id="pdf-change">{t('pdf.changeButton', locale)}</button></div>
     <div class="pdf-controls">
-      <fieldset><legend>How should we compress it?</legend>
-        <label><input type="radio" name="pdf-mode" value="visual" checked /><span><strong>Make it smaller</strong><small>Rebuild pages as images. Text, links and forms will no longer be interactive.</small></span></label>
-        <label><input type="radio" name="pdf-mode" value="preserve" /><span><strong>Keep text and links</strong><small>Optimize PDF structure only. File size may barely change.</small></span></label>
+      <fieldset><legend>{t('pdf.howCompress', locale)}</legend>
+        <label><input type="radio" name="pdf-mode" value="visual" checked /><span><strong>{t('pdf.makeSmaller', locale)}</strong><small>{t('pdf.makeSmallerDesc', locale)}</small></span></label>
+        <label><input type="radio" name="pdf-mode" value="preserve" /><span><strong>{t('pdf.keepText', locale)}</strong><small>{t('pdf.keepTextDesc', locale)}</small></span></label>
       </fieldset>
-      <div class="pdf-control-row"><label for="pdf-level">Compression level<select id="pdf-level"><option value="light">Light · clearer pages</option><option value="balanced" selected>Balanced</option><option value="strong">Strong · smaller pages</option></select></label>
-        <label for="pdf-target">Maximum size<select id="pdf-target"><option value="">No fixed limit</option><option value="100" selected={targetKb === 100}>100KB</option><option value="200" selected={targetKb === 200}>200KB</option><option value="500" selected={targetKb === 500}>500KB</option></select></label></div>
-      <p class="pdf-target-hint" id="pdf-target-hint">A size limit may be impossible for a long or complex PDF. We will show the actual result. Modified PDFs may lose valid digital signatures.</p>
+      <div class="pdf-control-row"><label for="pdf-level">{t('pdf.levelLabel', locale)}<select id="pdf-level"><option value="light">{t('pdf.levelLight', locale)}</option><option value="balanced" selected>{t('pdf.levelBalanced', locale)}</option><option value="strong">{t('pdf.levelStrong', locale)}</option></select></label>
+        <label for="pdf-target">{t('pdf.targetLabel', locale)}<select id="pdf-target"><option value="">{t('pdf.targetNone', locale)}</option><option value="100" selected={targetKb === 100}>{t('pdf.target100', locale)}</option><option value="200" selected={targetKb === 200}>{t('pdf.target200', locale)}</option><option value="500" selected={targetKb === 500}>{t('pdf.target500', locale)}</option></select></label></div>
+      <p class="pdf-target-hint" id="pdf-target-hint">{t('pdf.targetHint', locale)}</p>
     </div>
-    <button type="button" class="btn" id="pdf-run">Compress PDF</button>
+    <button type="button" class="btn" id="pdf-run">{t('pdf.compressButton', locale)}</button>
   </div>
   <p class="pdf-status" id="pdf-status" role="status" aria-live="polite" hidden></p>
   <div class="pdf-result" id="pdf-result" hidden>
-    <div class="pdf-sizes"><div><span>Original</span><strong id="pdf-before"></strong></div><div><span>Compressed</span><strong id="pdf-after"></strong></div><div><span>Saved</span><strong id="pdf-saved"></strong></div></div>
+    <div class="pdf-sizes"><div><span>{t('pdf.original', locale)}</span><strong id="pdf-before"></strong></div><div><span>{t('pdf.compressed', locale)}</span><strong id="pdf-after"></strong></div><div><span>{t('pdf.saved', locale)}</span><strong id="pdf-saved"></strong></div></div>
     <p id="pdf-result-note"></p>
-    <a class="btn" id="pdf-download" download>Download PDF</a>
+    <a class="btn" id="pdf-download" download>{t('pdf.download', locale)}</a>
   </div>
 </div>
 <style>
@@ -58,20 +78,23 @@ const { targetKb } = Astro.props;
   .pdf-controls fieldset input { accent-color: var(--cobalt); margin-block-start: 4px; }
   .pdf-controls fieldset span { display: grid; gap: 4px; }
   .pdf-controls fieldset small { color: var(--slate); line-height: 1.45; }
-  .pdf-control-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-block-start: 24px; }
-  .pdf-control-row label { font-weight: 600; }
-  .pdf-control-row select { display: block; width: 100%; min-height: 44px; margin-block-start: 8px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 3px; background: white; color: var(--ink); font: inherit; }
-  .pdf-target-hint { color: var(--slate); font-size: 14px; margin: 14px 0 0; }
-  .pdf-status { margin: 0 30px 28px; padding: 12px 15px; border-inline-start: 3px solid var(--cobalt); background: var(--cobalt-wash); }
-  .pdf-status.error { border-color: #b33e31; background: #fff0ef; }
-  .pdf-result { border-block-start: 1px solid var(--line); }
-  .pdf-sizes { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); }
-  .pdf-sizes div { display: grid; gap: 4px; padding: 16px; border-inline-end: 1px solid var(--line); }
-  .pdf-sizes div:last-child { border-inline-end: 0; }
+  .pdf-control-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-block-start: 20px; }
+  .pdf-control-row label { display: grid; gap: 6px; font-weight: 600; }
+  .pdf-control-row select { height: 42px; border: 1.5px solid var(--ink); border-radius: 3px; background: var(--paper); padding: 0 10px; font: inherit; }
+  .pdf-target-hint { color: var(--slate); margin: 12px 0 0; font-size: 14px; }
+  .pdf-workspace > .btn { margin-block-start: 8px; }
+  .pdf-status { padding: 16px 30px; margin: 0; border-block-start: 1px solid var(--line); background: var(--paper-warm); font-weight: 600; }
+  .pdf-status.error { background: #fee2e2; color: #991b1b; }
+  .pdf-result { border-block-start: 1px solid var(--line); background: var(--paper-warm); }
+  .pdf-sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-block-end: 18px; }
+  .pdf-sizes div { display: grid; gap: 4px; }
   .pdf-sizes span { color: var(--slate); font-size: 14px; }
-  .pdf-sizes strong { font-size: clamp(20px, 3vw, 30px); font-stretch: 88%; font-variant-numeric: tabular-nums; }
-  .pdf-result p { color: var(--slate); max-width: 68ch; }
-  .pdf-result .btn { display: inline-flex; text-decoration: none; align-items: center; }
-  @media (max-width: 680px) { .pdf-tool-head { align-items: start; flex-direction: column; } .pdf-tool-head, .pdf-workspace, .pdf-result { padding-inline: 20px; } .pdf-drop { margin-inline: 20px; } .pdf-controls fieldset, .pdf-control-row { grid-template-columns: 1fr; } .pdf-status { margin-inline: 20px; } }
+  .pdf-sizes strong { font-size: 24px; }
+  .pdf-result p { margin: 0 0 20px; color: var(--slate); line-height: 1.5; }
+  @media (max-width: 640px) {
+    .pdf-tool-head, .pdf-selected, .pdf-controls fieldset, .pdf-control-row, .pdf-sizes { grid-template-columns: 1fr; display: grid; }
+    .pdf-tool-head, .pdf-drop, .pdf-workspace, .pdf-result, .pdf-status { padding-inline: 18px; }
+    .pdf-drop { margin-inline: 18px; }
+  }
 </style>
 <script src="../scripts/compress-pdf.ts"></script>

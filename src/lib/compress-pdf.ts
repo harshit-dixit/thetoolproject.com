@@ -10,32 +10,32 @@ const settings: Record<CompressionLevel, { dpi: number; quality: number }> = {
   strong: { dpi: 78, quality: 0.43 },
 };
 
-function canvasJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Uint8Array> {
+function canvasJpeg(canvas: HTMLCanvasElement, quality: number, strings?: Record<string, string>): Promise<Uint8Array> {
   return new Promise((resolve, reject) => canvas.toBlob(async blob => {
-    if (!blob) return reject(new Error('Your browser could not encode a PDF page.'));
+    if (!blob) return reject(new Error(strings?.['pdf.errEncode'] || 'Your browser could not encode a PDF page.'));
     resolve(new Uint8Array(await blob.arrayBuffer()));
   }, 'image/jpeg', quality));
 }
 
 export async function compressPdf(
   file: File,
-  options: { mode: CompressionMode; level: CompressionLevel; targetBytes?: number; onProgress?: (message: string) => void },
+  options: { mode: CompressionMode; level: CompressionLevel; targetBytes?: number; onProgress?: (message: string) => void; strings?: Record<string, string> },
 ): Promise<CompressionResult> {
+  const { targetBytes, onProgress = () => {}, strings } = options;
   const original = new Uint8Array(await file.arrayBuffer());
   if (original.length < 5 || new TextDecoder('ascii').decode(original.subarray(0, 5)) !== '%PDF-') {
-    throw new Error('Choose a valid PDF file.');
+    throw new Error(strings?.['pdf.errInvalidPdf'] || 'Choose a valid PDF file.');
   }
-  const { targetBytes, onProgress = () => {} } = options;
-  onProgress('Checking PDF structure…');
+  onProgress(strings?.['pdf.checkingStructure'] || 'Checking PDF structure…');
   let source: PDFDocument;
   try {
     source = await PDFDocument.load(original);
   } catch {
-    throw new Error('This PDF could not be opened. Password-protected or damaged PDFs are not supported.');
+    throw new Error(strings?.['pdf.errPasswordOrDamaged'] || 'This PDF could not be opened. Password-protected or damaged PDFs are not supported.');
   }
   const pages = source.getPageCount();
-  if (!pages) throw new Error('This PDF has no pages.');
-  if (pages > 60) throw new Error('This tool supports PDFs with up to 60 pages.');
+  if (!pages) throw new Error(strings?.['pdf.errNoPages'] || 'This PDF has no pages.');
+  if (pages > 60) throw new Error(strings?.['pdf.errPageLimit'] || 'This tool supports PDFs with up to 60 pages.');
 
   let best: Uint8Array = original;
   let method: CompressionResult['method'] = 'original';
@@ -59,7 +59,7 @@ export async function compressPdf(
   try {
     input = await loading.promise;
   } catch {
-    throw new Error('This PDF could not be rendered. Try a different file.');
+    throw new Error(strings?.['pdf.errRender'] || 'This PDF could not be rendered. Try a different file.');
   }
 
   const base = settings[options.level];
@@ -77,7 +77,8 @@ export async function compressPdf(
     for (const candidate of candidates) {
       const output = await PDFDocument.create();
       for (let number = 1; number <= pages; number++) {
-        onProgress(`Compressing page ${number} of ${pages}…`);
+        const progressTemplate = strings?.['pdf.compressingPage'] || 'Compressing page {current} of {total}…';
+        onProgress(progressTemplate.replace('{current}', String(number)).replace('{total}', String(pages)));
         const page = await input.getPage(number);
         const pdfViewport = page.getViewport({ scale: 1 });
         const scale = Math.min(candidate.dpi / 72, 2400 / Math.max(pdfViewport.width, pdfViewport.height));
@@ -86,11 +87,11 @@ export async function compressPdf(
         canvas.width = Math.max(1, Math.floor(viewport.width));
         canvas.height = Math.max(1, Math.floor(viewport.height));
         const context = canvas.getContext('2d', { alpha: false });
-        if (!context) throw new Error('Your browser could not create a drawing surface.');
+        if (!context) throw new Error(strings?.['pdf.errCanvas'] || 'Your browser could not create a drawing surface.');
         context.fillStyle = '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
         await page.render({ canvas, canvasContext: context, viewport }).promise;
-        const jpeg = await canvasJpeg(canvas, candidate.quality);
+        const jpeg = await canvasJpeg(canvas, candidate.quality, strings);
         const image = await output.embedJpg(jpeg);
         const newPage = output.addPage([pdfViewport.width, pdfViewport.height]);
         newPage.drawImage(image, { x: 0, y: 0, width: pdfViewport.width, height: pdfViewport.height });

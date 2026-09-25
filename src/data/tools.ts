@@ -8,20 +8,56 @@ export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesAp
 
 export const tools: Record<string, Tool> = {
   compressPdf: {
-    id: 'compress-pdf', category: 'UtilitiesApplication',
-    locales: { en: { path: '/compress-pdf/', title: 'Compress PDF online: reduce PDF file size | thetoolproject', description: 'Compress a PDF in your browser. Choose visual compression or preserve selectable text, compare exact file sizes, and download privately without uploading.', h1: 'Compress PDF', reviewed: true } },
+    id: 'compress-pdf',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/compress-pdf/',
+        title: en['compressPdf.title'],
+        description: en['compressPdf.description'],
+        h1: en['compressPdf.h1'],
+        reviewed: true,
+      },
+    },
   },
   compressPdf100kb: {
-    id: 'compress-pdf-to-100kb', category: 'UtilitiesApplication',
-    locales: { en: { path: '/compress-pdf-to-100kb/', title: 'Compress PDF to 100KB online | thetoolproject', description: 'Try to reduce a PDF to 100KB or less in your browser. See the exact result size before downloading; no upload or account needed.', h1: 'Compress PDF to 100KB', reviewed: true } },
+    id: 'compress-pdf-to-100kb',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/compress-pdf-to-100kb/',
+        title: en['compressPdf100kb.title'],
+        description: en['compressPdf100kb.description'],
+        h1: en['compressPdf100kb.h1'],
+        reviewed: true,
+      },
+    },
   },
   compressPdf200kb: {
-    id: 'compress-pdf-to-200kb', category: 'UtilitiesApplication',
-    locales: { en: { path: '/compress-pdf-to-200kb/', title: 'Compress PDF to 200KB online | thetoolproject', description: 'Try to reduce a PDF to 200KB or less in your browser. Compare before and after sizes and download without uploading your file.', h1: 'Compress PDF to 200KB', reviewed: true } },
+    id: 'compress-pdf-to-200kb',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/compress-pdf-to-200kb/',
+        title: en['compressPdf200kb.title'],
+        description: en['compressPdf200kb.description'],
+        h1: en['compressPdf200kb.h1'],
+        reviewed: true,
+      },
+    },
   },
   compressPdf500kb: {
-    id: 'compress-pdf-to-500kb', category: 'UtilitiesApplication',
-    locales: { en: { path: '/compress-pdf-to-500kb/', title: 'Compress PDF to 500KB online | thetoolproject', description: 'Try to reduce a PDF to 500KB or less in your browser. Check the measured output size before downloading; your file stays on your device.', h1: 'Compress PDF to 500KB', reviewed: true } },
+    id: 'compress-pdf-to-500kb',
+    category: 'UtilitiesApplication',
+    locales: {
+      en: {
+        path: '/compress-pdf-to-500kb/',
+        title: en['compressPdf500kb.title'],
+        description: en['compressPdf500kb.description'],
+        h1: en['compressPdf500kb.h1'],
+        reviewed: true,
+      },
+    },
   },
   imageResizer: {
     id: 'image-resizer',
@@ -29,9 +65,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/image-resizer/',
-        title: 'Image resizer online: pixels, cm, KB and bulk | thetoolproject',
-        description: 'Resize photos online by pixels, percentage or centimetres, reduce an image to a target KB, or resize up to 20 images at once. Free, private and processed in your browser.',
-        h1: 'Image resizer',
+        title: en['imageResizer.title'],
+        description: en['imageResizer.description'],
+        h1: en['imageResizer.h1'],
         reviewed: true,
       },
     },
@@ -42,9 +78,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/compress-jpg-to-100kb/',
-        title: 'Compress JPG to 100KB online | thetoolproject',
-        description: 'Compress a JPG to 100KB or less in your browser. Preview the result, see its exact file size and download it without uploading your photo.',
-        h1: 'Compress JPG to 100KB',
+        title: en['compressJpg100kb.title'],
+        description: en['compressJpg100kb.description'],
+        h1: en['compressJpg100kb.h1'],
         reviewed: true,
       },
     },
@@ -55,9 +91,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/compress-jpg-to-50kb/',
-        title: 'Compress JPG to 50KB online | thetoolproject',
-        description: 'Compress a JPG to 50KB or less in your browser. Preview the result, see its exact file size and download it without uploading your photo.',
-        h1: 'Compress JPG to 50KB',
+        title: en['compressJpg50kb.title'],
+        description: en['compressJpg50kb.description'],
+        h1: en['compressJpg50kb.h1'],
         reviewed: true,
       },
     },
@@ -68,9 +104,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/qr-code-scanner/',
-        title: 'QR code scanner free online: camera or image | thetoolproject',
-        description: 'Scan QR codes online for free with your camera, or read one from an image or screenshot. See the full result before opening a link. Private, fast, and no app required.',
-        h1: 'QR code scanner',
+        title: en['qrScanner.title'],
+        description: en['qrScanner.description'],
+        h1: en['qrScanner.h1'],
         reviewed: true,
       },
     },
@@ -81,9 +117,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/csv-to-json/',
-        title: 'CSV to JSON converter online | thetoolproject',
-        description: 'Convert CSV or TSV to JSON instantly in your browser. Preview rows, choose delimiters and types, then copy or download JSON or JSON Lines. Your data stays on your device.',
-        h1: 'CSV to JSON',
+        title: en['csvJson.title'],
+        description: en['csvJson.description'],
+        h1: en['csvJson.h1'],
         reviewed: true,
       },
     },
@@ -94,9 +130,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/csv-viewer/',
-        title: 'CSV viewer online: open, search and edit CSV files | thetoolproject',
-        description: 'Open CSV and TSV files in your browser. Search, filter, sort, edit and inspect columns, then download CSV or JSON. Your file is never uploaded.',
-        h1: 'CSV viewer',
+        title: en['csvViewer.title'],
+        description: en['csvViewer.description'],
+        h1: en['csvViewer.h1'],
         reviewed: true,
       },
     },
@@ -107,9 +143,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/json-beautifier/',
-        title: 'JSON beautifier and formatter online | thetoolproject',
-        description: 'Beautify and validate JSON in your browser. Choose indentation, fix syntax errors, then copy or download formatted JSON. Nothing is uploaded.',
-        h1: 'JSON beautifier',
+        title: en['jsonBeautifier.title'],
+        description: en['jsonBeautifier.description'],
+        h1: en['jsonBeautifier.h1'],
         reviewed: true,
       },
     },
@@ -120,9 +156,9 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/csv-to-sql/',
-        title: 'CSV to SQL converter: generate INSERT statements | thetoolproject',
-        description: 'Convert CSV to SQL INSERT statements in your browser. Choose PostgreSQL, MySQL, SQLite or SQL Server, preview the result, and copy or download SQL. Nothing is uploaded.',
-        h1: 'CSV to SQL',
+        title: en['csvSql.title'],
+        description: en['csvSql.description'],
+        h1: en['csvSql.h1'],
         reviewed: true,
       },
     },
@@ -211,15 +247,25 @@ export const tools: Record<string, Tool> = {
     locales: {
       en: {
         path: '/dbf-to-excel/',
-        title: 'DBF to Excel converter online: download XLSX | thetoolproject',
-        description: 'Convert a DBF table to an Excel XLSX file in your browser. Preview records, choose legacy text encoding and download without uploading your data.',
-        h1: 'DBF to Excel',
+        title: en['dbfExcel.title'],
+        description: en['dbfExcel.description'],
+        h1: en['dbfExcel.h1'],
         reviewed: true,
       },
     },
   },
 };
 
-export function publishedToolLocales(tool: Tool) {
+export function publishedToolLocales(tool: Tool): [Locale, ToolLocale][] {
   return Object.entries(tool.locales).filter((entry): entry is [Locale, ToolLocale] => !!entry[1]?.reviewed);
+}
+
+export function getPublishedToolPath(toolKeyOrId: string, locale: Locale): string {
+  const tool = tools[toolKeyOrId] || Object.values(tools).find(t => t.id === toolKeyOrId);
+  if (!tool) throw new Error(`Unknown tool: ${toolKeyOrId}`);
+  const localized = tool.locales[locale];
+  if (localized?.reviewed) return localized.path;
+  const english = tool.locales.en;
+  if (english?.reviewed) return english.path;
+  throw new Error(`Tool ${toolKeyOrId} has no published route`);
 }

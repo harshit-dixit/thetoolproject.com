@@ -2,12 +2,16 @@
 import Base from './Base.astro';
 import { t } from '../i18n/utils';
 import type { Locale, Tool, ToolLocale } from '../data/tools';
+import { getPublishedHomePath } from '../data/pages';
+
 interface Props { locale: Locale; entry: ToolLocale; category: Tool['category']; alternates: Partial<Record<Locale, string>> }
 const { locale, entry, category, alternates } = Astro.props;
 const url = new URL(entry.path, 'https://thetoolproject.com').href;
+const homePath = getPublishedHomePath(locale) ?? '/';
+const homeUrl = new URL(homePath, 'https://thetoolproject.com').href;
 const application = { '@context': 'https://schema.org', '@type': 'WebApplication', name: entry.h1, url, description: entry.description, applicationCategory: category, operatingSystem: 'Any', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } };
 const breadcrumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
-  { '@type': 'ListItem', position: 1, name: t('breadcrumb.home', locale), item: 'https://thetoolproject.com/' },
+  { '@type': 'ListItem', position: 1, name: t('breadcrumb.home', locale), item: homeUrl },
   { '@type': 'ListItem', position: 2, name: entry.h1, item: url },
 ] };
 ---

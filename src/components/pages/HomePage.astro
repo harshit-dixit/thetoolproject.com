@@ -1,0 +1,56 @@
+---
+import Base from '../../layouts/Base.astro';
+import { t } from '../../i18n/utils';
+import { getPublishedToolPath } from '../../data/tools';
+import { sitePages, publishedPageLocales } from '../../data/pages';
+import type { Locale } from '../../data/tools';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const entry = sitePages.home.locales[locale] || sitePages.home.locales.en!;
+const alternates = Object.fromEntries(publishedPageLocales(sitePages.home).map(([lang, item]) => [lang, item.path]));
+---
+<Base locale={locale} title={entry.title} description={entry.description} path={entry.path} alternates={alternates}>
+  <main class="wrap">
+    <div class="hero"><h1 class="page-title">{t('home.h1', locale)}</h1><p class="lead"><strong>{t('home.leadStrong', locale)}</strong> {t('home.lead', locale)}</p></div>
+    <section aria-labelledby="file-tools"><div class="sec-head"><h2 id="file-tools">{t('home.fileTools', locale)}</h2></div>
+      <div class="table-scroll"><table class="spec-table"><thead><tr><th scope="col">{t('home.tool', locale)}</th><th scope="col">{t('home.takes', locale)}</th><th scope="col">{t('home.gives', locale)}</th><th scope="col">{t('home.goodFor', locale)}</th></tr></thead>
+        <tbody>
+          <tr><td><a href={getPublishedToolPath('compressPdf', locale)}>{t('compressPdf.h1', locale)}</a></td><td class="fmt">{t('home.takes.pdf', locale)}</td><td class="fmt">{t('home.gives.pdfSmaller', locale)}</td><td class="note">{t('home.note.pdf', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('compressPdf100kb', locale)}>{t('compressPdf100kb.h1', locale)}</a></td><td class="fmt">{t('home.takes.pdf', locale)}</td><td class="fmt">{t('home.gives.pdf100', locale)}</td><td class="note">{t('home.note.pdf100', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('compressPdf200kb', locale)}>{t('compressPdf200kb.h1', locale)}</a></td><td class="fmt">{t('home.takes.pdf', locale)}</td><td class="fmt">{t('home.gives.pdf200', locale)}</td><td class="note">{t('home.note.pdf200', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('compressPdf500kb', locale)}>{t('compressPdf500kb.h1', locale)}</a></td><td class="fmt">{t('home.takes.pdf', locale)}</td><td class="fmt">{t('home.gives.pdf500', locale)}</td><td class="note">{t('home.note.pdf500', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('imageResizer', locale)}>{t('imageResizer.h1', locale)}</a></td><td class="fmt">{t('home.takes.imageResizer', locale)}</td><td class="fmt">{t('home.gives.imageResizer', locale)}</td><td class="note">{t('home.note.imageResizer', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('compressJpg100kb', locale)}>{t('compressJpg100kb.h1', locale)}</a></td><td class="fmt">{t('home.takes.jpg', locale)}</td><td class="fmt">{t('home.gives.jpg100', locale)}</td><td class="note">{t('home.note.jpg100', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('compressJpg50kb', locale)}>{t('compressJpg50kb.h1', locale)}</a></td><td class="fmt">{t('home.takes.jpg', locale)}</td><td class="fmt">{t('home.gives.jpg50', locale)}</td><td class="note">{t('home.note.jpg50', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('qrCodeScanner', locale)}>{t('qrScanner.h1', locale)}</a></td><td class="fmt">{t('home.takes.qrScanner', locale)}</td><td class="fmt">{t('home.gives.qrScanner', locale)}</td><td class="note">{t('home.note.qrScanner', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('csvToJson', locale)}>{t('csvJson.h1', locale)}</a></td><td class="fmt">{t('home.takes.csv', locale)}</td><td class="fmt">{t('home.gives.csvJson', locale)}</td><td class="note">{t('home.note.csvJson', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('csvViewer', locale)}>{t('csvViewer.h1', locale)}</a></td><td class="fmt">{t('home.takes.csv', locale)}</td><td class="fmt">{t('home.gives.csvViewer', locale)}</td><td class="note">{t('home.note.csvViewer', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('jsonBeautifier', locale)}>{t('jsonBeautifier.h1', locale)}</a></td><td class="fmt">{t('home.takes.jsonText', locale)}</td><td class="fmt">{t('home.gives.jsonBeautifier', locale)}</td><td class="note">{t('home.note.jsonBeautifier', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('jsonToHtml', locale)}>{t('tool.h1', locale)}</a></td><td class="fmt">{t('home.jsonInput', locale)}</td><td class="fmt">{t('home.htmlOutput', locale)}</td><td class="note">{t('home.goodForText', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('jsonToExcel', locale)}>{t('jsonExcel.h1', locale)}</a></td><td class="fmt">{t('home.jsonExcelInput', locale)}</td><td class="fmt">{t('home.xlsxOutput', locale)}</td><td class="note">{t('home.jsonExcelGoodFor', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('jsonToCsv', locale)}>{t('jsonCsv.h1', locale)}</a></td><td class="fmt">{t('home.jsonInput', locale)}</td><td class="fmt">{t('home.csvOutput', locale)}</td><td class="note">{t('home.jsonCsvGoodFor', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('xmlToCsv', locale)}>{t('xmlCsv.h1', locale)}</a></td><td class="fmt">{t('home.xmlInput', locale)}</td><td class="fmt">{t('home.csvOutput', locale)}</td><td class="note">{t('home.xmlCsvGoodFor', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('xmlToJson', locale)}>{t('xmlJson.h1', locale)}</a></td><td class="fmt">{t('home.xmlInput', locale)}</td><td class="fmt">{t('home.xmlJsonOutput', locale)}</td><td class="note">{t('home.xmlJsonGoodFor', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('excelToCsv', locale)}>{t('excel.h1', locale)}</a></td><td class="fmt">{t('home.excelInput', locale)}</td><td class="fmt">{t('home.csvOutput', locale)}</td><td class="note">{t('home.excelGoodFor', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('dbfToExcel', locale)}>{t('dbfExcel.h1', locale)}</a></td><td class="fmt">{t('home.takes.dbf', locale)}</td><td class="fmt">{t('home.gives.dbfExcel', locale)}</td><td class="note">{t('home.note.dbfExcel', locale)}</td></tr>
+          <tr><td><a href={getPublishedToolPath('csvToSql', locale)}>{t('csvSql.h1', locale)}</a></td><td class="fmt">{t('home.takes.csv', locale)}</td><td class="fmt">{t('home.gives.csvSql', locale)}</td><td class="note">{t('home.note.csvSql', locale)}</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+    <section aria-labelledby="json-guides"><div class="sec-head"><h2 id="json-guides">{t('home.guidesTitle', locale)}</h2><p>{t('home.guidesIntro', locale)}</p></div>
+      <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('home.guideColumn', locale)}</th><th scope="col">{t('home.coversColumn', locale)}</th></tr></thead>
+        <tbody>
+          <tr><td><a href="/guides/json/">{t('home.jsonGuideTitle', locale)}</a></td><td class="note">{t('home.jsonGuideDescription', locale)}</td></tr>
+          <tr><td><a href="/guides/json-syntax-square-brackets/">{t('home.bracketsGuideTitle', locale)}</a></td><td class="note">{t('home.bracketsGuideDescription', locale)}</td></tr>
+          <tr><td><a href="/guides/json-to-csv/">{t('home.jsonCsvGuideTitle', locale)}</a></td><td class="note">{t('home.jsonCsvGuideDescription', locale)}</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="home-open-source" aria-labelledby="open-source"><div class="sec-head"><h2 id="open-source">{t('home.openSourceTitle', locale)}</h2><p>{t('home.openSourceText', locale)}</p></div>
+      <a class="source-link" href="https://github.com/harshit-dixit/thetoolproject.com">{t('home.openSourceLink', locale)} <span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+</Base>

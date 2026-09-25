@@ -3,6 +3,7 @@ import type { CsvViewerRequest } from '../workers/csv-viewer';
 import { serializeCsv } from '../lib/csv-viewer';
 
 const get = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const root = get<HTMLDivElement>('csv-viewer');
 const fileInput = get<HTMLInputElement>('viewer-file');
 const paste = get<HTMLTextAreaElement>('viewer-paste');
 const importStatus = get<HTMLParagraphElement>('viewer-import-status');
@@ -21,8 +22,21 @@ const separator = get<HTMLSelectElement>('viewer-separator');
 const encoding = get<HTMLSelectElement>('viewer-encoding');
 const headers = get<HTMLInputElement>('viewer-headers');
 const exportScope = get<HTMLSelectElement>('viewer-export-scope');
-const number = new Intl.NumberFormat();
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+const strings = JSON.parse(root?.dataset.strings || '{}') as Record<string, string>;
+const locale = root?.dataset.locale || 'en';
+const number = new Intl.NumberFormat(locale);
+const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
+
+function t(key: string, values?: Record<string, string | number>): string {
+  const str = strings[key];
+  if (typeof str !== 'string') {
+    throw new Error(`Missing translation key: ${key}`);
+  }
+  if (!values) return str;
+  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
+}
+
 const rowHeight = 38;
 const maxBytes = 10 * 1024 * 1024;
 let worker: Worker | undefined;
@@ -38,18 +52,27 @@ let renderQueued = false;
 let filterTimer: ReturnType<typeof setTimeout>;
 
 function message(target: HTMLElement, value: string) { target.textContent = value; target.hidden = !value; }
-function labelSeparator(value: string) { return ({ comma: 'Comma', semicolon: 'Semicolon', tab: 'Tab', pipe: 'Pipe' } as Record<string, string>)[value] || value; }
+function labelSeparator(value: string) {
+  const map: Record<string, string> = {
+    comma: t('csvViewer.sepComma'),
+    semicolon: t('csvViewer.sepSemicolon'),
+    tab: t('csvViewer.sepTab'),
+    pipe: t('csvViewer.sepPipe'),
+  };
+  return map[value] || value;
+}
 function errorText(code: string, row?: number) {
-  if (code === 'empty') return 'Add CSV text or choose a file to view.';
-  if (code === 'tooManyColumns') return 'This file has more than 500 columns. Choose a narrower file.';
-  return `CSV could not be read${row ? ` near row ${number.format(row)}` : ''}. Check the quotes or try another separator in Import settings.`;
+  if (code === 'empty') return t('csvViewer.errEmpty');
+  if (code === 'tooManyColumns') return t('csvViewer.errTooManyColumns');
+  if (row) return t('csvViewer.errReadRow', { row: number.format(row) });
+  return t('csvViewer.errReadGeneric');
 }
 
 function parseSource(source: string | ArrayBuffer, name: string) {
   const size = typeof source === 'string' ? new Blob([source]).size : source.byteLength;
-  if (size > maxBytes) { message(importStatus, 'Choose a file under 10 MB. Large CSV files can use substantial memory in a browser tab.'); return; }
+  if (size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); return; }
   fileName = name;
-  message(importStatus, 'Reading and checking CSV…');
+  message(importStatus, t('csvViewer.reading'));
   get<HTMLButtonElement>('viewer-choose').disabled = true;
   get<HTMLButtonElement>('viewer-open-paste').disabled = true;
   worker ??= new Worker(new URL('../workers/csv-viewer.ts', import.meta.url), { type: 'module' });
@@ -67,7 +90,11 @@ function parseSource(source: string | ArrayBuffer, name: string) {
     get<HTMLElement>('viewer-irregular-wrap').hidden = table.irregularRows === 0;
     fillColumnOptions();
     get<HTMLElement>('viewer-filename').textContent = name;
-    get<HTMLElement>('viewer-filemeta').textContent = `${labelSeparator(table.separator)} separated · ${fileEncoding === 'pasted' ? 'Pasted text' : fileEncoding.toUpperCase()}${table.irregularRows ? ` · ${number.format(table.irregularRows)} ${table.irregularRows === 1 ? 'row has' : 'rows have'} a different field count` : ''}`;
+    const irregularText = table.irregularRows
+      ? ` · ${table.irregularRows === 1 ? t('csvViewer.metaIrregular.one', { count: number.format(table.irregularRows) }) : t('csvViewer.metaIrregular.other', { count: number.format(table.irregularRows) })}`
+      : '';
+    const encodingText = fileEncoding === 'pasted' ? t('csvViewer.metaPasted') : fileEncoding.toUpperCase();
+    get<HTMLElement>('viewer-filemeta').textContent = `${t('csvViewer.metaSeparated', { separator: labelSeparator(table.separator) })} · ${encodingText}${irregularText}`;
     get<HTMLElement>('viewer-row-count').textContent = number.format(table.rows.length);
     get<HTMLElement>('viewer-column-count').textContent = number.format(table.headers.length);
     scroll.style.height = `${Math.min(440, Math.max(180, (table.rows.length + 1) * rowHeight + 2))}px`;
@@ -87,7 +114,7 @@ function fillColumnOptions() {
   if (!table) return;
   for (const select of [filterColumn, inspectColumn]) {
     select.replaceChildren();
-    if (select === filterColumn) select.add(new Option('All columns', ''));
+    if (select === filterColumn) select.add(new Option(t('csvViewer.allColumns'), ''));
     table.headers.forEach((header, index) => select.add(new Option(header, String(index))));
   }
 }
@@ -101,7 +128,7 @@ function buildHeader() {
     th.setAttribute('aria-sort', sortColumn === column ? (sortDirection === 1 ? 'ascending' : 'descending') : 'none');
     const button = document.createElement('button'); button.type = 'button';
     button.textContent = `${header}${sortColumn === column ? (sortDirection === 1 ? ' ↑' : ' ↓') : ''}`;
-    button.title = `Sort by ${header}`;
+    button.title = t('csvViewer.sortHeader', { header });
     button.addEventListener('click', () => {
       if (sortColumn === column) sortDirection *= -1; else { sortColumn = column; sortDirection = 1; }
       buildHeader(); applyFilters(); scroll.scrollTop = 0; scheduleRender();
@@ -125,7 +152,10 @@ function applyFilters() {
     visible.push(index);
   });
   if (sortColumn >= 0) visible.sort((a, b) => sortDirection * (collator.compare(table!.rows[a][sortColumn], table!.rows[b][sortColumn]) || a - b));
-  get<HTMLElement>('viewer-showing').textContent = `Showing ${number.format(visible.length)} of ${number.format(table.rows.length)} rows`;
+  get<HTMLElement>('viewer-showing').textContent = t('csvViewer.showingRows', {
+    shown: number.format(visible.length),
+    total: number.format(table.rows.length)
+  });
   get<HTMLElement>('viewer-empty').hidden = visible.length !== 0;
   profile();
   scheduleRender();
@@ -158,7 +188,12 @@ function renderRows() {
       const td = document.createElement('td');
       if (originals.has(`${rowIndex}:${column}`)) { td.dataset.edited = ''; tr.dataset.edited = ''; }
       const button = document.createElement('button'); button.type = 'button'; button.textContent = value || ' ';
-      button.title = value || 'Empty cell'; button.setAttribute('aria-label', `Row ${rowIndex + 1}, ${table!.headers[column]}: ${value || 'empty'}. Edit cell`);
+      button.title = value || t('csvViewer.emptyCell');
+      button.setAttribute('aria-label', t('csvViewer.cellAria', {
+        row: number.format(rowIndex + 1),
+        header: table!.headers[column],
+        value: value || t('csvViewer.cellEmpty')
+      }));
       button.addEventListener('click', () => editCell(td, rowIndex, column));
       td.append(button); tr.append(td);
     });
@@ -171,7 +206,7 @@ function renderRows() {
 function editCell(cell: HTMLTableCellElement, row: number, column: number) {
   if (!table) return;
   const input = document.createElement('input'); input.type = 'text'; input.value = table.rows[row][column];
-  input.setAttribute('aria-label', `Edit row ${row + 1}, ${table.headers[column]}`);
+  input.setAttribute('aria-label', t('csvViewer.editCellAria', { row: number.format(row + 1), header: table.headers[column] }));
   let done = false;
   const finish = (save: boolean) => {
     if (done || !table) return; done = true;
@@ -199,9 +234,14 @@ function profile() {
   const values = visible.map(index => table!.rows[index][column]);
   const blanks = values.filter(value => value === '').length;
   const distinct = new Set(values).size;
-  const examples = [...new Set(values.filter(Boolean))].slice(0, 3).join(' · ') || 'None';
+  const examples = [...new Set(values.filter(Boolean))].slice(0, 3).join(' · ') || t('csvViewer.profileNone');
   const dl = get<HTMLDListElement>('viewer-profile'); dl.replaceChildren();
-  for (const [term, value] of [['Shown values', number.format(values.length)], ['Empty cells', number.format(blanks)], ['Distinct values', number.format(distinct)], ['Examples', examples]]) {
+  for (const [term, value] of [
+    [t('csvViewer.profileValues'), number.format(values.length)],
+    [t('csvViewer.profileBlanks'), number.format(blanks)],
+    [t('csvViewer.profileDistinct'), number.format(distinct)],
+    [t('csvViewer.profileExamples'), examples]
+  ]) {
     const item = document.createElement('div'); const dt = document.createElement('dt'); dt.textContent = term;
     const dd = document.createElement('dd'); dd.textContent = value; item.append(dt, dd); dl.append(item);
   }
@@ -218,7 +258,7 @@ function download(content: string, type: string, extension: string) {
 get<HTMLButtonElement>('viewer-choose').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', async () => {
   const file = fileInput.files?.[0]; if (!file) return;
-  if (file.size > maxBytes) { message(importStatus, 'Choose a file under 10 MB.'); return; }
+  if (file.size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); return; }
   parseSource(await file.arrayBuffer(), file.name);
 });
 get<HTMLButtonElement>('viewer-paste-toggle').addEventListener('click', event => {
@@ -229,7 +269,7 @@ get<HTMLButtonElement>('viewer-paste-toggle').addEventListener('click', event =>
 get<HTMLButtonElement>('viewer-open-paste').addEventListener('click', () => parseSource(paste.value, 'pasted.csv'));
 get<HTMLButtonElement>('viewer-example').addEventListener('click', () => parseSource('order_id,customer,city,amount,status\n1001,Ada Lovelace,London,125.50,Paid\n1002,Grace Hopper,New York,89.00,Pending\n1003,Alan Turing,Manchester,210.75,Paid\n1004,Katherine Johnson,White Sulphur Springs,156.20,Refunded\n1005,Radia Perlman,Portsmouth,42.99,Paid', 'sample-orders.csv'));
 get<HTMLButtonElement>('viewer-replace').addEventListener('click', () => {
-  if (originals.size && !window.confirm('Open another file and discard your edits?')) return;
+  if (originals.size && !window.confirm(t('csvViewer.confirmRevert', { count: number.format(originals.size) }))) return;
   workspace.hidden = true; importPanel.hidden = false; fileInput.value = ''; table = undefined; originals.clear();
   get<HTMLButtonElement>('viewer-choose').focus();
 });
@@ -242,25 +282,25 @@ inspectColumn.addEventListener('change', profile);
 get<HTMLButtonElement>('viewer-revert').addEventListener('click', () => {
   if (!table) return;
   for (const [key, value] of originals) { const [row, column] = key.split(':').map(Number); table.rows[row][column] = value; }
-  originals.clear(); updateEditCount(); applyFilters(); message(status, 'Edits reverted.');
+  originals.clear(); updateEditCount(); applyFilters(); message(status, t('csvViewer.statusReverted'));
 });
 get<HTMLButtonElement>('viewer-download-csv').addEventListener('click', () => {
   if (!table) return;
   download(serializeCsv(table.headers, selectedRows(), ',', true), 'text/csv;charset=utf-8', 'csv');
-  message(status, 'CSV downloaded.');
+  message(status, t('csvViewer.statusCsvDownloaded'));
 });
 get<HTMLButtonElement>('viewer-download-json').addEventListener('click', () => {
   if (!table) return;
   const objects = selectedRows().map(row => Object.fromEntries(table!.headers.map((header, index) => [header, row[index]])));
   download(JSON.stringify(objects, null, 2) + '\n', 'application/json;charset=utf-8', 'json');
-  message(status, 'JSON downloaded. Values are strings to preserve the CSV text.');
+  message(status, t('csvViewer.statusJsonDownloaded'));
 });
 get<HTMLButtonElement>('viewer-copy').addEventListener('click', async () => {
   if (!table) return;
   try {
     await navigator.clipboard.writeText(serializeCsv(table.headers, selectedRows(), '\t', true));
-    message(status, 'Table copied as tab-separated text.');
-  } catch { message(status, 'Clipboard access was blocked. Use Download CSV instead.'); }
+    message(status, t('csvViewer.statusCopied'));
+  } catch { message(status, t('csvViewer.errClipboard')); }
 });
 const drop = get<HTMLDivElement>('csv-viewer');
 drop.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) { event.preventDefault(); drop.classList.add('over'); } });
@@ -269,8 +309,8 @@ drop.addEventListener('drop', async event => {
   drop.classList.remove('over');
   const file = event.dataTransfer?.files[0]; if (!file) return;
   event.preventDefault();
-  if (originals.size && !window.confirm('Open another file and discard your edits?')) return;
-  if (file.size > maxBytes) { message(importStatus, 'Choose a file under 10 MB.'); return; }
+  if (originals.size && !window.confirm(t('csvViewer.confirmRevert', { count: number.format(originals.size) }))) return;
+  if (file.size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); return; }
   workspace.hidden = true; importPanel.hidden = false;
   parseSource(await file.arrayBuffer(), file.name);
 });

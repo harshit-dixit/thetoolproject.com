@@ -1,29 +1,48 @@
-<div class="drop" id="xml-json-tool">
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'xmlJson.copy', 'xmlJson.copied', 'xmlJson.copiedAria',
+  'xmlJson.working', 'xmlJson.reading', 'xmlJson.summary',
+  'xmlJson.elements.one', 'xmlJson.elements.other',
+  'xmlJson.errDoctype', 'xmlJson.errTooDeep', 'xmlJson.errEmpty',
+  'xmlJson.errSyntax', 'xmlJson.syntaxCheck', 'xmlJson.errWorker',
+  'xmlJson.errTooLarge', 'xmlJson.errWrongType', 'xmlJson.fileTooLargeText',
+  'xmlJson.fileLoaded', 'xmlJson.errRead', 'xmlJson.errClipboard',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="drop" id="xml-json-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
   <div class="tool-frame">
-    <label class="field-label" for="xml-json-input">Input XML</label>
-    <textarea id="xml-json-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Paste XML here, or choose a file"></textarea>
-    <p class="input-hint">Paste XML, drop a file here, or choose a .xml or .txt file. Files stay in your browser.</p>
+    <label class="field-label" for="xml-json-input">{t('xmlJson.inputLabel', locale)}</label>
+    <textarea id="xml-json-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder={t('xmlJson.inputPlaceholder', locale)}></textarea>
+    <p class="input-hint">{t('xmlJson.inputHint', locale)}</p>
     <div class="actions input-actions">
       <input class="visually-hidden" type="file" id="xml-json-file" accept=".xml,.txt,text/xml,application/xml" tabindex="-1" />
-      <button class="btn alt" type="button" id="xml-json-choose">Choose XML file</button>
-      <button class="text-button" type="button" id="xml-json-example">Try an example</button>
+      <button class="btn alt" type="button" id="xml-json-choose">{t('xmlJson.chooseFile', locale)}</button>
+      <button class="text-button" type="button" id="xml-json-example">{t('xmlJson.tryExample', locale)}</button>
     </div>
     <div class="file-line" id="xml-json-file-line" hidden><span class="file-name" id="xml-json-file-name"></span><span class="file-size" id="xml-json-file-size"></span></div>
     <div class="option-row xml-json-options">
-      <fieldset><legend>Attributes</legend><div class="chips" role="group" aria-label="Attribute prefix">
+      <fieldset><legend>{t('xmlJson.attributes', locale)}</legend><div class="chips" role="group" aria-label={t('xmlJson.prefixAria', locale)}>
         <button type="button" data-xml-json-prefix="@_" aria-pressed="true">@_id</button>
         <button type="button" data-xml-json-prefix="@" aria-pressed="false">@id</button>
       </div></fieldset>
-      <fieldset><legend>Repeated elements</legend><label class="xml-json-check"><input id="xml-json-arrays" type="checkbox" /> Always use arrays</label></fieldset>
-      <fieldset><legend>Output</legend><label class="xml-json-check"><input id="xml-json-pretty" type="checkbox" checked /> Pretty print</label></fieldset>
+      <fieldset><legend>{t('xmlJson.repeated', locale)}</legend><label class="xml-json-check"><input id="xml-json-arrays" type="checkbox" /> {t('xmlJson.alwaysArray', locale)}</label></fieldset>
+      <fieldset><legend>{t('xmlJson.output', locale)}</legend><label class="xml-json-check"><input id="xml-json-pretty" type="checkbox" checked /> {t('xmlJson.pretty', locale)}</label></fieldset>
     </div>
-    <button class="btn" id="xml-json-convert" type="button">Convert XML to JSON</button>
+    <button class="btn" id="xml-json-convert" type="button">{t('xmlJson.convertButton', locale)}</button>
     <p id="xml-json-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
-    <div id="xml-json-placeholder" class="preview-placeholder"><p>Your JSON will appear here after conversion.</p></div>
+    <div id="xml-json-placeholder" class="preview-placeholder"><p>{t('xmlJson.placeholder', locale)}</p></div>
     <div id="xml-json-result" class="result" hidden>
-      <div class="result-head"><label class="field-label" for="xml-json-output">JSON output</label><p class="result-summary" id="xml-json-summary"></p></div>
-      <textarea id="xml-json-output" class="code-view xml-json-output" readonly spellcheck="false" aria-label="JSON output"></textarea>
-      <div class="actions"><button class="btn" id="xml-json-download" type="button">Download JSON</button><button class="btn alt" id="xml-json-copy" type="button">Copy JSON</button><button class="btn alt" id="xml-json-start-over" type="button">Start over</button></div>
+      <div class="result-head"><label class="field-label" for="xml-json-output">{t('xmlJson.outputLabel', locale)}</label><p class="result-summary" id="xml-json-summary"></p></div>
+      <textarea id="xml-json-output" class="code-view xml-json-output" readonly spellcheck="false" aria-label={t('xmlJson.outputLabel', locale)}></textarea>
+      <div class="actions"><button class="btn" id="xml-json-download" type="button">{t('xmlJson.download', locale)}</button><button class="btn alt" id="xml-json-copy" type="button">{t('xmlJson.copy', locale)}</button><button class="btn alt" id="xml-json-start-over" type="button">{t('xmlJson.startOver', locale)}</button></div>
     </div>
   </div>
 </div>

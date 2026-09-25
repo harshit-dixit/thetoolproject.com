@@ -1,0 +1,55 @@
+---
+import Text from '../../layouts/Text.astro';
+import RichText from '../RichText.astro';
+import { t } from '../../i18n/utils';
+import { sitePages, publishedPageLocales } from '../../data/pages';
+import type { Locale } from '../../data/tools';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const entry = sitePages.privacy.locales[locale] || sitePages.privacy.locales.en!;
+const alternates = Object.fromEntries(publishedPageLocales(sitePages.privacy).map(([lang, item]) => [lang, item.path]));
+---
+<Text locale={locale} title={entry.title} description={entry.description} heading={t('privacy.heading', locale)} lead={t('privacy.lead', locale)} path={entry.path} alternates={alternates}>
+  <h2>{t('privacy.h2Files', locale)}</h2>
+  <p>{t('privacy.pFiles', locale)}</p>
+
+  <h2>{t('privacy.h2Web', locale)}</h2>
+  <p>{t('privacy.pWeb', locale)}</p>
+
+  <h2>{t('privacy.h2Messages', locale)}</h2>
+  <p>
+    <RichText
+      text={t('privacy.pMessages', locale)}
+      links={{ email: "mailto:hello@thetoolproject.com" }}
+      params={{ emailLink: "hello@thetoolproject.com" }}
+    />
+  </p>
+
+  <h2>{t('privacy.h2Github', locale)}</h2>
+  <p>
+    <RichText
+      text={t('privacy.pGithub', locale)}
+      links={{
+        repo: "https://github.com/harshit-dixit/thetoolproject.com",
+        privacy: "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+      }}
+      params={{
+        repoLink: t('privacy.repoLink', locale),
+        privacyLink: t('privacy.privacyLink', locale)
+      }}
+    />
+  </p>
+
+  <h2>{t('privacy.h2Changes', locale)}</h2>
+  <p>
+    <RichText
+      text={t('privacy.pChanges', locale)}
+      links={{ email: "mailto:hello@thetoolproject.com" }}
+      params={{ emailLink: "hello@thetoolproject.com" }}
+    />
+  </p>
+</Text>

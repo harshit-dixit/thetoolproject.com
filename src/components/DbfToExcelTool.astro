@@ -1,19 +1,34 @@
 ---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'dbf.reading', 'dbf.ready', 'dbf.summary', 'dbf.noteEncoding',
+  'dbf.noteSkipped', 'dbf.noteTextNumbers', 'dbf.notePreviewLimited',
+  'dbf.errInvalid', 'dbf.errUnsupported', 'dbf.errMemo',
+  'dbf.errTooManyRows', 'dbf.errTooManyColumns', 'dbf.errEncoding',
+  'dbf.errWrongType', 'dbf.errTooLarge', 'dbf.errWorker',
+  'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
-<div class="drop" id="dbf-tool">
+<div class="drop" id="dbf-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
   <div class="tool-frame">
-    <input class="visually-hidden" type="file" id="dbf-file" accept=".dbf" tabindex="-1" aria-label="Choose a DBF file" />
+    <input class="visually-hidden" type="file" id="dbf-file" accept=".dbf" tabindex="-1" aria-label={t('dbf.fileAria', locale)} />
     <div class="drop-empty" id="dbf-empty">
-      <h2 class="drop-title">Drop a DBF file here</h2>
-      <p class="drop-hint">Or choose a .dbf file, up to 20 MB</p>
-      <button class="btn" type="button" id="dbf-choose">Choose DBF file</button>
+      <h2 class="drop-title">{t('dbf.dropTitle', locale)}</h2>
+      <p class="drop-hint">{t('dbf.dropHint', locale)}</p>
+      <button class="btn" type="button" id="dbf-choose">{t('dbf.chooseButton', locale)}</button>
     </div>
     <div id="dbf-panel" hidden>
       <div class="file-line"><span class="file-name" id="dbf-name"></span><span class="file-size" id="dbf-size"></span></div>
       <div class="option-row">
-        <div><label class="field-label" for="dbf-encoding">Text encoding</label>
+        <div><label class="field-label" for="dbf-encoding">{t('dbf.encodingLabel', locale)}</label>
           <select id="dbf-encoding" class="dbf-select">
-            <option value="auto">Auto detect from DBF header</option>
+            <option value="auto">{t('dbf.encodingAuto', locale)}</option>
             <option value="windows-1252">Western European (Windows-1252)</option>
             <option value="windows-1251">Cyrillic (Windows-1251)</option>
             <option value="ibm866">Cyrillic DOS (CP866)</option>
@@ -21,16 +36,16 @@
             <option value="ibm437">US DOS (CP437)</option>
             <option value="utf-8">UTF-8</option>
           </select>
-          <p class="input-hint">If accented or Cyrillic text looks wrong, choose the source encoding and convert again.</p>
+          <p class="input-hint">{t('dbf.encodingHint', locale)}</p>
         </div>
       </div>
-      <div class="actions input-actions"><button class="btn" type="button" id="dbf-convert">Convert to XLSX</button><button class="btn alt" type="button" id="dbf-change">Choose another file</button></div>
+      <div class="actions input-actions"><button class="btn" type="button" id="dbf-convert">{t('dbf.convertButton', locale)}</button><button class="btn alt" type="button" id="dbf-change">{t('dbf.changeButton', locale)}</button></div>
       <p id="dbf-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
       <div id="dbf-result" class="result excel-result" hidden>
         <p class="result-summary" id="dbf-summary"></p>
-        <div class="result-view"><div class="sheet-preview" tabindex="0" role="region" aria-label="Preview of converted Excel rows"><table id="dbf-preview"></table></div></div>
+        <div class="result-view"><div class="sheet-preview" tabindex="0" role="region" aria-label={t('dbf.previewAria', locale)}><table id="dbf-preview"></table></div></div>
         <p class="result-note" id="dbf-note"></p>
-        <div class="actions"><button class="btn" type="button" id="dbf-download">Download XLSX</button></div>
+        <div class="actions"><button class="btn" type="button" id="dbf-download">{t('dbf.download', locale)}</button></div>
       </div>
     </div>
   </div>

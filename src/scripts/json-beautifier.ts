@@ -2,6 +2,18 @@ import type { JsonBeautifierError, JsonBeautifierResult, JsonIndent } from '../l
 import type { JsonBeautifierRequest } from '../workers/json-beautifier';
 
 const root = document.querySelector<HTMLElement>('#json-beautifier-tool')!;
+const strings = JSON.parse(root?.dataset.strings || '{}') as Record<string, string>;
+const locale = root?.dataset.locale || 'en';
+
+function t(key: string, values?: Record<string, string | number>): string {
+  const str = strings[key];
+  if (typeof str !== 'string') {
+    throw new Error(`Missing translation key: ${key}`);
+  }
+  if (!values) return str;
+  return str.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
+}
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = $<HTMLTextAreaElement>('beautifier-input');
 const output = $<HTMLTextAreaElement>('beautifier-output');
@@ -21,35 +33,47 @@ let fileName: string | undefined;
 let current: JsonBeautifierResult | undefined;
 let spacing: JsonIndent = 2;
 
-const formatSize = (bytes: number) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} bytes`;
+const formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+
+const formatSize = (bytes: number) => {
+  const unit = bytes >= 1048576 ? 'unit.mb' : bytes >= 1024 ? 'unit.kb' : 'unit.bytes';
+  const amount = bytes >= 1048576 ? bytes / 1048576 : bytes >= 1024 ? bytes / 1024 : bytes;
+  return `${formatter.format(amount)} ${t(unit)}`;
+};
+
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
-function hideResult() { current = undefined; result.hidden = true; placeholder.hidden = false; output.value = ''; copyButton.textContent = 'Copy JSON'; }
+function hideResult() { current = undefined; result.hidden = true; placeholder.hidden = false; output.value = ''; copyButton.textContent = t('jsonBeautifier.copy'); }
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; busy = false; formatButton.disabled = false; } }
 function showResult(data: JsonBeautifierResult) {
   current = data; output.value = data.json; result.hidden = false; placeholder.hidden = true;
-  $('beautifier-summary').textContent = `Valid JSON · ${formatSize(data.bytes)}`;
-  copyButton.textContent = 'Copy JSON'; clearStatus();
+  $('beautifier-summary').textContent = t('jsonBeautifier.summary', { size: formatSize(data.bytes) });
+  copyButton.textContent = t('jsonBeautifier.copy'); clearStatus();
 }
 function errorMessage(error: JsonBeautifierError | { code: 'workerError' }) {
-  if (error.code === 'workerError') return 'Formatting stopped. Try a smaller JSON file or start over.';
-  if (error.code === 'empty') return 'Paste JSON or choose a file first.';
-  const reason: Record<string, string> = {
-    trailingComma: 'Remove the trailing comma.',
-    singleQuote: 'Use double quotes for strings and keys.',
-    unquotedKey: 'Put double quotes around the key.',
-    comment: 'Remove the comment. JSON does not allow comments.',
-    jsonLines: 'This looks like JSON Lines. Wrap the values in an array with commas between them.',
-    syntax: 'Check the JSON syntax at this position.',
-    depth: 'This JSON is too deeply nested.',
+  if (error.code === 'workerError') return t('jsonBeautifier.errWorker');
+  if (error.code === 'empty') return t('jsonBeautifier.errEmpty');
+  const reasonMap: Record<string, string> = {
+    trailingComma: t('jsonBeautifier.reasonTrailingComma'),
+    singleQuote: t('jsonBeautifier.reasonSingleQuote'),
+    unquotedKey: t('jsonBeautifier.reasonUnquotedKey'),
+    comment: t('jsonBeautifier.reasonComment'),
+    jsonLines: t('jsonBeautifier.reasonJsonLines'),
+    syntax: t('jsonBeautifier.reasonSyntax'),
+    depth: t('jsonBeautifier.reasonDepth'),
   };
-  return `Line ${error.line}, column ${error.column}: ${reason[error.code] ?? reason.syntax}`;
+  const detail = reasonMap[error.code] ?? reasonMap.syntax;
+  return t('jsonBeautifier.errSyntax', {
+    line: formatter.format(error.line),
+    column: formatter.format(error.column),
+    detail,
+  });
 }
 function run() {
   const source = fileText ?? input.value;
-  if (!source.trim()) { hideResult(); announce('Paste JSON or choose a file first.'); input.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce('This JSON is over 10 MB. Choose a smaller file.'); return; }
-  ++sequence; stopWorker(); busy = true; formatButton.disabled = true; announce('Formatting JSON…');
+  if (!source.trim()) { hideResult(); announce(t('jsonBeautifier.errEmpty')); input.focus(); return; }
+  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('jsonBeautifier.errTooLarge')); return; }
+  ++sequence; stopWorker(); busy = true; formatButton.disabled = true; announce(t('jsonBeautifier.working'));
   const id = sequence;
   worker ??= new Worker(new URL('../workers/json-beautifier.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<{ id: number; result?: JsonBeautifierResult; error?: JsonBeautifierError | { code: 'workerError' } }>) => {
@@ -61,24 +85,24 @@ function run() {
       if (fileText === undefined && 'position' in error && error.code !== 'depth') { input.focus(); input.setSelectionRange(error.position, error.position); }
     }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; formatButton.disabled = false; hideResult(); announce('Formatting stopped. Try a smaller JSON file or start over.'); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; formatButton.disabled = false; hideResult(); announce(t('jsonBeautifier.errWorker')); };
   worker.postMessage({ id, source, spacing } satisfies JsonBeautifierRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(json|txt)$/i.test(file.name)) { announce('Choose a .json or .txt file.'); return; }
-  if (file.size > MAX_BYTES) { announce('This JSON is over 10 MB. Choose a smaller file.'); return; }
-  const id = ++sequence; stopWorker(); announce('Reading file…');
+  if (!/\.(json|txt)$/i.test(file.name)) { announce(t('jsonBeautifier.errWrongType')); return; }
+  if (file.size > MAX_BYTES) { announce(t('jsonBeautifier.errTooLarge')); return; }
+  const id = ++sequence; stopWorker(); announce(t('jsonBeautifier.reading'));
   try {
     const content = await file.text();
     if (id !== sequence) return;
     fileName = file.name;
-    if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; $('beautifier-hint').textContent = `${file.name} is too large to show in the editor. You can still format it.`; }
-    else { input.value = content; fileText = undefined; $('beautifier-hint').textContent = 'Paste JSON, drop a file here, or choose a .json or .txt file. Your data stays in this browser.'; }
+    if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; $('beautifier-hint').textContent = t('jsonBeautifier.fileTooLarge', { name: file.name }); }
+    else { input.value = content; fileText = undefined; $('beautifier-hint').textContent = t('jsonBeautifier.inputHint'); }
     $('beautifier-file-name').textContent = file.name; $('beautifier-file-size').textContent = formatSize(file.size); $('beautifier-file-line').hidden = false;
-    hideResult(); announce(`Loaded ${file.name}, ${formatSize(file.size)}.`);
-  } catch { if (id === sequence) announce('This file could not be read. Choose it again or paste its JSON.'); }
+    hideResult(); announce(t('jsonBeautifier.fileLoaded', { name: file.name, size: formatSize(file.size) }));
+  } catch { if (id === sequence) announce(t('jsonBeautifier.errRead')); }
 }
-function clearFile() { fileText = undefined; fileName = undefined; fileInput.value = ''; $('beautifier-file-line').hidden = true; $('beautifier-hint').textContent = 'Paste JSON, drop a file here, or choose a .json or .txt file. Your data stays in this browser.'; }
+function clearFile() { fileText = undefined; fileName = undefined; fileInput.value = ''; $('beautifier-file-line').hidden = true; $('beautifier-hint').textContent = t('jsonBeautifier.inputHint'); }
 $('beautifier-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
 $('beautifier-example').addEventListener('click', () => {
@@ -100,8 +124,8 @@ $('beautifier-download').addEventListener('click', () => {
 copyButton.addEventListener('click', async () => {
   if (!current) return;
   const data = current;
-  try { if (!navigator.clipboard?.writeText) throw Error(); await navigator.clipboard.writeText(data.json); if (current === data) { copyButton.textContent = 'Copied'; announce('Copied JSON to clipboard.'); } }
-  catch { if (current === data) { output.focus(); output.select(); announce('Clipboard unavailable. The JSON is selected; copy it with your keyboard.'); } }
+  try { if (!navigator.clipboard?.writeText) throw Error(); await navigator.clipboard.writeText(data.json); if (current === data) { copyButton.textContent = t('jsonBeautifier.copied'); announce(t('jsonBeautifier.copiedClipboard')); } }
+  catch { if (current === data) { output.focus(); output.select(); announce(t('jsonBeautifier.errClipboard')); } }
 });
 $('beautifier-reset').addEventListener('click', () => { ++sequence; stopWorker(); clearFile(); input.value = ''; hideResult(); clearStatus(); input.focus(); });
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });

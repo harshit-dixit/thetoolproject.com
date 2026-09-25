@@ -1,9 +1,20 @@
 ---
 import Base from './Base.astro';
-interface Props { title: string; description: string; heading: string; lead: string; path: string }
-const { title, description, heading, lead, path } = Astro.props;
+import type { Locale } from '../data/tools';
+
+interface Props {
+  locale?: Locale;
+  title: string;
+  description: string;
+  heading: string;
+  lead: string;
+  path: string;
+  alternates?: Partial<Record<Locale, string>>;
+}
+
+const { locale = 'en', title, description, heading, lead, path, alternates } = Astro.props;
 ---
-<Base locale="en" {title} {description} {path}>
+<Base {locale} {title} {description} {path} {alternates}>
   <main class="wrap">
     <div class="hero"><h1 class="page-title">{heading}</h1><p class="lead">{lead}</p></div>
     <div class="text-body"><slot /></div>

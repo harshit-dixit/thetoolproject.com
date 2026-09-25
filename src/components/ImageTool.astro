@@ -1,33 +1,60 @@
 ---
-interface Props { mode: 'resize' | 'compress'; targetKb?: 50 | 100 }
-const { mode, targetKb = 100 } = Astro.props;
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { mode: 'resize' | 'compress'; targetKb?: 50 | 100; locale?: Locale }
+const { mode, targetKb = 100, locale = 'en' } = Astro.props;
 const resize = mode === 'resize';
+
+const clientKeys: TranslationKey[] = [
+  'image.chooseHeading', 'image.chooseHeadingJpg', 'image.chooseSubheading',
+  'image.chooseSubheadingJpg', 'image.processedOnDevice', 'image.dropTitle',
+  'image.dropTitleJpg', 'image.dropHint', 'image.dropHintJpg', 'image.chooseButton',
+  'image.chooseButtonJpg', 'image.dropLimit', 'image.dropLimitJpg', 'image.selectedHeading',
+  'image.changeButton', 'image.changeButtonJpg', 'image.previewAlt', 'image.original',
+  'image.batchNote', 'image.jpgNote', 'image.resizeBy', 'image.modePixels',
+  'image.modePercent', 'image.modeCm', 'image.modeKb', 'image.width', 'image.height',
+  'image.dpi', 'image.scale', 'image.scaleAria', 'image.maxFileSize', 'image.lockAspect',
+  'image.noEnlarge', 'image.saveAs', 'image.formatOriginal', 'image.hintBox',
+  'image.hintCm', 'image.estimateButton', 'image.runButton', 'image.runButtonCompress',
+  'image.nothingUploaded', 'image.readyToDownload', 'image.downloadAllZip',
+  'image.errRead', 'image.errNoDimensions', 'image.errBatchLimit', 'image.errSingleJpg',
+  'image.errUnsupportedType', 'image.errReadGeneric', 'image.selectedCount.one',
+  'image.selectedCount.other', 'image.readyToProcess', 'image.previewing',
+  'image.errPercentRange', 'image.errDimPositive', 'image.errDpiRange',
+  'image.errOutputTooLarge', 'image.errCanvas', 'image.errSaveFormat',
+  'image.errFitLimit', 'image.errKbRange', 'image.processing', 'image.processedCount.one',
+  'image.processedCount.other', 'image.download', 'image.estimating', 'image.estimatedSize',
+  'image.estimatedForFile', 'image.estimatedOtherNote', 'image.errEstimate',
+  'image.errGenericProcess', 'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 ---
-<div class="image-tool" id="image-tool" data-mode={mode} data-target-kb={targetKb}>
-  <div class="image-tool-head"><div><h2>{resize ? 'Choose your images' : 'Choose a JPG'}</h2><p>{resize ? 'Resize one image or a batch of up to 20.' : `We will make a JPG that fits within ${targetKb}KB.`}</p></div><span>Processed on your device</span></div>
+<div class="image-tool" id="image-tool" data-mode={mode} data-target-kb={targetKb} data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="image-tool-head"><div><h2>{resize ? t('image.chooseHeading', locale) : t('image.chooseHeadingJpg', locale)}</h2><p>{resize ? t('image.chooseSubheading', locale) : t('image.chooseSubheadingJpg', locale, { target: targetKb })}</p></div><span>{t('image.processedOnDevice', locale)}</span></div>
   <div class="image-drop" id="image-drop">
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><rect x="8" y="11" width="48" height="42" rx="3" stroke="currentColor" stroke-width="2.5"/><circle cx="23" cy="25" r="4" stroke="currentColor" stroke-width="2.5"/><path d="m10 45 14-12 9 8 9-12 13 15" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
-    <h3>{resize ? 'Drop images here' : 'Drop a JPG here'}</h3><p>or choose {resize ? 'files' : 'a file'} from your device</p>
+    <h3>{resize ? t('image.dropTitle', locale) : t('image.dropTitleJpg', locale)}</h3><p>{resize ? t('image.dropHint', locale) : t('image.dropHintJpg', locale)}</p>
     <input id="image-files" type="file" accept={resize ? 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp' : 'image/jpeg,.jpg,.jpeg'} multiple={resize} class="visually-hidden" tabindex="-1" />
-    <button class="btn" type="button" id="image-choose">{resize ? 'Choose images' : 'Choose JPG'}</button>
-    <small>{resize ? 'JPG, PNG or WebP · 25MB per file · up to 20 images' : 'JPG only · up to 25MB'}</small>
+    <button class="btn" type="button" id="image-choose">{resize ? t('image.chooseButton', locale) : t('image.chooseButtonJpg', locale)}</button>
+    <small>{resize ? t('image.dropLimit', locale) : t('image.dropLimitJpg', locale)}</small>
   </div>
   <div class="image-workspace" id="image-workspace" hidden>
-    <div class="image-selected"><div><h3 id="image-selection-title">Selected image</h3><p id="image-selection-detail"></p></div><button type="button" id="image-change">{resize ? 'Change images' : 'Change JPG'}</button></div>
-    <div class="image-preview-row"><div class="image-preview"><img id="image-before" alt="Preview of selected image" /></div><div class="image-preview-copy"><span>Original</span><strong id="image-original-size"></strong><span id="image-original-dimensions"></span><p>{resize ? 'All selected images use the same settings.' : `Image quality and dimensions may be reduced to reach ${targetKb}KB.`}</p></div></div>
+    <div class="image-selected"><div><h3 id="image-selection-title">{t('image.selectedHeading', locale)}</h3><p id="image-selection-detail"></p></div><button type="button" id="image-change">{resize ? t('image.changeButton', locale) : t('image.changeButtonJpg', locale)}</button></div>
+    <div class="image-preview-row"><div class="image-preview"><img id="image-before" alt={t('image.previewAlt', locale)} /></div><div class="image-preview-copy"><span>{t('image.original', locale)}</span><strong id="image-original-size"></strong><span id="image-original-dimensions"></span><p>{resize ? t('image.batchNote', locale) : t('image.jpgNote', locale, { target: targetKb })}</p></div></div>
     {resize && <div class="image-settings">
-      <fieldset class="image-modes"><legend>Resize by</legend><label><input type="radio" name="resize-mode" value="pixels" checked /> Pixels</label><label><input type="radio" name="resize-mode" value="percent" /> Percentage</label><label><input type="radio" name="resize-mode" value="cm" /> Centimetres</label><label><input type="radio" name="resize-mode" value="kb" /> File size (KB)</label></fieldset>
-      <div class="image-fields" id="image-dim-fields"><label><span>Width <b id="image-width-unit">px</b></span><input id="image-width" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label><span>Height <b id="image-height-unit">px</b></span><input id="image-height" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label id="image-dpi-field" hidden><span>Resolution (PPI)</span><input id="image-dpi" type="number" min="1" max="1200" value="300" step="1" inputmode="numeric" /></label></div>
-      <div class="image-fields" id="image-percent-field" hidden><label><span>Scale</span><div class="image-suffix"><input id="image-percent" type="number" min="1" max="500" value="50" step="1" inputmode="numeric" /><span>%</span></div></label><div class="image-range"><input id="image-percent-slider" type="range" min="1" max="500" value="50" step="1" aria-label="Scale percentage slider" /><div class="image-range-ends" aria-hidden="true"><span>1%</span><span>500%</span></div></div></div>
-      <div class="image-fields" id="image-kb-field" hidden><label><span>Maximum file size</span><div class="image-suffix"><input id="image-kb" type="number" min="1" max="20000" value="100" step="1" inputmode="numeric" /><span>KB</span></div></label></div>
-      <div class="image-settings-row" id="image-dim-options"><label class="image-check"><input id="image-lock" type="checkbox" checked /> Keep aspect ratio</label><label class="image-check"><input id="image-no-enlarge" type="checkbox" checked /> Do not enlarge small images</label></div>
-      <div class="image-format-row" id="image-format-row"><label for="image-format">Save as</label><select id="image-format"><option value="original">Same format</option><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select><p id="image-mode-hint">With aspect ratio on, width and height form a maximum-size box for each image.</p></div>
+      <fieldset class="image-modes"><legend>{t('image.resizeBy', locale)}</legend><label><input type="radio" name="resize-mode" value="pixels" checked /> {t('image.modePixels', locale)}</label><label><input type="radio" name="resize-mode" value="percent" /> {t('image.modePercent', locale)}</label><label><input type="radio" name="resize-mode" value="cm" /> {t('image.modeCm', locale)}</label><label><input type="radio" name="resize-mode" value="kb" /> {t('image.modeKb', locale)}</label></fieldset>
+      <div class="image-fields" id="image-dim-fields"><label><span>{t('image.width', locale)} <b id="image-width-unit">px</b></span><input id="image-width" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label><span>{t('image.height', locale)} <b id="image-height-unit">px</b></span><input id="image-height" type="number" min="1" max="16000" step="1" inputmode="decimal" /></label><label id="image-dpi-field" hidden><span>{t('image.dpi', locale)}</span><input id="image-dpi" type="number" min="1" max="1200" value="300" step="1" inputmode="numeric" /></label></div>
+      <div class="image-fields" id="image-percent-field" hidden><label><span>{t('image.scale', locale)}</span><div class="image-suffix"><input id="image-percent" type="number" min="1" max="500" value="50" step="1" inputmode="numeric" /><span>%</span></div></label><div class="image-range"><input id="image-percent-slider" type="range" min="1" max="500" value="50" step="1" aria-label={t('image.scaleAria', locale)} /><div class="image-range-ends" aria-hidden="true"><span>1%</span><span>500%</span></div></div></div>
+      <div class="image-fields" id="image-kb-field" hidden><label><span>{t('image.maxFileSize', locale)}</span><div class="image-suffix"><input id="image-kb" type="number" min="1" max="20000" value="100" step="1" inputmode="numeric" /><span>KB</span></div></label></div>
+      <div class="image-settings-row" id="image-dim-options"><label class="image-check"><input id="image-lock" type="checkbox" checked /> {t('image.lockAspect', locale)}</label><label class="image-check"><input id="image-no-enlarge" type="checkbox" checked /> {t('image.noEnlarge', locale)}</label></div>
+      <div class="image-format-row" id="image-format-row"><label for="image-format">{t('image.saveAs', locale)}</label><select id="image-format"><option value="original">{t('image.formatOriginal', locale)}</option><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select><p id="image-mode-hint">{t('image.hintBox', locale)}</p></div>
     </div>}
-    {resize && <div class="image-estimate"><button type="button" class="btn alt" id="image-estimate-button">Estimate output size</button><p id="image-estimate-result" role="status" aria-live="polite" hidden></p></div>}
-    <div class="image-action"><button type="button" class="btn" id="image-run">{resize ? 'Resize images' : `Compress to ${targetKb}KB`}</button><p>Nothing is uploaded.</p></div>
+    {resize && <div class="image-estimate"><button type="button" class="btn alt" id="image-estimate-button">{t('image.estimateButton', locale)}</button><p id="image-estimate-result" role="status" aria-live="polite" hidden></p></div>}
+    <div class="image-action"><button type="button" class="btn" id="image-run">{resize ? t('image.runButton', locale) : t('image.runButtonCompress', locale, { target: targetKb })}</button><p>{t('image.nothingUploaded', locale)}</p></div>
   </div>
   <p class="image-status" id="image-status" role="status" aria-live="polite" hidden></p>
-  <div class="image-results" id="image-results" hidden><div class="image-results-head"><h3>Ready to download</h3><p id="image-results-summary"></p></div><div id="image-result-list" class="image-result-list"></div><button type="button" class="btn alt" id="image-download-all" hidden>Download all as ZIP</button></div>
+  <div class="image-results" id="image-results" hidden><div class="image-results-head"><h3>{t('image.readyToDownload', locale)}</h3><p id="image-results-summary"></p></div><div id="image-result-list" class="image-result-list"></div><button type="button" class="btn alt" id="image-download-all" hidden>{t('image.downloadAllZip', locale)}</button></div>
 </div>
 <style>
   .image-tool { margin-block-start: 40px; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper); overflow: hidden; }
@@ -58,38 +85,39 @@ const resize = mode === 'resize';
   .image-modes label:has(input:checked) { border-color: var(--cobalt); background: var(--cobalt-wash); color: var(--cobalt); }
   .image-modes input { accent-color: var(--cobalt); }
   .image-fields { display: flex; flex-wrap: wrap; gap: 15px; margin-block-end: 18px; }
-  .image-fields label { display: grid; gap: 7px; min-width: 150px; flex: 1; font-size: 14px; color: var(--slate); }
-  .image-fields b { font-weight: 400; }
-  .image-fields input[type="number"], .image-format-row select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 3px; color: var(--ink); background: white; font: inherit; font-size: 16px; }
-  #image-percent-field > label { flex: 0 0 240px; }
-  .image-range { flex: 1 1 260px; max-width: 540px; padding-block-start: 22px; }
-  .image-range input { display: block; width: 100%; height: 24px; margin: 0; accent-color: var(--cobalt); cursor: pointer; }
-  .image-range-ends { display: flex; justify-content: space-between; margin-block-start: 2px; color: var(--slate); font-size: 13px; }
-  .image-suffix { display: flex; align-items: center; max-width: 240px; }
-  .image-suffix input { border-radius: 3px 0 0 3px; }
-  .image-suffix span { min-height: 44px; padding: 9px 13px; border: 1.5px solid var(--line); border-inline-start: 0; background: #f7f8fa; color: var(--ink); }
-  .image-settings-row { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-block: 8px 22px; }
-  .image-check { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; }
-  .image-check input { width: 18px; height: 18px; accent-color: var(--cobalt); }
-  .image-format-row { display: grid; grid-template-columns: 90px minmax(140px, 220px) 1fr; align-items: center; gap: 14px; }
+  .image-fields label { display: grid; gap: 6px; font-weight: 600; min-width: 140px; }
+  .image-fields input[type="number"] { height: 42px; border: 1.5px solid var(--ink); border-radius: 3px; padding: 0 10px; font: inherit; background: var(--paper); }
+  .image-suffix { position: relative; display: grid; }
+  .image-suffix input { padding-inline-end: 32px; }
+  .image-suffix span { position: absolute; inset-inline-end: 10px; inset-block: 0; display: grid; align-content: center; color: var(--slate); pointer-events: none; }
+  .image-range { display: grid; gap: 4px; min-width: 220px; align-content: end; }
+  .image-range input[type="range"] { accent-color: var(--cobalt); }
+  .image-range-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--slate); }
+  .image-settings-row { display: flex; flex-wrap: wrap; gap: 18px; margin-block-end: 18px; }
+  .image-check { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+  .image-check input { accent-color: var(--cobalt); }
+  .image-format-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; border-block-start: 1px solid var(--line); padding-block-start: 18px; }
   .image-format-row label { font-weight: 600; }
-  .image-format-row p { margin: 0; color: var(--slate); font-size: 14px; }
-  .image-estimate { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-block-start: 26px; }
-  .image-estimate p { margin: 0; min-width: 0; color: var(--slate); }
-  .image-estimate strong { color: var(--ink); }
-  .image-action { display: flex; align-items: center; gap: 18px; margin-block-start: 28px; }
+  .image-format-row select { height: 40px; border: 1.5px solid var(--ink); border-radius: 3px; background: var(--paper); padding: 0 10px; font: inherit; }
+  .image-format-row p { margin: 0; color: var(--slate); font-size: 14px; flex-basis: 100%; }
+  .image-estimate { border-block-start: 1px solid var(--line); padding-block-start: 18px; margin-block-start: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .image-estimate p { margin: 0; color: var(--slate); }
+  .image-action { border-block-start: 1px solid var(--line); padding-block-start: 22px; margin-block-start: 22px; display: flex; align-items: center; gap: 16px; }
   .image-action p { margin: 0; color: var(--slate); font-size: 14px; }
-  .image-status { margin: 0 30px 28px; padding: 12px 15px; border-inline-start: 3px solid var(--cobalt); background: var(--cobalt-wash); }
-  .image-status.error { border-color: #b33e31; background: #fff0ef; }
-  .image-results { padding: 28px 30px 30px; border-block-start: 1px solid var(--line); }
-  .image-results-head p { margin: 0; color: var(--slate); }
-  .image-result-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); margin-block: 20px; }
-  .image-result-list :global(.image-result-row) { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px; background: white; }
-  .image-result-list :global(.image-result-row img) { width: 64px; height: 64px; flex: none; object-fit: contain; background: #eff1f5; }
-  .image-result-list :global(.image-result-row div) { min-width: 0; display: grid; gap: 3px; flex: 1; }
-  .image-result-list :global(.image-result-row strong) { overflow-wrap: anywhere; }
-  .image-result-list :global(.image-result-row span) { color: var(--slate); font-size: 14px; }
-  .image-result-list :global(.image-result-row a) { white-space: nowrap; color: var(--cobalt); font-weight: 700; }
-  @media (max-width: 680px) { .image-tool-head { align-items: start; flex-direction: column; gap: 7px; } .image-tool-head, .image-workspace, .image-results { padding-inline: 20px; } .image-drop { margin-inline: 20px; } .image-preview-row { grid-template-columns: 1fr; gap: 12px; } .image-preview-copy p { margin-block-start: 4px; } .image-format-row { grid-template-columns: 1fr; gap: 8px; } .image-range { flex-basis: 100%; padding-block-start: 0; } .image-status { margin-inline: 20px; } .image-results-head { align-items: start; flex-direction: column; } }
+  .image-status { padding: 16px 30px; margin: 0; border-block-start: 1px solid var(--line); background: var(--paper-warm); font-weight: 600; }
+  .image-status.error { background: #fee2e2; color: #991b1b; }
+  .image-results { border-block-start: 1px solid var(--line); background: var(--paper-warm); padding: 26px 30px 30px; }
+  .image-result-list { display: grid; gap: 12px; margin-block: 18px 22px; }
+  .image-result-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; align-items: center; background: var(--paper); border: 1px solid var(--line); border-radius: 3px; padding: 10px 14px; }
+  .image-result-row img { width: 56px; height: 56px; object-fit: contain; background: #eff1f5; }
+  .image-result-row strong { display: block; overflow-wrap: anywhere; }
+  .image-result-row span { color: var(--slate); font-size: 14px; }
+  .image-result-row a { font-weight: 600; text-decoration: underline; color: var(--cobalt); }
+  @media (max-width: 640px) {
+    .image-tool-head, .image-preview-row, .image-action { display: grid; grid-template-columns: 1fr; }
+    .image-tool-head, .image-drop, .image-workspace, .image-status, .image-results { padding-inline: 18px; }
+    .image-drop { margin-inline: 18px; }
+    .image-result-row { grid-template-columns: 1fr; }
+  }
 </style>
 <script src="../scripts/image-tool.ts"></script>

@@ -1,27 +1,58 @@
-<div class="drop" id="json-beautifier-tool">
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'jsonBeautifier.inputLabel', 'jsonBeautifier.inputPlaceholder',
+  'jsonBeautifier.inputHint', 'jsonBeautifier.chooseFile',
+  'jsonBeautifier.tryExample', 'jsonBeautifier.indentation',
+  'jsonBeautifier.spaces2', 'jsonBeautifier.spaces4',
+  'jsonBeautifier.tabs', 'jsonBeautifier.compact',
+  'jsonBeautifier.formatButton', 'jsonBeautifier.placeholder',
+  'jsonBeautifier.outputLabel', 'jsonBeautifier.download',
+  'jsonBeautifier.copy', 'jsonBeautifier.startOver',
+  'jsonBeautifier.working', 'jsonBeautifier.copied',
+  'jsonBeautifier.summary', 'jsonBeautifier.errEmpty',
+  'jsonBeautifier.errTooLarge', 'jsonBeautifier.errWrongType',
+  'jsonBeautifier.errRead', 'jsonBeautifier.errWorker',
+  'jsonBeautifier.errSyntax', 'jsonBeautifier.reasonTrailingComma',
+  'jsonBeautifier.reasonSingleQuote', 'jsonBeautifier.reasonUnquotedKey',
+  'jsonBeautifier.reasonComment', 'jsonBeautifier.reasonJsonLines',
+  'jsonBeautifier.reasonSyntax', 'jsonBeautifier.reasonDepth',
+  'jsonBeautifier.reading', 'jsonBeautifier.fileTooLarge',
+  'jsonBeautifier.fileLoaded', 'jsonBeautifier.copiedClipboard',
+  'jsonBeautifier.errClipboard',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="drop" id="json-beautifier-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
   <div class="tool-frame">
-    <label class="field-label" for="beautifier-input">Input JSON</label>
-    <textarea id="beautifier-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder='Paste JSON here, for example {"name":"Maya"}'></textarea>
-    <p class="input-hint" id="beautifier-hint">Paste JSON, drop a file here, or choose a .json or .txt file. Your data stays in this browser.</p>
+    <label class="field-label" for="beautifier-input">{t('jsonBeautifier.inputLabel', locale)}</label>
+    <textarea id="beautifier-input" class="json-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder={t('jsonBeautifier.inputPlaceholder', locale)}></textarea>
+    <p class="input-hint" id="beautifier-hint">{t('jsonBeautifier.inputHint', locale)}</p>
     <div class="actions input-actions">
       <input class="visually-hidden" type="file" id="beautifier-file" accept=".json,.txt,application/json,text/plain" tabindex="-1" />
-      <button class="btn alt" type="button" id="beautifier-choose">Choose JSON file</button>
-      <button class="text-button" type="button" id="beautifier-example">Try an example</button>
+      <button class="btn alt" type="button" id="beautifier-choose">{t('jsonBeautifier.chooseFile', locale)}</button>
+      <button class="text-button" type="button" id="beautifier-example">{t('jsonBeautifier.tryExample', locale)}</button>
     </div>
     <div class="file-line" id="beautifier-file-line" hidden><span class="file-name" id="beautifier-file-name"></span><span class="file-size" id="beautifier-file-size"></span></div>
-    <div class="option-row"><fieldset><legend>Indentation</legend><div class="chips" role="group" aria-label="Indentation">
-      <button type="button" data-spacing="2" aria-pressed="true">2 spaces</button>
-      <button type="button" data-spacing="4" aria-pressed="false">4 spaces</button>
-      <button type="button" data-spacing="tab" aria-pressed="false">Tabs</button>
-      <button type="button" data-spacing="compact" aria-pressed="false">Compact</button>
+    <div class="option-row"><fieldset><legend>{t('jsonBeautifier.indentation', locale)}</legend><div class="chips" role="group" aria-label={t('jsonBeautifier.indentation', locale)}>
+      <button type="button" data-spacing="2" aria-pressed="true">{t('jsonBeautifier.spaces2', locale)}</button>
+      <button type="button" data-spacing="4" aria-pressed="false">{t('jsonBeautifier.spaces4', locale)}</button>
+      <button type="button" data-spacing="tab" aria-pressed="false">{t('jsonBeautifier.tabs', locale)}</button>
+      <button type="button" data-spacing="compact" aria-pressed="false">{t('jsonBeautifier.compact', locale)}</button>
     </div></fieldset></div>
-    <button class="btn" id="beautifier-format" type="button">Beautify JSON</button>
+    <button class="btn" id="beautifier-format" type="button">{t('jsonBeautifier.formatButton', locale)}</button>
     <p id="beautifier-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
-    <div id="beautifier-placeholder" class="preview-placeholder"><p>Formatted JSON will appear here.</p></div>
+    <div id="beautifier-placeholder" class="preview-placeholder"><p>{t('jsonBeautifier.placeholder', locale)}</p></div>
     <div id="beautifier-result" class="result" hidden>
-      <div class="result-head"><label class="field-label" for="beautifier-output">Formatted JSON</label><p class="result-summary" id="beautifier-summary"></p></div>
-      <textarea id="beautifier-output" class="code-view beautifier-output" readonly spellcheck="false" aria-label="Formatted JSON"></textarea>
-      <div class="actions"><button class="btn" id="beautifier-download" type="button">Download JSON</button><button class="btn alt" id="beautifier-copy" type="button">Copy JSON</button><button class="btn alt" id="beautifier-reset" type="button">Start over</button></div>
+      <div class="result-head"><label class="field-label" for="beautifier-output">{t('jsonBeautifier.outputLabel', locale)}</label><p class="result-summary" id="beautifier-summary"></p></div>
+      <textarea id="beautifier-output" class="code-view beautifier-output" readonly spellcheck="false" aria-label={t('jsonBeautifier.outputLabel', locale)}></textarea>
+      <div class="actions"><button class="btn" id="beautifier-download" type="button">{t('jsonBeautifier.download', locale)}</button><button class="btn alt" id="beautifier-copy" type="button">{t('jsonBeautifier.copy', locale)}</button><button class="btn alt" id="beautifier-reset" type="button">{t('jsonBeautifier.startOver', locale)}</button></div>
     </div>
   </div>
 </div>

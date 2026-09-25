@@ -2,6 +2,18 @@ import type { XmlJsonConversion, XmlJsonError, XmlJsonOptions } from '../lib/xml
 import type { XmlJsonRequest } from '../workers/xml-to-json';
 
 const root = document.querySelector<HTMLElement>('#xml-json-tool')!;
+const locale = root.dataset.locale || 'en';
+const strings: Record<string, string> = JSON.parse(root.dataset.strings || '{}');
+const t = (key: string, vars?: Record<string, string | number>) => {
+  let text = strings[key] ?? key;
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      text = text.replaceAll(`{${k}}`, String(v));
+    }
+  }
+  return text;
+};
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = $<HTMLTextAreaElement>('xml-json-input');
 const output = $<HTMLTextAreaElement>('xml-json-output');
@@ -11,6 +23,7 @@ const result = $('xml-json-result');
 const placeholder = $('xml-json-placeholder');
 const convertButton = $<HTMLButtonElement>('xml-json-convert');
 const copyButton = $<HTMLButtonElement>('xml-json-copy');
+const formatter = new Intl.NumberFormat(locale);
 const MAX_BYTES = 10 * 1024 * 1024;
 const TEXTAREA_LIMIT = 2 * 1024 * 1024;
 let worker: Worker | undefined;
@@ -20,28 +33,41 @@ let fileText: string | undefined;
 let fileName: string | undefined;
 let current: XmlJsonConversion | undefined;
 let options: XmlJsonOptions = { attributePrefix: '@_', alwaysArray: false, pretty: true };
-const formatSize = (bytes: number) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} bytes`;
+const formatSize = (bytes: number) => bytes >= 1048576
+  ? `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1048576)} ${t('unit.mb')}`
+  : bytes >= 1024
+  ? `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1024)} ${t('unit.kb')}`
+  : `${formatter.format(bytes)} ${t('unit.bytes')}`;
+
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
-function hideResult() { current = undefined; result.hidden = true; placeholder.hidden = false; output.value = ''; copyButton.textContent = 'Copy JSON'; }
+function hideResult() { current = undefined; result.hidden = true; placeholder.hidden = false; output.value = ''; copyButton.textContent = t('xmlJson.copy'); }
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; busy = false; convertButton.disabled = false; } }
 function showResult(data: XmlJsonConversion) {
   current = data; output.value = data.json; result.hidden = false; placeholder.hidden = true;
-  $('xml-json-summary').textContent = `${new Intl.NumberFormat().format(data.elements)} elements · ${formatSize(data.bytes)}`;
-  copyButton.textContent = 'Copy JSON'; clearStatus();
+  const elementsText = t(data.elements === 1 ? 'xmlJson.elements.one' : 'xmlJson.elements.other', { count: formatter.format(data.elements) });
+  $('xml-json-summary').textContent = t('xmlJson.summary', {
+    elements: elementsText,
+    size: formatSize(data.bytes),
+  });
+  copyButton.textContent = t('xmlJson.copy'); clearStatus();
 }
 function errorMessage(error: XmlJsonError | { code: 'workerError' }) {
-  if (error.code === 'doctype') return 'This XML contains a DOCTYPE. Remove the DTD declaration and try again.';
-  if (error.code === 'tooDeep') return 'This XML is nested more than 100 levels deep. Reduce the nesting and try again.';
-  if (error.code === 'empty') return 'Paste XML or choose a file first.';
-  if (error.code === 'invalidXml') return `Line ${error.line ?? 1}, column ${error.column ?? 1}: ${error.detail || 'Check the XML syntax.'}`;
-  return 'The conversion stopped. Try a smaller XML file or start over.';
+  if (error.code === 'doctype') return t('xmlJson.errDoctype');
+  if (error.code === 'tooDeep') return t('xmlJson.errTooDeep');
+  if (error.code === 'empty') return t('xmlJson.errEmpty');
+  if (error.code === 'invalidXml') return t('xmlJson.errSyntax', {
+    line: formatter.format(error.line ?? 1),
+    column: formatter.format(error.column ?? 1),
+    detail: error.detail || t('xmlJson.syntaxCheck'),
+  });
+  return t('xmlJson.errWorker');
 }
 function run() {
   const source = fileText ?? input.value;
-  if (!source.trim()) { hideResult(); announce('Paste XML or choose a file first.'); input.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce('This XML is over 10 MB. Choose a smaller file.'); return; }
-  stopWorker(); busy = true; convertButton.disabled = true; announce('Converting XML…');
+  if (!source.trim()) { hideResult(); announce(t('xmlJson.errEmpty')); input.focus(); return; }
+  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('xmlJson.errTooLarge')); return; }
+  stopWorker(); busy = true; convertButton.disabled = true; announce(t('xmlJson.working'));
   const id = ++sequence;
   worker ??= new Worker(new URL('../workers/xml-to-json.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<{ id: number; result?: XmlJsonConversion; error?: XmlJsonError | { code: 'workerError' } }>) => {
@@ -50,21 +76,21 @@ function run() {
     if (event.data.result) showResult(event.data.result);
     else { hideResult(); announce(errorMessage(event.data.error ?? { code: 'workerError' })); }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; convertButton.disabled = false; hideResult(); announce('The conversion stopped. Try a smaller XML file or start over.'); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; convertButton.disabled = false; hideResult(); announce(t('xmlJson.errWorker')); };
   worker.postMessage({ id, source, options } satisfies XmlJsonRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(xml|txt)$/i.test(file.name)) { announce('Choose a .xml or .txt file.'); return; }
-  if (file.size > MAX_BYTES) { announce('This XML is over 10 MB. Choose a smaller file.'); return; }
-  const id = ++sequence; stopWorker(); announce('Reading file…');
+  if (!/\.(xml|txt)$/i.test(file.name)) { announce(t('xmlJson.errWrongType')); return; }
+  if (file.size > MAX_BYTES) { announce(t('xmlJson.errTooLarge')); return; }
+  const id = ++sequence; stopWorker(); announce(t('xmlJson.reading'));
   try {
     const content = await file.text();
     if (id !== sequence) return;
     fileName = file.name;
-    if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; announce(`${file.name} is too large to show in the editor. It will still be converted.`); }
-    else { input.value = content; fileText = undefined; announce(`Loaded ${file.name}, ${formatSize(file.size)}`); }
+    if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; announce(t('xmlJson.fileTooLargeText', { name: file.name })); }
+    else { input.value = content; fileText = undefined; announce(t('xmlJson.fileLoaded', { name: file.name, size: formatSize(file.size) })); }
     $('xml-json-file-name').textContent = file.name; $('xml-json-file-size').textContent = formatSize(file.size); $('xml-json-file-line').hidden = false; hideResult();
-  } catch { if (id === sequence) announce('This file could not be read. Choose it again or paste its XML.'); }
+  } catch { if (id === sequence) announce(t('xmlJson.errRead')); }
 }
 $('xml-json-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
@@ -90,8 +116,8 @@ $('xml-json-download').addEventListener('click', () => {
 copyButton.addEventListener('click', async () => {
   if (!current) return;
   const data = current;
-  try { if (!navigator.clipboard?.writeText) throw Error(); await navigator.clipboard.writeText(data.json); if (current === data) { copyButton.textContent = 'Copied'; announce('Copied JSON to clipboard.'); } }
-  catch { if (current === data) { output.focus(); output.select(); announce('Clipboard unavailable. The JSON is selected; copy it with your keyboard.'); } }
+  try { if (!navigator.clipboard?.writeText) throw Error(); await navigator.clipboard.writeText(data.json); if (current === data) { copyButton.textContent = t('xmlJson.copied'); announce(t('xmlJson.copiedAria')); } }
+  catch { if (current === data) { output.focus(); output.select(); announce(t('xmlJson.errClipboard')); } }
 });
 $('xml-json-start-over').addEventListener('click', () => { ++sequence; stopWorker(); fileText = undefined; fileName = undefined; input.value = ''; fileInput.value = ''; $('xml-json-file-line').hidden = true; hideResult(); clearStatus(); input.focus(); });
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });

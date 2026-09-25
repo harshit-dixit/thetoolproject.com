@@ -1,37 +1,59 @@
-<div class="drop csv-sql-drop" id="csv-sql-tool">
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'csvSql.inputHint', 'csvSql.chooseFile', 'csvSql.tryExample',
+  'csvSql.convertButton', 'csvSql.viewSql', 'csvSql.viewTable',
+  'csvSql.download', 'csvSql.copy', 'csvSql.copied', 'csvSql.sqlCopied',
+  'csvSql.startOver', 'csvSql.working', 'csvSql.reading',
+  'csvSql.summary', 'csvSql.noteSqlFull', 'csvSql.noteSqlTruncated',
+  'csvSql.noteTable', 'csvSql.errEmpty', 'csvSql.errInvalidCsv',
+  'csvSql.errNoRows', 'csvSql.errTooManyColumns', 'csvSql.errInvalidTable',
+  'csvSql.errWorker', 'csvSql.errTooLarge', 'csvSql.errWrongType',
+  'csvSql.loadedTooLarge', 'csvSql.editHint', 'csvSql.exampleHint',
+  'csvSql.loadedReady', 'csvSql.errRead', 'csvSql.errClipboard',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="drop csv-sql-drop" id="csv-sql-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
   <div class="tool-frame">
-    <label class="field-label" for="csv-sql-input">Paste your CSV</label>
+    <label class="field-label" for="csv-sql-input">{t('csvSql.inputLabel', locale)}</label>
     <textarea id="csv-sql-input" class="json-input" rows="11" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder={'id,name,city\n1,Ada,London\n2,Grace,New York'}></textarea>
-    <p class="input-hint" id="csv-sql-hint">Paste CSV or choose a local .csv or .tsv file. You can also drop a file here.</p>
+    <p class="input-hint" id="csv-sql-hint">{t('csvSql.inputHint', locale)}</p>
     <div class="actions input-actions">
       <input class="visually-hidden" type="file" id="csv-sql-file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" tabindex="-1" />
-      <button class="btn alt" id="csv-sql-choose" type="button">Choose a file</button>
-      <button class="text-button" id="csv-sql-example" type="button">Try an example</button>
+      <button class="btn alt" id="csv-sql-choose" type="button">{t('csvSql.chooseFile', locale)}</button>
+      <button class="text-button" id="csv-sql-example" type="button">{t('csvSql.tryExample', locale)}</button>
     </div>
     <div class="file-line" id="csv-sql-file-line" hidden><span class="file-name" id="csv-sql-file-name"></span><span class="file-size" id="csv-sql-file-size"></span></div>
     <div class="csv-sql-options">
       <div class="csv-sql-fields">
-        <label><span class="field-label">Database</span><select id="csv-sql-dialect" class="tool-select"><option value="postgresql">PostgreSQL</option><option value="mysql">MySQL</option><option value="sqlite">SQLite</option><option value="sqlserver">SQL Server</option></select></label>
-        <label><span class="field-label">Table name</span><input id="csv-sql-table" class="tool-select" type="text" value="my_table" spellcheck="false" autocomplete="off" /></label>
-        <label><span class="field-label">CSV delimiter</span><select id="csv-sql-delimiter" class="tool-select"><option value="auto">Auto detect</option><option value="comma">Comma</option><option value="semicolon">Semicolon</option><option value="tab">Tab</option><option value="pipe">Pipe</option></select></label>
+        <label><span class="field-label">{t('csvSql.database', locale)}</span><select id="csv-sql-dialect" class="tool-select"><option value="postgresql">PostgreSQL</option><option value="mysql">MySQL</option><option value="sqlite">SQLite</option><option value="sqlserver">SQL Server</option></select></label>
+        <label><span class="field-label">{t('csvSql.tableName', locale)}</span><input id="csv-sql-table" class="tool-select" type="text" value="my_table" spellcheck="false" autocomplete="off" /></label>
+        <label><span class="field-label">{t('csvSql.delimiter', locale)}</span><select id="csv-sql-delimiter" class="tool-select"><option value="auto">{t('csvSql.delimiterAuto', locale)}</option><option value="comma">{t('csvSql.delimiterComma', locale)}</option><option value="semicolon">{t('csvSql.delimiterSemicolon', locale)}</option><option value="tab">{t('csvSql.delimiterTab', locale)}</option><option value="pipe">{t('csvSql.delimiterPipe', locale)}</option></select></label>
       </div>
       <div class="csv-sql-checks">
-        <label><input id="csv-sql-headers" type="checkbox" checked /> First row contains column names</label>
-        <label><input id="csv-sql-create" type="checkbox" checked /> Include CREATE TABLE</label>
-        <label><input id="csv-sql-batch" type="checkbox" checked /> Combine rows into INSERT statements</label>
-        <label><input id="csv-sql-null" type="checkbox" /> Convert empty fields to NULL</label>
-        <label><input id="csv-sql-types" type="checkbox" /> Detect numbers and booleans</label>
+        <label><input id="csv-sql-headers" type="checkbox" checked /> {t('csvSql.headersCheck', locale)}</label>
+        <label><input id="csv-sql-create" type="checkbox" checked /> {t('csvSql.createCheck', locale)}</label>
+        <label><input id="csv-sql-batch" type="checkbox" checked /> {t('csvSql.batchCheck', locale)}</label>
+        <label><input id="csv-sql-null" type="checkbox" /> {t('csvSql.nullCheck', locale)}</label>
+        <label><input id="csv-sql-types" type="checkbox" /> {t('csvSql.typesCheck', locale)}</label>
       </div>
-      <p class="input-hint">Values stay as text by default, preserving leading zeros. Turn on detection when the target columns use number or boolean types.</p>
+      <p class="input-hint">{t('csvSql.typesHint', locale)}</p>
     </div>
-    <button class="btn" id="csv-sql-convert" type="button">Convert to SQL</button>
+    <button class="btn" id="csv-sql-convert" type="button">{t('csvSql.convertButton', locale)}</button>
     <p id="csv-sql-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
-    <div id="csv-sql-placeholder" class="preview-placeholder"><p>Your SQL preview will appear here.</p></div>
+    <div id="csv-sql-placeholder" class="preview-placeholder"><p>{t('csvSql.placeholder', locale)}</p></div>
     <div id="csv-sql-result" class="result" hidden>
-      <div class="result-head"><div class="chips" role="group" aria-label="Result view"><button type="button" data-csv-sql-view="sql" aria-pressed="true">SQL preview</button><button type="button" data-csv-sql-view="table" aria-pressed="false">Table preview</button></div><p class="result-summary" id="csv-sql-summary" aria-live="polite"></p></div>
-      <div class="result-view"><pre class="code-view" id="csv-sql-code" tabindex="0" aria-label="Generated SQL"></pre><div class="sheet-preview" id="csv-sql-preview" tabindex="0" role="region" aria-label="Parsed CSV preview" hidden><table id="csv-sql-preview-table"></table></div></div>
+      <div class="result-head"><div class="chips" role="group" aria-label={t('csvSql.resultViewAria', locale)}><button type="button" data-csv-sql-view="sql" aria-pressed="true">{t('csvSql.viewSql', locale)}</button><button type="button" data-csv-sql-view="table" aria-pressed="false">{t('csvSql.viewTable', locale)}</button></div><p class="result-summary" id="csv-sql-summary" aria-live="polite"></p></div>
+      <div class="result-view"><pre class="code-view" id="csv-sql-code" tabindex="0" aria-label={t('csvSql.sqlAria', locale)}></pre><div class="sheet-preview" id="csv-sql-preview" tabindex="0" role="region" aria-label={t('csvSql.tableAria', locale)} hidden><table id="csv-sql-preview-table"></table></div></div>
       <p class="result-note" id="csv-sql-note"></p>
-      <div class="actions"><button class="btn" id="csv-sql-download" type="button">Download .sql</button><button class="btn alt" id="csv-sql-copy" type="button">Copy SQL</button><button class="btn alt" id="csv-sql-reset" type="button">Start over</button></div>
+      <div class="actions"><button class="btn" id="csv-sql-download" type="button">{t('csvSql.download', locale)}</button><button class="btn alt" id="csv-sql-copy" type="button">{t('csvSql.copy', locale)}</button><button class="btn alt" id="csv-sql-reset" type="button">{t('csvSql.startOver', locale)}</button></div>
     </div>
   </div>
 </div>

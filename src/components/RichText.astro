@@ -1,0 +1,59 @@
+---
+interface Props {
+  text: string;
+  links?: Record<string, string | { href: string }>;
+  params?: Record<string, string | number>;
+}
+
+const { text, links = {}, params } = Astro.props;
+
+// Step 1: Interpolate parameters if any ({param})
+let interpolated = text;
+if (params) {
+  for (const [key, val] of Object.entries(params)) {
+    interpolated = interpolated.replaceAll(`{${key}}`, String(val));
+  }
+}
+
+// Step 2: Tokenize tags: <code>...</code>, <strong>...</strong>, <a:linkId>...</a:linkId>
+type Token =
+  | { type: 'text'; content: string }
+  | { type: 'code'; content: string }
+  | { type: 'strong'; content: string }
+  | { type: 'link'; linkId: string; content: string };
+
+const tokens: Token[] = [];
+const tagRegex = /<code>([\s\S]*?)<\/code>|<strong>([\s\S]*?)<\/strong>|<a:([a-zA-Z0-9_-]+)>([\s\S]*?)<\/a:\3>/g;
+let lastIndex = 0;
+let match: RegExpExecArray | null;
+
+while ((match = tagRegex.exec(interpolated)) !== null) {
+  if (match.index > lastIndex) {
+    tokens.push({ type: 'text', content: interpolated.slice(lastIndex, match.index) });
+  }
+  if (match[1] !== undefined) {
+    tokens.push({ type: 'code', content: match[1] });
+  } else if (match[2] !== undefined) {
+    tokens.push({ type: 'strong', content: match[2] });
+  } else if (match[3] !== undefined && match[4] !== undefined) {
+    tokens.push({ type: 'link', linkId: match[3], content: match[4] });
+  }
+  lastIndex = tagRegex.lastIndex;
+}
+
+if (lastIndex < interpolated.length) {
+  tokens.push({ type: 'text', content: interpolated.slice(lastIndex) });
+}
+
+function resolveHref(link: string | { href: string } | undefined): string {
+  if (!link) return '#';
+  if (typeof link === 'string') return link;
+  return link.href || '#';
+}
+---
+{tokens.map((token) => {
+  if (token.type === 'code') return <code>{token.content}</code>;
+  if (token.type === 'strong') return <strong>{token.content}</strong>;
+  if (token.type === 'link') return <a href={resolveHref(links[token.linkId])}>{token.content}</a>;
+  return token.content;
+})}

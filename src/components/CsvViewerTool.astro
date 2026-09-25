@@ -1,40 +1,76 @@
-<div class="drop csv-viewer" id="csv-viewer">
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'csvViewer.openTitle', 'csvViewer.openHint', 'csvViewer.chooseFile',
+  'csvViewer.pasteToggle', 'csvViewer.tryExample', 'csvViewer.pasteLabel',
+  'csvViewer.viewPasted', 'csvViewer.importSettings', 'csvViewer.separator',
+  'csvViewer.encoding', 'csvViewer.headersCheck', 'csvViewer.replaceFile',
+  'csvViewer.tableOverview', 'csvViewer.rows', 'csvViewer.columns',
+  'csvViewer.editedCells', 'csvViewer.searchAll', 'csvViewer.searchPlaceholder',
+  'csvViewer.filterColumn', 'csvViewer.allColumns', 'csvViewer.contains',
+  'csvViewer.filterPlaceholder', 'csvViewer.showIrregular', 'csvViewer.gridTip',
+  'csvViewer.tableAria', 'csvViewer.emptyFiltered', 'csvViewer.columnDetails',
+  'csvViewer.chooseColumn', 'csvViewer.exportData', 'csvViewer.exportDesc',
+  'csvViewer.rowsToExport', 'csvViewer.allRows', 'csvViewer.shownRows',
+  'csvViewer.downloadCsv', 'csvViewer.downloadJson', 'csvViewer.copyTsv',
+  'csvViewer.revertEdits', 'csvViewer.copied', 'csvViewer.showingRows',
+  'csvViewer.profileValues', 'csvViewer.profileBlanks', 'csvViewer.profileDistinct',
+  'csvViewer.profileExamples', 'csvViewer.errTooLarge', 'csvViewer.errTooManyColumns',
+  'csvViewer.errEmpty', 'csvViewer.errRead', 'csvViewer.errWorker',
+  'csvViewer.confirmRevert', 'csvViewer.sepAuto', 'csvViewer.sepComma',
+  'csvViewer.sepSemicolon', 'csvViewer.sepTab', 'csvViewer.sepPipe',
+  'csvViewer.metaSeparated', 'csvViewer.metaPasted', 'csvViewer.metaIrregular.one',
+  'csvViewer.metaIrregular.other', 'csvViewer.reading', 'csvViewer.errReadGeneric',
+  'csvViewer.errReadRow', 'csvViewer.errLargeMemory', 'csvViewer.sortHeader',
+  'csvViewer.emptyCell', 'csvViewer.cellAria', 'csvViewer.cellEmpty',
+  'csvViewer.editCellAria', 'csvViewer.profileNone', 'csvViewer.statusReverted',
+  'csvViewer.statusCsvDownloaded', 'csvViewer.statusJsonDownloaded',
+  'csvViewer.statusCopied', 'csvViewer.errClipboard'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="drop csv-viewer" id="csv-viewer" data-strings={JSON.stringify(strings)} data-locale={locale}>
   <div class="viewer-import" id="viewer-import">
-    <h2 class="drop-title">Open a CSV file</h2>
-    <p class="drop-hint">Drop a file here, choose one from your device, or paste CSV text. Your data stays in this browser tab.</p>
+    <h2 class="drop-title">{t('csvViewer.openTitle', locale)}</h2>
+    <p class="drop-hint">{t('csvViewer.openHint', locale)}</p>
     <div class="actions">
       <input class="visually-hidden" id="viewer-file" type="file" accept=".csv,.tsv,.tab,.txt,text/csv,text/tab-separated-values" />
-      <button class="btn" id="viewer-choose" type="button">Choose a file</button>
-      <button class="btn alt" id="viewer-paste-toggle" type="button" aria-expanded="false" aria-controls="viewer-paste-panel">Paste CSV</button>
-      <button class="text-button" id="viewer-example" type="button">Try an example</button>
+      <button class="btn" id="viewer-choose" type="button">{t('csvViewer.chooseFile', locale)}</button>
+      <button class="btn alt" id="viewer-paste-toggle" type="button" aria-expanded="false" aria-controls="viewer-paste-panel">{t('csvViewer.pasteToggle', locale)}</button>
+      <button class="text-button" id="viewer-example" type="button">{t('csvViewer.tryExample', locale)}</button>
     </div>
     <div id="viewer-paste-panel" class="viewer-paste" hidden>
-      <label class="field-label" for="viewer-paste">CSV or TSV text</label>
+      <label class="field-label" for="viewer-paste">{t('csvViewer.pasteLabel', locale)}</label>
       <textarea id="viewer-paste" class="json-input" rows="7" spellcheck="false" autocapitalize="off" placeholder={'name,city,orders\nAda,London,12\nGrace,New York,8'}></textarea>
-      <button class="btn" id="viewer-open-paste" type="button">View pasted data</button>
+      <button class="btn" id="viewer-open-paste" type="button">{t('csvViewer.viewPasted', locale)}</button>
     </div>
-    <details class="viewer-options"><summary>Import settings</summary><div class="viewer-option-grid">
-      <label><span class="field-label">Separator</span><select id="viewer-separator" class="tool-select"><option value="auto">Auto detect</option><option value="comma">Comma</option><option value="semicolon">Semicolon</option><option value="tab">Tab</option><option value="pipe">Pipe</option></select></label>
-      <label><span class="field-label">File encoding</span><select id="viewer-encoding" class="tool-select"><option value="auto">Auto detect</option><option value="utf-8">UTF-8</option><option value="utf-16le">UTF-16 LE</option><option value="utf-16be">UTF-16 BE</option><option value="windows-1252">Windows-1252</option></select></label>
-      <label class="viewer-checkbox"><input id="viewer-headers" type="checkbox" checked /> First row contains column names</label>
+    <details class="viewer-options"><summary>{t('csvViewer.importSettings', locale)}</summary><div class="viewer-option-grid">
+      <label><span class="field-label">{t('csvViewer.separator', locale)}</span><select id="viewer-separator" class="tool-select"><option value="auto">{t('csvViewer.sepAuto', locale)}</option><option value="comma">{t('csvViewer.sepComma', locale)}</option><option value="semicolon">{t('csvViewer.sepSemicolon', locale)}</option><option value="tab">{t('csvViewer.sepTab', locale)}</option><option value="pipe">{t('csvViewer.sepPipe', locale)}</option></select></label>
+      <label><span class="field-label">{t('csvViewer.encoding', locale)}</span><select id="viewer-encoding" class="tool-select"><option value="auto">Auto detect</option><option value="utf-8">UTF-8</option><option value="utf-16le">UTF-16 LE</option><option value="utf-16be">UTF-16 BE</option><option value="windows-1252">Windows-1252</option></select></label>
+      <label class="viewer-checkbox"><input id="viewer-headers" type="checkbox" checked /> {t('csvViewer.headersCheck', locale)}</label>
     </div></details>
     <p id="viewer-import-status" class="status" role="status" aria-live="polite" hidden></p>
   </div>
 
   <div class="viewer-workspace" id="viewer-workspace" hidden>
-    <div class="viewer-file-head"><div><h2 id="viewer-filename" class="panel-title"></h2><p id="viewer-filemeta" class="viewer-muted"></p></div><div class="actions"><button class="btn alt" id="viewer-replace" type="button">Open another file</button></div></div>
-    <div class="viewer-stats" aria-label="Table overview"><div><strong id="viewer-row-count">0</strong><span>Rows</span></div><div><strong id="viewer-column-count">0</strong><span>Columns</span></div><div><strong id="viewer-edit-count">0</strong><span>Edited cells</span></div></div>
+    <div class="viewer-file-head"><div><h2 id="viewer-filename" class="panel-title"></h2><p id="viewer-filemeta" class="viewer-muted"></p></div><div class="actions"><button class="btn alt" id="viewer-replace" type="button">{t('csvViewer.replaceFile', locale)}</button></div></div>
+    <div class="viewer-stats" aria-label={t('csvViewer.tableOverview', locale)}><div><strong id="viewer-row-count">0</strong><span>{t('csvViewer.rows', locale)}</span></div><div><strong id="viewer-column-count">0</strong><span>{t('csvViewer.columns', locale)}</span></div><div><strong id="viewer-edit-count">0</strong><span>{t('csvViewer.editedCells', locale)}</span></div></div>
     <div class="viewer-toolbar">
-      <label class="viewer-search-label"><span class="field-label">Search all columns</span><input id="viewer-search" class="tool-select" type="search" placeholder="Find rows…" autocomplete="off" /></label>
-      <label><span class="field-label">Filter column</span><select id="viewer-filter-column" class="tool-select"><option value="">All columns</option></select></label>
-      <label class="viewer-filter-label"><span class="field-label">Contains</span><input id="viewer-filter" class="tool-select" type="search" placeholder="Filter value…" autocomplete="off" /></label>
+      <label class="viewer-search-label"><span class="field-label">{t('csvViewer.searchAll', locale)}</span><input id="viewer-search" class="tool-select" type="search" placeholder={t('csvViewer.searchPlaceholder', locale)} autocomplete="off" /></label>
+      <label><span class="field-label">{t('csvViewer.filterColumn', locale)}</span><select id="viewer-filter-column" class="tool-select"><option value="">{t('csvViewer.allColumns', locale)}</option></select></label>
+      <label class="viewer-filter-label"><span class="field-label">{t('csvViewer.contains', locale)}</span><input id="viewer-filter" class="tool-select" type="search" placeholder={t('csvViewer.filterPlaceholder', locale)} autocomplete="off" /></label>
     </div>
-    <label id="viewer-irregular-wrap" class="viewer-irregular" hidden><input id="viewer-irregular" type="checkbox" /> Show only rows with a different field count</label>
-    <div class="viewer-grid-head"><p id="viewer-showing" aria-live="polite"></p><p>Click a header to sort. Click a cell to edit.</p></div>
-    <div class="viewer-table-scroll" id="viewer-scroll" role="region" aria-label="CSV data table" tabindex="0"><table id="viewer-table"><thead id="viewer-thead"></thead><tbody id="viewer-tbody"></tbody></table></div>
-    <p id="viewer-empty" class="viewer-empty" hidden>No rows match these filters. Clear the search or column filter to see more rows.</p>
-    <div class="viewer-inspector"><div><h3>Column details</h3><label class="field-label" for="viewer-inspect-column">Choose a column</label><select id="viewer-inspect-column" class="tool-select"></select></div><dl id="viewer-profile"></dl></div>
-    <div class="viewer-export"><div><h3>Export data</h3><p class="viewer-muted">Edits are included. Choose whether to export every row or just the rows currently shown.</p></div><div class="viewer-export-actions"><label><span class="field-label">Rows to export</span><select id="viewer-export-scope" class="tool-select"><option value="all">All rows</option><option value="visible">Shown rows</option></select></label><div class="actions"><button class="btn" id="viewer-download-csv" type="button">Download CSV</button><button class="btn alt" id="viewer-download-json" type="button">Download JSON</button><button class="btn alt" id="viewer-copy" type="button">Copy as TSV</button><button class="text-button" id="viewer-revert" type="button" disabled>Revert edits</button></div></div></div>
+    <label id="viewer-irregular-wrap" class="viewer-irregular" hidden><input id="viewer-irregular" type="checkbox" /> {t('csvViewer.showIrregular', locale)}</label>
+    <div class="viewer-grid-head"><p id="viewer-showing" aria-live="polite"></p><p>{t('csvViewer.gridTip', locale)}</p></div>
+    <div class="viewer-table-scroll" id="viewer-scroll" role="region" aria-label={t('csvViewer.tableAria', locale)} tabindex="0"><table id="viewer-table"><thead id="viewer-thead"></thead><tbody id="viewer-tbody"></tbody></table></div>
+    <p id="viewer-empty" class="viewer-empty" hidden>{t('csvViewer.emptyFiltered', locale)}</p>
+    <div class="viewer-inspector"><div><h3>{t('csvViewer.columnDetails', locale)}</h3><label class="field-label" for="viewer-inspect-column">{t('csvViewer.chooseColumn', locale)}</label><select id="viewer-inspect-column" class="tool-select"></select></div><dl id="viewer-profile"></dl></div>
+    <div class="viewer-export"><div><h3>{t('csvViewer.exportData', locale)}</h3><p class="viewer-muted">{t('csvViewer.exportDesc', locale)}</p></div><div class="viewer-export-actions"><label><span class="field-label">{t('csvViewer.rowsToExport', locale)}</span><select id="viewer-export-scope" class="tool-select"><option value="all">{t('csvViewer.allRows', locale)}</option><option value="visible">{t('csvViewer.shownRows', locale)}</option></select></label><div class="actions"><button class="btn" id="viewer-download-csv" type="button">{t('csvViewer.downloadCsv', locale)}</button><button class="btn alt" id="viewer-download-json" type="button">{t('csvViewer.downloadJson', locale)}</button><button class="btn alt" id="viewer-copy" type="button">{t('csvViewer.copyTsv', locale)}</button><button class="text-button" id="viewer-revert" type="button" disabled>{t('csvViewer.revertEdits', locale)}</button></div></div></div>
     <p id="viewer-status" class="status" role="status" aria-live="polite" hidden></p>
   </div>
 </div>
@@ -83,7 +119,7 @@
   .viewer-inspector, .viewer-export { border-block-start: 1px solid var(--line); margin-block-start: 24px; padding-block-start: 24px; }
   .viewer-inspector { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
   .viewer-inspector h3, .viewer-export h3 { margin: 0 0 12px; font-size: 22px; font-stretch: 88%; }
-  .viewer-inspector dl { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px 20px; margin: 0; }
+  .viewer-inspector dl { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px 20px; margin: 0; }
   :global(#viewer-profile div) { min-width: 0; }
   :global(#viewer-profile dt) { color: var(--slate); font-size: 14px; }
   :global(#viewer-profile dd) { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }

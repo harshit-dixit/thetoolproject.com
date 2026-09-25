@@ -1,0 +1,422 @@
+---
+import ToolLayout from '../layouts/Tool.astro';
+import RichText from '../components/RichText.astro';
+import HomePage from '../components/pages/HomePage.astro';
+import AboutPage from '../components/pages/AboutPage.astro';
+import ContactPage from '../components/pages/ContactPage.astro';
+import PrivacyPage from '../components/pages/PrivacyPage.astro';
+import TermsPage from '../components/pages/TermsPage.astro';
+import TextToolFrame from '../components/TextToolFrame.astro';
+import ExcelToCsvTool from '../components/ExcelToCsvTool.astro';
+import DbfToExcelTool from '../components/DbfToExcelTool.astro';
+import JsonToExcelTool from '../components/JsonToExcelTool.astro';
+import JsonToCsvTool from '../components/JsonToCsvTool.astro';
+import XmlToCsvTool from '../components/XmlToCsvTool.astro';
+import XmlToJsonTool from '../components/XmlToJsonTool.astro';
+import CsvToSqlTool from '../components/CsvToSqlTool.astro';
+import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
+import CsvViewerTool from '../components/CsvViewerTool.astro';
+import CsvToJsonTool from '../components/CsvToJsonTool.astro';
+import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
+import ImageTool from '../components/ImageTool.astro';
+import CompressPdfTool from '../components/CompressPdfTool.astro';
+import { tools, publishedToolLocales, getPublishedToolPath, type Locale, type Tool, type ToolLocale } from '../data/tools';
+import { sitePages, publishedPageLocales, type SitePage, type PageLocale } from '../data/pages';
+import { t, type TranslationKey } from '../i18n/utils';
+
+export function getStaticPaths() {
+  const toolPaths = Object.values(tools).flatMap(tool =>
+    publishedToolLocales(tool).map(([locale, entry]) => ({
+      params: { path: entry.path.replace(/^\/|\/$/g, '') || undefined },
+      props: { kind: 'tool' as const, locale, entry, tool }
+    }))
+  );
+
+  const pagePaths = Object.values(sitePages).flatMap(page =>
+    publishedPageLocales(page)
+      .filter(([locale]) => !(page.id === 'notFound' && locale === 'en'))
+      .map(([locale, entry]) => ({
+        params: { path: entry.path.replace(/^\/|\/$/g, '') || undefined },
+        props: { kind: 'page' as const, locale, entry, page }
+      }))
+  );
+
+  return [...toolPaths, ...pagePaths];
+}
+
+type Props =
+  | { kind: 'tool'; locale: Locale; entry: ToolLocale; tool: Tool }
+  | { kind: 'page'; locale: Locale; entry: PageLocale; page: SitePage };
+
+const props = Astro.props;
+const locale = props.locale;
+const isTool = props.kind === 'tool';
+const tool = isTool ? props.tool : undefined;
+const entry = isTool ? props.entry : undefined;
+const alternates = isTool && tool ? Object.fromEntries(publishedToolLocales(tool).map(([lang, item]) => [lang, item.path])) : {};
+const pdfTarget = isTool && tool ? ({ 'compress-pdf-to-100kb': 100, 'compress-pdf-to-200kb': 200, 'compress-pdf-to-500kb': 500 } as Record<string, 100 | 200 | 500>)[tool.id] : undefined;
+
+const excelRows: [TranslationKey, TranslationKey][] = [
+  ['excel.howNumbers', 'excel.howNumbersResult'],
+  ['excel.howDates', 'excel.howDatesResult'],
+  ['excel.howFormulas', 'excel.howFormulasResult'],
+  ['excel.howMerged', 'excel.howMergedResult'],
+  ['excel.howHidden', 'excel.howHiddenResult'],
+  ['excel.howFormatting', 'excel.howFormattingResult'],
+];
+const jsonExcelRows: [TranslationKey, TranslationKey][] = [
+  ['jsonExcel.howArray', 'jsonExcel.howArrayResult'],
+  ['jsonExcel.howObject', 'jsonExcel.howObjectResult'],
+  ['jsonExcel.howList', 'jsonExcel.howListResult'],
+  ['jsonExcel.howSimpleList', 'jsonExcel.howSimpleListResult'],
+  ['jsonExcel.howRoot', 'jsonExcel.howRootResult'],
+  ['jsonExcel.howGrid', 'jsonExcel.howGridResult'],
+];
+---
+{props.kind === 'page' && (
+  <>
+    {props.page.id === 'home' && <HomePage locale={locale} />}
+    {props.page.id === 'about' && <AboutPage locale={locale} />}
+    {props.page.id === 'contact' && <ContactPage locale={locale} />}
+    {props.page.id === 'privacy' && <PrivacyPage locale={locale} />}
+    {props.page.id === 'terms' && <TermsPage locale={locale} />}
+  </>
+)}
+{isTool && tool && entry && (
+  <ToolLayout locale={locale} entry={entry} category={tool.category} alternates={alternates}>
+    <main class="wrap">
+      {tool.id === 'compress-pdf' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('compressPdf.leadStrong', locale)}</strong> {t('compressPdf.lead', locale)}</p><p class="caption">{t('compressPdf.caption', locale)}</p></div></div>
+        <CompressPdfTool locale={locale} />
+        <section aria-labelledby="pdf-how-title"><div class="sec-head"><h2 id="pdf-how-title">{t('compressPdf.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('compressPdf.howIntro', locale, { button: t('pdf.compressButton', locale) })} /></p>
+          <h3>{t('compressPdf.howKeepTitle', locale)}</h3>
+          <p><RichText text={t('compressPdf.howKeepP1', locale, { keepText: t('pdf.keepText', locale), makeSmaller: t('pdf.makeSmaller', locale) })} /></p>
+          <p>{t('compressPdf.howKeepP2', locale)}</p>
+          <h3>{t('compressPdf.howLimitTitle', locale)}</h3>
+          <p><RichText
+            text={t('compressPdf.howLimitP', locale)}
+            links={{
+              jpg100: getPublishedToolPath('compressPdf100kb', locale)
+            }}
+            params={{
+              jpg100Label: '100KB'
+            }}
+          /></p>
+          <h3>{t('compressPdf.faqTitle', locale)}</h3>
+          <p><strong>{t('compressPdf.faqQ1', locale)}</strong> {t('compressPdf.faqA1', locale)}</p>
+          <p><strong>{t('compressPdf.faqQ2', locale)}</strong> {t('compressPdf.faqA2', locale)}</p>
+          <p><strong>{t('compressPdf.faqQ3', locale)}</strong> {t('compressPdf.faqA3', locale)}</p>
+        </div></section>
+      </>}
+      {pdfTarget && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('compressPdf.target.leadStrong', locale, { target: pdfTarget })}</strong> {t('compressPdf.target.lead', locale)}</p><p class="caption">{t('compressPdf.target.caption', locale, { target: pdfTarget, bytes: pdfTarget * 1024 })}</p></div></div>
+        <CompressPdfTool locale={locale} targetKb={pdfTarget} />
+        <section aria-labelledby="pdf-target-how-title"><div class="sec-head"><h2 id="pdf-target-how-title">{t('compressPdf.target.howTitle', locale, { target: pdfTarget })}</h2></div><div class="how-copy">
+          <p><RichText text={t('compressPdf.target.howP1', locale, { target: pdfTarget, button: t('pdf.compressButton', locale) })} /></p>
+          <p><RichText text={t('compressPdf.target.howP2', locale, { keepText: t('pdf.keepText', locale) })} /></p>
+          <p>{t('compressPdf.target.howP3', locale, { target: pdfTarget })}</p>
+          {pdfTarget === 100 && <p>{t('compressPdf.target.how100', locale)}</p>}
+          {pdfTarget === 200 && <p>{t('compressPdf.target.how200', locale)}</p>}
+          {pdfTarget === 500 && <p>{t('compressPdf.target.how500', locale)}</p>}
+          <p><RichText
+            text={t('compressPdf.target.howOther', locale)}
+            links={{
+              target1: pdfTarget === 100 ? getPublishedToolPath('compressPdf200kb', locale) : getPublishedToolPath('compressPdf100kb', locale),
+              target2: pdfTarget === 500 ? getPublishedToolPath('compressPdf200kb', locale) : getPublishedToolPath('compressPdf500kb', locale),
+              main: getPublishedToolPath('compressPdf', locale)
+            }}
+            params={{
+              target1Label: pdfTarget === 100 ? '200KB' : '100KB',
+              target2Label: pdfTarget === 500 ? '200KB' : '500KB',
+              mainLabel: t('compressPdf.target.generalLinkText', locale)
+            }}
+          /></p>
+        </div></section>
+      </>}
+      {tool.id === 'image-resizer' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('imageResizer.leadStrong', locale)}</strong> {t('imageResizer.lead', locale)}</p><p class="caption">{t('imageResizer.caption', locale)}</p></div></div>
+        <ImageTool locale={locale} mode="resize" />
+        <section aria-labelledby="image-how-title"><div class="sec-head"><h2 id="image-how-title">{t('imageResizer.howTitle', locale)}</h2><p>{t('imageResizer.howSubtitle', locale)}</p></div><div class="how-copy">
+          <p>{t('imageResizer.howIntro', locale)}</p>
+          <h3>{t('imageResizer.howBatchTitle', locale)}</h3>
+          <p><RichText text={t('imageResizer.howBatchP', locale, { zipButton: t('image.downloadAllZip', locale) })} /></p>
+          <h3>{t('imageResizer.howCmTitle', locale)}</h3>
+          <p><RichText text={t('imageResizer.howCmP', locale)} /></p>
+          <h3>{t('imageResizer.howKbTitle', locale)}</h3>
+          <p><RichText
+            text={t('imageResizer.howKbP', locale)}
+            links={{
+              jpg100: getPublishedToolPath('compressJpg100kb', locale),
+              jpg50: getPublishedToolPath('compressJpg50kb', locale)
+            }}
+            params={{
+              jpg100Label: t('compressJpg100kb.h1', locale),
+              jpg50Label: t('compressJpg50kb.h1', locale)
+            }}
+          /></p>
+          <h3>{t('imageResizer.howFormatsTitle', locale)}</h3>
+          <p>{t('imageResizer.howFormatsP', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'compress-jpg-to-100kb' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('compressJpg.leadStrong', locale, { target: 100 })}</strong> {t('compressJpg.lead', locale, { target: 100 })}</p><p class="caption">{t('compressJpg.caption', locale)}</p></div></div>
+        <ImageTool locale={locale} mode="compress" targetKb={100} />
+        <section aria-labelledby="jpg-how-title"><div class="sec-head"><h2 id="jpg-how-title">{t('compressJpg.howTitle', locale, { target: 100 })}</h2></div><div class="how-copy">
+          <p>{t('compressJpg.howP1', locale, { target: 100, bytes: '102,400', fileSizeText: t('compressJpg.fileSizePlain', locale) })}</p>
+          <p>{t('compressJpg.howP2', locale, { target: 100 })}</p>
+          <p><RichText
+            text={t('compressJpg.how100Other', locale)}
+            links={{
+              jpg50: getPublishedToolPath('compressJpg50kb', locale),
+              resizer: getPublishedToolPath('imageResizer', locale)
+            }}
+            params={{
+              jpg50Label: t('compressJpg50kb.h1', locale),
+              resizerLabel: t('imageResizer.h1', locale).toLowerCase()
+            }}
+          /></p>
+        </div></section>
+      </>}
+      {tool.id === 'compress-jpg-to-50kb' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('compressJpg.leadStrong', locale, { target: 50 })}</strong> {t('compressJpg.lead', locale, { target: 50 })}</p><p class="caption">{t('compressJpg.caption', locale)}</p></div></div>
+        <ImageTool locale={locale} mode="compress" targetKb={50} />
+        <section aria-labelledby="jpg-50-how-title"><div class="sec-head"><h2 id="jpg-50-how-title">{t('compressJpg.howTitle', locale, { target: 50 })}</h2></div><div class="how-copy">
+          <p>{t('compressJpg.howP1', locale, { target: 50, bytes: '51,200', fileSizeText: t('compressJpg.fileSizeExact', locale) })}</p>
+          <p>{t('compressJpg.howP2', locale, { target: 50 })}</p>
+          <p><RichText
+            text={t('compressJpg.how50Other', locale)}
+            links={{
+              jpg100: getPublishedToolPath('compressJpg100kb', locale),
+              resizer: getPublishedToolPath('imageResizer', locale)
+            }}
+            params={{
+              jpg100Label: t('compressJpg100kb.h1', locale),
+              resizerLabel: t('imageResizer.h1', locale).toLowerCase()
+            }}
+          /></p>
+        </div></section>
+      </>}
+      {tool.id === 'qr-code-scanner' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('qrScanner.leadStrong', locale)}</strong> {t('qrScanner.lead', locale)}</p><p class="caption">{t('qrScanner.caption', locale)}</p></div></div>
+        <QrCodeScannerTool locale={locale} />
+        <section aria-labelledby="qr-how-title"><div class="sec-head"><h2 id="qr-how-title">{t('qrScanner.howTitle', locale)}</h2><p>{t('qrScanner.howSubtitle', locale)}</p></div><div class="how-copy">
+          <h3>{t('qrScanner.howCameraTitle', locale)}</h3>
+          <p>{t('qrScanner.howCameraP', locale)}</p>
+          <h3>{t('qrScanner.howImageTitle', locale)}</h3>
+          <p><RichText text={t('qrScanner.howImageP', locale, { imageTab: t('qr.imageTab', locale).split(' ')[0] })} /></p>
+          <h3>{t('qrScanner.howResultTitle', locale)}</h3>
+          <p><RichText text={t('qrScanner.howResultP1', locale)} /></p>
+          <p>{t('qrScanner.howResultP2', locale)}</p>
+          <h3>{t('qrScanner.faqTitle', locale)}</h3>
+          <p><strong>{t('qrScanner.faqQ1', locale)}</strong> {t('qrScanner.faqA1', locale)}</p>
+          <p><strong>{t('qrScanner.faqQ2', locale)}</strong> {t('qrScanner.faqA2', locale)}</p>
+          <p><strong>{t('qrScanner.faqQ3', locale)}</strong> {t('qrScanner.faqA3', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'csv-to-json' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('csvJson.leadStrong', locale)}</strong> {t('csvJson.lead', locale)}</p><p class="caption">{t('csvJson.caption', locale)}</p></div></div>
+        <CsvToJsonTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('csvJson.howTitle', locale)}</h2></div><div class="how-copy">
+          <p>{t('csvJson.howIntro', locale)}</p>
+          <h3>{t('csvJson.howMapTitle', locale)}</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('csvJson.howInput', locale)}</th><th scope="col">{t('csvJson.howResult', locale)}</th></tr></thead><tbody>
+            <tr><td>{t('csvJson.howFirstRow', locale)}</td><td>{t('csvJson.howFirstRowResult', locale)}</td></tr>
+            <tr><td>{t('csvJson.howNoHeader', locale)}</td><td><RichText text={t('csvJson.howNoHeaderResult', locale, { col1: 'Column 1', col2: 'Column 2' })} /></td></tr>
+            <tr><td><code>001</code>, <code>true</code>, empty cell</td><td><RichText text={t('csvJson.howValuesResult', locale)} /></td></tr>
+            <tr><td>{t('csvJson.howQuotes', locale)}</td><td>{t('csvJson.howQuotesResult', locale)}</td></tr>
+          </tbody></table></div>
+          <p>{t('csvJson.howSeparators', locale)}</p>
+          <p><RichText text={t('csvJson.howOutput', locale)} /></p>
+          <p><RichText
+            text={t('csvJson.howLimits', locale)}
+            links={{
+              csvSql: getPublishedToolPath('csvToSql', locale),
+              csvViewer: getPublishedToolPath('csvViewer', locale)
+            }}
+            params={{
+              csvSqlLabel: t('csvSql.h1', locale),
+              csvViewerLabel: t('csvViewer.h1', locale)
+            }}
+          /></p>
+        </div></section>
+      </>}
+      {tool.id === 'csv-viewer' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('csvViewer.leadStrong', locale)}</strong> {t('csvViewer.lead', locale)}</p><p class="caption">{t('csvViewer.caption', locale)}</p></div></div>
+        <CsvViewerTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('csvViewer.howTitle', locale)}</h2></div><div class="how-copy">
+          <p>{t('csvViewer.howIntro', locale)}</p>
+          <h3>{t('csvViewer.howExploreTitle', locale)}</h3>
+          <p>{t('csvViewer.howExploreP1', locale)}</p>
+          <p>{t('csvViewer.howExploreP2', locale)}</p>
+          <h3>{t('csvViewer.howSaveTitle', locale)}</h3>
+          <p><RichText text={t('csvViewer.howSaveP1', locale)} /></p>
+          <p>{t('csvViewer.howSaveP2', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'json-beautifier' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('jsonBeautifier.leadStrong', locale)}</strong> {t('jsonBeautifier.lead', locale)}</p><p class="caption">{t('jsonBeautifier.caption', locale)}</p></div></div>
+        <JsonBeautifierTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('jsonBeautifier.howTitle', locale)}</h2></div><div class="how-copy">
+          <p>{t('jsonBeautifier.howP1', locale)}</p>
+          <p>{t('jsonBeautifier.howP2', locale)}</p>
+          <p>{t('jsonBeautifier.howP3', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'csv-to-sql' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('csvSql.leadStrong', locale)}</strong> {t('csvSql.lead', locale)}</p><p class="caption">{t('csvSql.caption', locale)}</p></div></div>
+        <CsvToSqlTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('csvSql.howTitle', locale)}</h2></div><div class="how-copy">
+          <p>{t('csvSql.howIntro', locale)}</p>
+          <h3>{t('csvSql.howValuesTitle', locale)}</h3>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('csvSql.howInput', locale)}</th><th scope="col">{t('csvSql.howOutput', locale)}</th></tr></thead><tbody>
+            <tr><td><code>001</code></td><td><RichText text={t('csvSql.howExample1Desc', locale)} /></td></tr>
+            <tr><td><code>O'Neil</code></td><td><RichText text={t('csvSql.howExample2Desc', locale)} /></td></tr>
+            <tr><td>An empty field</td><td><RichText text={t('csvSql.howExample3Desc', locale)} /></td></tr>
+            <tr><td>{t('csvSql.howExample4', locale)}</td><td>{t('csvSql.howExample4Desc', locale)}</td></tr>
+          </tbody></table></div>
+          <p>{t('csvSql.howSeparators', locale)}</p>
+          <p><RichText text={t('csvSql.howLimits', locale)} /></p>
+        </div></section>
+      </>}
+      {tool.id === 'json-to-html' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('tool.leadStrong', locale)}</strong> {t('tool.lead', locale)}</p><p class="caption">{t('tool.caption', locale)}</p></div></div>
+        <TextToolFrame locale={locale} />
+        <section aria-labelledby="how-title">
+          <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+          <div class="how-copy">
+            <p>{t('how.intro', locale)}</p>
+            <h3>{t('how.mapTitle', locale)}</h3>
+            <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('how.yourJson', locale)}</th><th scope="col">{t('how.youGet', locale)}</th></tr></thead>
+              <tbody>
+                <tr><td>{t('how.arrayObjects', locale)}</td><td>{t('how.arrayObjectsResult', locale)}</td></tr>
+                <tr><td>{t('how.object', locale)}</td><td>{t('how.objectResult', locale)}</td></tr>
+                <tr><td>{t('how.nested', locale)}</td><td>{t('how.nestedResult', locale)}</td></tr>
+                <tr><td>{t('how.simple', locale)}</td><td>{t('how.simpleResult', locale)}</td></tr>
+              </tbody></table></div>
+            <p>{t('how.layouts', locale)}</p><p>{t('how.outputs', locale)}</p><p>{t('how.limits', locale)}</p><p>{t('how.errors', locale)}</p>
+          </div>
+        </section>
+      </>}
+      {tool.id === 'excel-to-csv' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('excel.leadStrong', locale)}</strong> {t('excel.lead', locale)}</p><p class="caption">{t('excel.caption', locale)}</p></div></div>
+        <ExcelToCsvTool locale={locale} />
+        <section aria-labelledby="how-title">
+          <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+          <div class="how-copy">
+            <p>{t('excel.howIntro', locale)}</p>
+            <h3>{t('excel.howMapTitle', locale)}</h3>
+            <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('excel.howInWorkbook', locale)}</th><th scope="col">{t('excel.howInCsv', locale)}</th></tr></thead>
+              <tbody>{excelRows.map(([what, result]) => <tr><td>{t(what, locale)}</td><td>{t(result, locale)}</td></tr>)}</tbody></table></div>
+            <p>{t('excel.howSeparators', locale)}</p><p>{t('excel.howEncoding', locale)}</p><p>{t('excel.howLimits', locale)}</p><p>{t('excel.howErrors', locale)}</p>
+          </div>
+        </section>
+      </>}
+      {tool.id === 'json-to-excel' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('jsonExcel.leadStrong', locale)}</strong> {t('jsonExcel.lead', locale)}</p><p class="caption">{t('jsonExcel.caption', locale)}</p></div></div>
+        <JsonToExcelTool locale={locale} />
+        <section aria-labelledby="how-title">
+          <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+          <div class="how-copy">
+            <p>{t('jsonExcel.howIntro', locale)}</p>
+            <h3>{t('jsonExcel.howMapTitle', locale)}</h3>
+            <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('jsonExcel.howYourJson', locale)}</th><th scope="col">{t('jsonExcel.howInWorkbook', locale)}</th></tr></thead>
+              <tbody>{jsonExcelRows.map(([what, result]) => <tr><td>{t(what, locale)}</td><td>{t(result, locale)}</td></tr>)}</tbody></table></div>
+            <p>{t('jsonExcel.howValues', locale)}</p><p>{t('jsonExcel.howNested', locale)}</p><p>{t('jsonExcel.howLimits', locale)}</p><p>{t('jsonExcel.howErrors', locale)}</p>
+          </div>
+        </section>
+      </>}
+      {tool.id === 'dbf-to-excel' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('dbfExcel.leadStrong', locale)}</strong> {t('dbfExcel.lead', locale)}</p><p class="caption">{t('dbfExcel.caption', locale)}</p></div></div>
+        <DbfToExcelTool locale={locale} />
+        <section aria-labelledby="dbf-how-title"><div class="sec-head"><h2 id="dbf-how-title">{t('dbfExcel.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('dbfExcel.howIntro', locale)} /></p>
+          <h3>{t('dbfExcel.howTypesTitle', locale)}</h3>
+          <p>{t('dbfExcel.howTypesP', locale)}</p>
+          <h3>{t('dbfExcel.howLimitsTitle', locale)}</h3>
+          <p><RichText text={t('dbfExcel.howLimitsP', locale)} /></p>
+          <h3>{t('dbfExcel.faqTitle', locale)}</h3>
+          <p><strong>{t('dbfExcel.faqQ1', locale)}</strong> {t('dbfExcel.faqA1', locale)}</p>
+          <p><strong>{t('dbfExcel.faqQ2', locale)}</strong> {t('dbfExcel.faqA2', locale)}</p>
+          <p><strong>{t('dbfExcel.faqQ3', locale)}</strong> {t('dbfExcel.faqA3', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'json-to-csv' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('jsonCsv.leadStrong', locale)}</strong> {t('jsonCsv.lead', locale)}</p><p class="caption">{t('jsonCsv.caption', locale)}</p></div></div>
+        <JsonToCsvTool locale={locale} />
+        <section aria-labelledby="how-title">
+          <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+          <div class="how-copy">
+            <p>{t('jsonCsv.howIntro', locale)}</p>
+            <h3>{t('jsonCsv.howMapTitle', locale)}</h3>
+            <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('jsonCsv.howYourJson', locale)}</th><th scope="col">{t('jsonCsv.howInCsv', locale)}</th></tr></thead><tbody>
+              <tr><td>{t('jsonCsv.howArray', locale)}</td><td>{t('jsonCsv.howArrayResult', locale)}</td></tr>
+              <tr><td>{t('jsonCsv.howObject', locale)}</td><td>{t('jsonCsv.howObjectResult', locale)}</td></tr>
+              <tr><td>{t('jsonCsv.howNested', locale)}</td><td>{t('jsonCsv.howNestedResult', locale)}</td></tr>
+              <tr><td>{t('jsonCsv.howList', locale)}</td><td>{t('jsonCsv.howListResult', locale)}</td></tr>
+              <tr><td>{t('jsonCsv.howGrid', locale)}</td><td>{t('jsonCsv.howGridResult', locale)}</td></tr>
+            </tbody></table></div>
+            <p>{t('jsonCsv.howFormat', locale)}</p><p>{t('jsonCsv.howSafety', locale)}</p><p>{t('jsonCsv.howLimits', locale)}</p>
+            <p><a href="/guides/json-to-csv/">{t('jsonCsv.guideLink', locale)}</a></p>
+          </div>
+        </section>
+      </>}
+      {tool.id === 'xml-to-csv' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('xmlCsv.leadStrong', locale)}</strong> {t('xmlCsv.lead', locale)}</p><p class="caption">{t('xmlCsv.caption', locale)}</p></div></div>
+        <XmlToCsvTool locale={locale} />
+        <section aria-labelledby="how-title">
+          <div class="sec-head"><h2 id="how-title">{t('how.title', locale)}</h2></div>
+          <div class="how-copy">
+            <p>{t('xmlCsv.howIntro', locale)}</p>
+            <h3>{t('xmlCsv.howMapTitle', locale)}</h3>
+            <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('xmlCsv.howYourXml', locale)}</th><th scope="col">{t('xmlCsv.howInCsv', locale)}</th></tr></thead><tbody>
+              <tr><td>{t('xmlCsv.howRecords', locale)}</td><td>{t('xmlCsv.howRecordsResult', locale)}</td></tr>
+              <tr><td>{t('xmlCsv.howAttributes', locale)}</td><td>{t('xmlCsv.howAttributesResult', locale)}</td></tr>
+              <tr><td>{t('xmlCsv.howNested', locale)}</td><td>{t('xmlCsv.howNestedResult', locale)}</td></tr>
+              <tr><td>{t('xmlCsv.howRepeated', locale)}</td><td>{t('xmlCsv.howRepeatedResult', locale)}</td></tr>
+            </tbody></table></div>
+            <h3>{t('xmlCsv.howStepsTitle', locale)}</h3>
+            <p>{t('xmlCsv.howSteps', locale)}</p>
+            <p>{t('xmlCsv.howFormat', locale)}</p><p>{t('xmlCsv.howSafety', locale)}</p><p>{t('xmlCsv.howLimits', locale)}</p>
+          </div>
+        </section>
+      </>}
+      {tool.id === 'xml-to-json' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('xmlJson.leadStrong', locale)}</strong> {t('xmlJson.lead', locale)}</p><p class="caption">{t('xmlJson.caption', locale)}</p></div></div>
+        <XmlToJsonTool locale={locale} />
+        <section aria-labelledby="how-title">
+          <div class="sec-head"><h2 id="how-title">{t('xmlJson.howTitle', locale)}</h2></div>
+          <div class="how-copy">
+            <p>{t('xmlJson.howIntro', locale)}</p>
+            <h3>{t('xmlJson.howRulesTitle', locale)}</h3>
+            <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('xmlJson.howInput', locale)}</th><th scope="col">{t('xmlJson.howOutput', locale)}</th></tr></thead><tbody>
+              <tr><td><code>&lt;name&gt;Maya&lt;/name&gt;</code></td><td><RichText text={t('xmlJson.howRule1Desc', locale)} /></td></tr>
+              <tr><td><code>&lt;order id="A-104"&gt;</code></td><td><RichText text={t('xmlJson.howRule2Desc', locale)} /></td></tr>
+              <tr><td>{t('xmlJson.howRule3', locale)}</td><td><RichText text={t('xmlJson.howRule3Desc', locale)} /></td></tr>
+              <tr><td>{t('xmlJson.howRule4', locale)}</td><td><RichText text={t('xmlJson.howRule4Desc', locale)} /></td></tr>
+              <tr><td>{t('xmlJson.howRule5', locale)}</td><td><RichText text={t('xmlJson.howRule5Desc', locale)} /></td></tr>
+            </tbody></table></div>
+            <h3>{t('xmlJson.howExampleTitle', locale)}</h3>
+            <p><RichText
+              text={t('xmlJson.howExampleP', locale)}
+              params={{
+                xml: '<person id="7"><name>Maya</name><name>Luis</name></person>',
+                json: '{"person":{"@_id":"7","name":["Maya","Luis"]}}'
+              }}
+            /></p>
+            <p><RichText text={t('xmlJson.howDetails', locale)} /></p>
+            <p><RichText
+              text={t('xmlJson.howLimits', locale)}
+              links={{
+                xmlCsv: getPublishedToolPath('xmlToCsv', locale)
+              }}
+              params={{
+                xmlCsvLabel: t('xmlCsv.h1', locale)
+              }}
+            /></p>
+          </div>
+        </section>
+      </>}
+    </main>
+  </ToolLayout>
+)}

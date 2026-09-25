@@ -1,0 +1,49 @@
+---
+import Text from '../../layouts/Text.astro';
+import RichText from '../RichText.astro';
+import { t } from '../../i18n/utils';
+import { sitePages, publishedPageLocales } from '../../data/pages';
+import type { Locale } from '../../data/tools';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const entry = sitePages.about.locales[locale] || sitePages.about.locales.en!;
+const alternates = Object.fromEntries(publishedPageLocales(sitePages.about).map(([lang, item]) => [lang, item.path]));
+---
+<Text locale={locale} title={entry.title} description={entry.description} heading={t('about.heading', locale)} lead={t('about.lead', locale)} path={entry.path} alternates={alternates}>
+  <p>{t('about.p1', locale)}</p>
+  <p>{t('about.p2', locale)}</p>
+
+  <h2>{t('about.h2Open', locale)}</h2>
+  <p>
+    <RichText
+      text={t('about.pOpen', locale)}
+      links={{
+        github: "https://github.com/harshit-dixit/thetoolproject.com",
+        license: "https://github.com/harshit-dixit/thetoolproject.com/blob/main/LICENSE"
+      }}
+      params={{
+        githubLink: t('about.githubLink', locale),
+        licenseLink: t('about.licenseLink', locale)
+      }}
+    />
+  </p>
+
+  <h2>{t('about.h2Help', locale)}</h2>
+  <p>
+    <RichText
+      text={t('about.pHelp', locale)}
+      links={{
+        issues: "https://github.com/harshit-dixit/thetoolproject.com/issues",
+        email: "mailto:hello@thetoolproject.com"
+      }}
+      params={{
+        issuesLink: t('about.issuesLink', locale),
+        emailLink: t('about.emailLink', locale)
+      }}
+    />
+  </p>
+</Text>

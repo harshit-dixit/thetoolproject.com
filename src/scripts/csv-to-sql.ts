@@ -2,6 +2,18 @@ import type { CsvSqlOptions, CsvSqlResult, CsvSqlErrorCode } from '../lib/csv-to
 import type { CsvSqlRequest } from '../workers/csv-to-sql';
 
 const root = document.querySelector<HTMLElement>('#csv-sql-tool')!;
+const locale = root.dataset.locale || 'en';
+const strings: Record<string, string> = JSON.parse(root.dataset.strings || '{}');
+const t = (key: string, vars?: Record<string, string | number>) => {
+  let text = strings[key] ?? key;
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      text = text.replaceAll(`{${k}}`, String(v));
+    }
+  }
+  return text;
+};
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = $<HTMLTextAreaElement>('csv-sql-input');
 const fileInput = $<HTMLInputElement>('csv-sql-file');
@@ -12,7 +24,7 @@ const code = $<HTMLPreElement>('csv-sql-code');
 const preview = $('csv-sql-preview');
 const copy = $<HTMLButtonElement>('csv-sql-copy');
 const convert = $<HTMLButtonElement>('csv-sql-convert');
-const formatter = new Intl.NumberFormat('en');
+const formatter = new Intl.NumberFormat(locale);
 const MAX_BYTES = 10 * 1024 * 1024;
 const TEXTAREA_LIMIT = 2 * 1024 * 1024;
 const CODE_LIMIT = 100000;
@@ -26,7 +38,11 @@ let view: 'sql' | 'table' = 'sql';
 
 function announce(message: string) { status.hidden = false; status.textContent = message; }
 function clearStatus() { status.hidden = true; status.textContent = ''; }
-function size(bytes: number) { return bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(1)} MB`; }
+function size(bytes: number) {
+  if (bytes < 1024) return `${formatter.format(bytes)} ${t('unit.bytes')}`;
+  if (bytes < 1048576) return `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1024)} ${t('unit.kb')}`;
+  return `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1048576)} ${t('unit.mb')}`;
+}
 function stopWorker() { if (busy) { worker?.terminate(); worker = undefined; busy = false; convert.disabled = false; } }
 function hideResult() { current = undefined; result.hidden = true; placeholder.hidden = false; code.textContent = ''; }
 function options(): CsvSqlOptions {
@@ -47,13 +63,22 @@ function showView(next: 'sql' | 'table') {
   code.hidden = view !== 'sql';
   preview.hidden = view !== 'table';
   $('csv-sql-note').textContent = !current ? '' : view === 'sql'
-    ? current.sql.length > CODE_LIMIT ? 'Showing the start of the SQL. Copy or download for the complete output.' : 'Copy or download the complete SQL.'
-    : `Showing ${formatter.format(current.preview.length)} of ${formatter.format(current.rows)} rows and up to 30 of ${formatter.format(current.columns)} columns. The SQL includes every row.`;
+    ? current.sql.length > CODE_LIMIT ? t('csvSql.noteSqlTruncated') : t('csvSql.noteSqlFull')
+    : t('csvSql.noteTable', {
+        shown: formatter.format(current.preview.length),
+        rows: formatter.format(current.rows),
+        columns: formatter.format(current.columns),
+      });
 }
 function showResult(data: CsvSqlResult) {
   current = data;
   result.hidden = false; placeholder.hidden = true;
-  $('csv-sql-summary').textContent = `${formatter.format(data.rows)} rows, ${formatter.format(data.columns)} columns · ${size(new Blob([data.sql]).size)} SQL · ${data.delimiter} input`;
+  $('csv-sql-summary').textContent = t('csvSql.summary', {
+    rows: formatter.format(data.rows),
+    columns: formatter.format(data.columns),
+    size: size(new Blob([data.sql]).size),
+    delimiter: data.delimiter,
+  });
   const head = document.createElement('thead');
   const headerRow = head.insertRow();
   for (const [index, value] of data.headers.slice(0, 30).entries()) {
@@ -67,26 +92,26 @@ function showResult(data: CsvSqlResult) {
   $<HTMLTableElement>('csv-sql-preview-table').replaceChildren(head, body);
   code.textContent = data.sql.slice(0, CODE_LIMIT);
   code.scrollTo(0, 0); preview.scrollTo(0, 0);
-  copy.textContent = 'Copy SQL';
+  copy.textContent = t('csvSql.copy');
   showView('sql'); clearStatus();
 }
 function errorMessage(error: { code: CsvSqlErrorCode | 'workerError'; row?: number }): string {
   switch (error.code) {
-    case 'empty': return 'Paste CSV or choose a file first.';
-    case 'invalidCsv': return `The CSV has an unmatched or misplaced quote near row ${formatter.format(error.row ?? 1)}. Check that quoted fields use two quotes for a literal quote.`;
-    case 'noRows': return 'No data rows were found. Add at least one row below the header, or turn off “First row contains column names”.';
-    case 'tooManyColumns': return 'This CSV has more than 500 columns. Split it into narrower files.';
-    case 'invalidTable': return 'Enter a table name, optionally with one schema prefix (schema.table).';
-    default: return 'The conversion stopped. Try a smaller CSV file or use a computer with more memory.';
+    case 'empty': return t('csvSql.errEmpty');
+    case 'invalidCsv': return t('csvSql.errInvalidCsv', { row: formatter.format(error.row ?? 1) });
+    case 'noRows': return t('csvSql.errNoRows');
+    case 'tooManyColumns': return t('csvSql.errTooManyColumns');
+    case 'invalidTable': return t('csvSql.errInvalidTable');
+    default: return t('csvSql.errWorker');
   }
 }
 function run() {
   const source = fileText ?? input.value;
   if (!source.trim()) { hideResult(); announce(errorMessage({ code: 'empty' })); input.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce('This file is over 10 MB. Choose a smaller CSV file.'); return; }
+  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('csvSql.errTooLarge')); return; }
   ++sequence; stopWorker();
   const id = sequence;
-  busy = true; convert.disabled = true; announce('Converting to SQL…');
+  busy = true; convert.disabled = true; announce(t('csvSql.working'));
   worker ??= new Worker(new URL('../workers/csv-to-sql.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<{ id: number; result?: CsvSqlResult; error?: { code: CsvSqlErrorCode | 'workerError'; row?: number } }>) => {
     if (event.data.id !== sequence) return;
@@ -98,25 +123,25 @@ function run() {
   worker.postMessage({ id, source, options: options() } satisfies CsvSqlRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(csv|tsv|txt)$/i.test(file.name)) { announce('Choose a .csv, .tsv or .txt file.'); return; }
-  if (file.size > MAX_BYTES) { announce('This file is over 10 MB. Choose a smaller CSV file.'); return; }
+  if (!/\.(csv|tsv|txt)$/i.test(file.name)) { announce(t('csvSql.errWrongType')); return; }
+  if (file.size > MAX_BYTES) { announce(t('csvSql.errTooLarge')); return; }
   ++sequence; stopWorker();
-  const id = sequence; announce('Reading file…');
+  const id = sequence; announce(t('csvSql.reading'));
   try {
     const content = await file.text();
     if (id !== sequence) return;
-    if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; $('csv-sql-hint').textContent = `Loaded ${file.name}. The file is too large to show in the text box.`; }
-    else { input.value = content; fileText = undefined; $('csv-sql-hint').textContent = 'Edit the CSV here, or choose another file.'; }
+    if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; $('csv-sql-hint').textContent = t('csvSql.loadedTooLarge', { name: file.name }); }
+    else { input.value = content; fileText = undefined; $('csv-sql-hint').textContent = t('csvSql.editHint'); }
     fileName = file.name; $('csv-sql-file-name').textContent = file.name; $('csv-sql-file-size').textContent = size(file.size); $('csv-sql-file-line').hidden = false;
-    hideResult(); announce(`Loaded ${file.name} (${size(file.size)}). Select Convert to SQL.`);
-  } catch { if (id === sequence) announce('The file could not be read. Try choosing it again.'); }
+    hideResult(); announce(t('csvSql.loadedReady', { name: file.name, size: size(file.size) }));
+  } catch { if (id === sequence) announce(t('csvSql.errRead')); }
 }
 $('csv-sql-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
 $('csv-sql-example').addEventListener('click', () => {
   ++sequence; stopWorker(); fileText = undefined; fileName = undefined;
   input.value = 'id,name,city,active\n001,Ada Lovelace,London,true\n002,"Grace, Jr.",New York,false\n003,O\'Neil,Dublin,true';
-  $('csv-sql-file-line').hidden = true; $('csv-sql-hint').textContent = 'Edit the CSV here, or choose a local file.';
+  $('csv-sql-file-line').hidden = true; $('csv-sql-hint').textContent = t('csvSql.exampleHint');
   hideResult(); clearStatus(); input.focus();
 });
 input.addEventListener('input', () => { ++sequence; stopWorker(); fileText = undefined; fileName = undefined; $('csv-sql-file-line').hidden = true; if (current) hideResult(); clearStatus(); });
@@ -137,17 +162,17 @@ copy.addEventListener('click', async () => {
     if (!navigator.clipboard?.writeText) throw Error();
     await navigator.clipboard.writeText(current.sql);
     if (current !== selected) return;
-    copy.textContent = 'Copied'; announce('SQL copied.');
+    copy.textContent = t('csvSql.copied'); announce(t('csvSql.sqlCopied'));
   } catch {
     if (current !== selected) return;
     showView('sql'); code.textContent = current.sql;
     const selection = window.getSelection(); const range = document.createRange(); range.selectNodeContents(code);
-    selection?.removeAllRanges(); selection?.addRange(range); announce('Clipboard unavailable. The full SQL is selected; copy it with your keyboard.');
+    selection?.removeAllRanges(); selection?.addRange(range); announce(t('csvSql.errClipboard'));
   }
 });
 $('csv-sql-reset').addEventListener('click', () => {
   ++sequence; stopWorker(); fileText = undefined; fileName = undefined; fileInput.value = ''; input.value = '';
-  $('csv-sql-file-line').hidden = true; $('csv-sql-hint').textContent = 'Paste CSV or choose a local .csv or .tsv file. You can also drop a file here.';
+  $('csv-sql-file-line').hidden = true; $('csv-sql-hint').textContent = t('csvSql.inputHint');
   hideResult(); clearStatus(); input.focus();
 });
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });

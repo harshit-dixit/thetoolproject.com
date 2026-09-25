@@ -1,0 +1,49 @@
+---
+import Text from '../../layouts/Text.astro';
+import RichText from '../RichText.astro';
+import { t } from '../../i18n/utils';
+import { sitePages, publishedPageLocales } from '../../data/pages';
+import type { Locale } from '../../data/tools';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const entry = sitePages.terms.locales[locale] || sitePages.terms.locales.en!;
+const alternates = Object.fromEntries(publishedPageLocales(sitePages.terms).map(([lang, item]) => [lang, item.path]));
+---
+<Text locale={locale} title={entry.title} description={entry.description} heading={t('terms.heading', locale)} lead={t('terms.lead', locale)} path={entry.path} alternates={alternates}>
+  <h2>{t('terms.h2Using', locale)}</h2>
+  <p>{t('terms.pUsing', locale)}</p>
+
+  <h2>{t('terms.h2Check', locale)}</h2>
+  <p>{t('terms.pCheck', locale)}</p>
+
+  <h2>{t('terms.h2Warranties', locale)}</h2>
+  <p>{t('terms.pWarranties', locale)}</p>
+
+  <h2>{t('terms.h2Open', locale)}</h2>
+  <p>
+    <RichText
+      text={t('terms.pOpen', locale)}
+      links={{
+        repo: "https://github.com/harshit-dixit/thetoolproject.com",
+        license: "https://github.com/harshit-dixit/thetoolproject.com/blob/main/LICENSE"
+      }}
+      params={{
+        repoLink: t('terms.repoLink', locale),
+        licenseLink: t('terms.licenseLink', locale)
+      }}
+    />
+  </p>
+
+  <h2>{t('terms.h2Changes', locale)}</h2>
+  <p>
+    <RichText
+      text={t('terms.pChanges', locale)}
+      links={{ email: "mailto:hello@thetoolproject.com" }}
+      params={{ emailLink: "hello@thetoolproject.com" }}
+    />
+  </p>
+</Text>

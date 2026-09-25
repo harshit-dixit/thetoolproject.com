@@ -1,29 +1,51 @@
-<div class="qr-tool" id="qr-tool">
-  <div class="qr-topline"><div><h2>Scan a code</h2><p>Choose a live camera or an image you already have.</p></div><span class="qr-private">Decoded on your device</span></div>
-  <div class="qr-modes" role="group" aria-label="Scan source">
-    <button type="button" id="qr-camera-tab" aria-pressed="true">Camera</button>
-    <button type="button" id="qr-image-tab" aria-pressed="false">Image or screenshot</button>
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'qr.heading', 'qr.subheading', 'qr.private', 'qr.modesAria', 'qr.cameraTab',
+  'qr.imageTab', 'qr.videoAria', 'qr.cameraPreviewPlaceholder', 'qr.startCamera',
+  'qr.stopCamera', 'qr.switchCamera', 'qr.torchOn', 'qr.torchOff', 'qr.cameraTip',
+  'qr.dropTitle', 'qr.dropHint', 'qr.chooseImage', 'qr.imageTip', 'qr.foundBadge',
+  'qr.typeText', 'qr.typeLink', 'qr.typeWifi', 'qr.typeContact', 'qr.scanAnother',
+  'qr.fullResult', 'qr.copyResult', 'qr.copied', 'qr.openLink', 'qr.noteDefault',
+  'qr.noteUnencrypted', 'qr.destination', 'qr.errSecureContext', 'qr.waitingPermission',
+  'qr.startingReader', 'qr.looking', 'qr.errReaderStopped', 'qr.errPermissionDenied',
+  'qr.errNotFound', 'qr.errStartFailed', 'qr.errImageType', 'qr.errImageTooLarge',
+  'qr.readingImage', 'qr.pastedImage', 'qr.errNotFoundInImage', 'qr.errImageRead',
+  'qr.cameraStopped', 'qr.cameraHidden', 'qr.errTorch', 'qr.clipboardSelected'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+---
+<div class="qr-tool" id="qr-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="qr-topline"><div><h2>{t('qr.heading', locale)}</h2><p>{t('qr.subheading', locale)}</p></div><span class="qr-private">{t('qr.private', locale)}</span></div>
+  <div class="qr-modes" role="group" aria-label={t('qr.modesAria', locale)}>
+    <button type="button" id="qr-camera-tab" aria-pressed="true">{t('qr.cameraTab', locale)}</button>
+    <button type="button" id="qr-image-tab" aria-pressed="false">{t('qr.imageTab', locale)}</button>
   </div>
   <div class="qr-body">
     <div id="qr-camera-panel" class="qr-camera-panel">
       <div class="qr-view" id="qr-view">
-        <video id="qr-video" autoplay muted playsinline aria-label="Live camera view"></video>
-        <div class="qr-view-message" id="qr-view-message"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M4 16V8a4 4 0 0 1 4-4h8M32 4h8a4 4 0 0 1 4 4v8M44 32v8a4 4 0 0 1-4 4h-8M16 44H8a4 4 0 0 1-4-4v-8M14 14h8v8h-8zM26 14h8v8h-8zM14 26h8v8h-8zM26 26h3M34 26v8h-8" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg><p>Camera preview appears here</p></div>
+        <video id="qr-video" autoplay muted playsinline aria-label={t('qr.videoAria', locale)}></video>
+        <div class="qr-view-message" id="qr-view-message"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M4 16V8a4 4 0 0 1 4-4h8M32 4h8a4 4 0 0 1 4 4v8M44 32v8a4 4 0 0 1-4 4h-8M16 44H8a4 4 0 0 1-4-4v-8M14 14h8v8h-8zM26 14h8v8h-8zM14 26h8v8h-8zM26 26h3M34 26v8h-8" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg><p>{t('qr.cameraPreviewPlaceholder', locale)}</p></div>
       </div>
-      <div class="qr-controls"><button type="button" class="btn" id="qr-start">Start camera</button><button type="button" class="btn alt" id="qr-stop" hidden>Stop camera</button><button type="button" class="text-button" id="qr-switch" hidden>Switch camera</button><button type="button" class="text-button" id="qr-torch" hidden aria-pressed="false">Turn on light</button></div>
-      <p class="qr-tip">Keep the whole QR code in view and hold it steady. Scanning stops when a code is found.</p>
+      <div class="qr-controls"><button type="button" class="btn" id="qr-start">{t('qr.startCamera', locale)}</button><button type="button" class="btn alt" id="qr-stop" hidden>{t('qr.stopCamera', locale)}</button><button type="button" class="text-button" id="qr-switch" hidden>{t('qr.switchCamera', locale)}</button><button type="button" class="text-button" id="qr-torch" hidden aria-pressed="false">{t('qr.torchOn', locale)}</button></div>
+      <p class="qr-tip">{t('qr.cameraTip', locale)}</p>
     </div>
     <div id="qr-image-panel" class="qr-image-panel" hidden>
-      <div class="qr-file-zone" id="qr-file-zone"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 34V10a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v24M8 34l9-10 7 7 7-9 9 12M8 34v4a4 4 0 0 0 4 4h24a4 4 0 0 0 4-4v-4H8zM18 18h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>Drop a QR image here</h3><p>Or choose a file from your device</p><input type="file" id="qr-file" class="visually-hidden" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" tabindex="-1" /><button type="button" class="btn" id="qr-choose">Choose image</button></div>
-      <p class="qr-tip">PNG, JPG, WebP, GIF or BMP up to 20 MB. You can also paste a screenshot while this page is open.</p>
+      <div class="qr-file-zone" id="qr-file-zone"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 34V10a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v24M8 34l9-10 7 7 7-9 9 12M8 34v4a4 4 0 0 0 4 4h24a4 4 0 0 0 4-4v-4H8zM18 18h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>{t('qr.dropTitle', locale)}</h3><p>{t('qr.dropHint', locale)}</p><input type="file" id="qr-file" class="visually-hidden" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" tabindex="-1" /><button type="button" class="btn" id="qr-choose">{t('qr.chooseImage', locale)}</button></div>
+      <p class="qr-tip">{t('qr.imageTip', locale)}</p>
     </div>
     <p id="qr-status" class="qr-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
     <div class="qr-result" id="qr-result" hidden>
-      <div class="qr-result-head"><div><span>QR code found</span><h3 id="qr-result-type">Scanned text</h3></div><button type="button" class="text-button" id="qr-clear">Scan another</button></div>
+      <div class="qr-result-head"><div><span>{t('qr.foundBadge', locale)}</span><h3 id="qr-result-type">{t('qr.typeText', locale)}</h3></div><button type="button" class="text-button" id="qr-clear">{t('qr.scanAnother', locale)}</button></div>
       <p id="qr-destination" class="qr-destination" hidden></p>
-      <label for="qr-output" class="field-label">Full result</label><textarea id="qr-output" readonly spellcheck="false" rows="4"></textarea>
-      <div class="qr-result-actions"><button type="button" class="btn" id="qr-copy">Copy result</button><a id="qr-open" class="btn alt" target="_blank" rel="noopener noreferrer" hidden>Open link</a></div>
-      <p class="qr-result-note" id="qr-result-note">Check the full result before opening a link.</p>
+      <label for="qr-output" class="field-label">{t('qr.fullResult', locale)}</label><textarea id="qr-output" readonly spellcheck="false" rows="4"></textarea>
+      <div class="qr-result-actions"><button type="button" class="btn" id="qr-copy">{t('qr.copyResult', locale)}</button><a id="qr-open" class="btn alt" target="_blank" rel="noopener noreferrer" hidden>{t('qr.openLink', locale)}</a></div>
+      <p class="qr-result-note" id="qr-result-note">{t('qr.noteDefault', locale)}</p>
     </div>
   </div>
 </div>
@@ -58,10 +80,14 @@
   .qr-result-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
   .qr-result-head span { color: #2e714d; font-size: 14px; font-weight: 700; }
   .qr-result-head h3 { margin: 4px 0 20px; font-size: 28px; line-height: 1.2; font-stretch: 88%; }
-  .qr-destination { margin: 0 0 20px; padding: 12px 14px; overflow-wrap: anywhere; background: #f2f4f7; font-weight: 600; }
-  .qr-result textarea { display: block; width: 100%; max-height: 260px; min-height: 92px; resize: vertical; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 3px; color: var(--ink); background: white; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
-  .qr-result-actions a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+  .qr-destination { margin: 0 0 16px; font-weight: 600; color: var(--ink); word-break: break-all; }
+  .field-label { display: block; margin: 0 0 8px; font-weight: 600; font-size: 14px; color: var(--slate); }
+  textarea#qr-output { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1.5px solid var(--ink); border-radius: 3px; background: var(--paper); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 14px; line-height: 1.5; resize: vertical; }
   .qr-result-note { margin: 12px 0 0; color: var(--slate); font-size: 14px; }
-  @media (max-width: 650px) { .qr-topline { align-items: start; flex-direction: column; gap: 8px; } .qr-topline, .qr-body { padding-inline: 20px; } .qr-view { aspect-ratio: 4 / 5; min-height: 320px; } .qr-topline h2 { font-size: 28px; } }
+  .text-button { border: 0; background: none; color: var(--cobalt); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0; }
+  @media (max-width: 640px) {
+    .qr-topline { display: grid; grid-template-columns: 1fr; padding: 22px 20px 18px; }
+    .qr-body { padding: 20px; }
+  }
 </style>
 <script src="../scripts/qr-code-scanner.ts"></script>

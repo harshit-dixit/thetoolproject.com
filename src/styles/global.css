@@ -470,9 +470,33 @@ footer .wrap {
 .footer-inner {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 16px 32px;
   flex-wrap: wrap;
+}
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+}
+.language-picker {
+  display: inline-flex;
+  align-items: center;
+}
+.language-select {
+  font: inherit;
+  font-size: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.language-select:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 3px;
 }
 .footer-inner nav {
   display: flex;
