@@ -5,11 +5,14 @@ const root = document.querySelector<HTMLElement>('#dbf-tool')!;
 const locale = root.dataset.locale || 'en';
 const strings: Record<string, string> = JSON.parse(root.dataset.strings || '{}');
 const t = (key: string, vars?: Record<string, string | number>) => {
-  let text = strings[key] ?? key;
-  if (vars) {
-    for (const [k, v] of Object.entries(vars)) {
-      text = text.replaceAll(`{${k}}`, String(v));
-    }
+  const str = strings[key];
+  if (typeof str !== 'string') {
+    throw new Error(`Missing translation key: ${key}`);
+  }
+  if (!vars) return str;
+  let text = str;
+  for (const [k, v] of Object.entries(vars)) {
+    text = text.replaceAll(`{${k}}`, String(v));
   }
   return text;
 };

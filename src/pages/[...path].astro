@@ -6,6 +6,7 @@ import AboutPage from '../components/pages/AboutPage.astro';
 import ContactPage from '../components/pages/ContactPage.astro';
 import PrivacyPage from '../components/pages/PrivacyPage.astro';
 import TermsPage from '../components/pages/TermsPage.astro';
+import NotFoundPage from '../components/pages/NotFoundPage.astro';
 import TextToolFrame from '../components/TextToolFrame.astro';
 import ExcelToCsvTool from '../components/ExcelToCsvTool.astro';
 import DbfToExcelTool from '../components/DbfToExcelTool.astro';
@@ -36,7 +37,11 @@ export function getStaticPaths() {
     publishedPageLocales(page)
       .filter(([locale]) => !(page.id === 'notFound' && locale === 'en'))
       .map(([locale, entry]) => ({
-        params: { path: entry.path.replace(/^\/|\/$/g, '') || undefined },
+        params: {
+          path: page.id === 'notFound'
+            ? `${locale}/404`
+            : entry.path.replace(/^\/|\/$/g, '') || undefined
+        },
         props: { kind: 'page' as const, locale, entry, page }
       }))
   );
@@ -80,6 +85,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
     {props.page.id === 'contact' && <ContactPage locale={locale} />}
     {props.page.id === 'privacy' && <PrivacyPage locale={locale} />}
     {props.page.id === 'terms' && <TermsPage locale={locale} />}
+    {props.page.id === 'notFound' && <NotFoundPage locale={locale} />}
   </>
 )}
 {isTool && tool && entry && (
@@ -97,10 +103,14 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><RichText
             text={t('compressPdf.howLimitP', locale)}
             links={{
-              jpg100: getPublishedToolPath('compressPdf100kb', locale)
+              pdf100: getPublishedToolPath('compressPdf100kb', locale),
+              pdf200: getPublishedToolPath('compressPdf200kb', locale),
+              pdf500: getPublishedToolPath('compressPdf500kb', locale)
             }}
             params={{
-              jpg100Label: '100KB'
+              pdf100Label: '100KB',
+              pdf200Label: '200KB',
+              pdf500Label: '500KB'
             }}
           /></p>
           <h3>{t('compressPdf.faqTitle', locale)}</h3>
@@ -116,9 +126,9 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><RichText text={t('compressPdf.target.howP1', locale, { target: pdfTarget, button: t('pdf.compressButton', locale) })} /></p>
           <p><RichText text={t('compressPdf.target.howP2', locale, { keepText: t('pdf.keepText', locale) })} /></p>
           <p>{t('compressPdf.target.howP3', locale, { target: pdfTarget })}</p>
-          {pdfTarget === 100 && <p>{t('compressPdf.target.how100', locale)}</p>}
-          {pdfTarget === 200 && <p>{t('compressPdf.target.how200', locale)}</p>}
-          {pdfTarget === 500 && <p>{t('compressPdf.target.how500', locale)}</p>}
+          {pdfTarget === 100 && <p><RichText text={t('compressPdf.target.how100', locale)} /></p>}
+          {pdfTarget === 200 && <p><RichText text={t('compressPdf.target.how200', locale)} /></p>}
+          {pdfTarget === 500 && <p><RichText text={t('compressPdf.target.how500', locale)} /></p>}
           <p><RichText
             text={t('compressPdf.target.howOther', locale)}
             links={{

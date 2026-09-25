@@ -100,6 +100,12 @@ for (const [page, html, target] of [['compress-pdf', pdf, ''], ['compress-pdf-to
   assert.match(html, target ? new RegExp(`data-target-kb="${target}"`) : /data-target-kb(?:\s|>)/);
   assert.match(home, new RegExp(`href="/${page}/"`));
 }
+assert.match(pdf, /<strong>Keep text and links<\/strong> rewrites the PDF structure\. It preserves selectable text, links and forms, but often saves little space\./);
+assert.match(pdf, /<strong>Make it smaller<\/strong> renders each page as a JPEG image in a new PDF\./);
+assert.doesNotMatch(pdf, /150 DPI/);
+assert.doesNotMatch(pdf, /recompresses existing images/);
+assert.doesNotMatch(pdf, /compress a single image/);
+assert.match(pdf, /For a preselected limit, use <a href="\/compress-pdf-to-100kb\/">100KB<\/a>, <a href="\/compress-pdf-to-200kb\/">200KB<\/a> or <a href="\/compress-pdf-to-500kb\/">500KB<\/a>\./);
 const qrLd = [...qrScanner.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
 assert.deepEqual(qrLd.map(item => item['@type']), ['WebApplication', 'BreadcrumbList']);
 assert.equal(qrLd[0].applicationCategory, 'UtilitiesApplication');
@@ -125,6 +131,13 @@ if (hasGuides) {
   assert.match(bracketsGuide, /What can go inside a JSON array\?/);
 }
 assert.match(notFound, /<meta name="robots" content="noindex"/);
+assert.ok(existsSync(new URL('../dist/404.html', import.meta.url)));
+assert.ok(!existsSync(new URL('../dist/404/index.html', import.meta.url)));
+for (const draft of ['es', 'pt', 'de', 'fr', 'ja']) {
+  assert.ok(!existsSync(new URL(`../dist/${draft}/404.html`, import.meta.url)), `Draft ${draft} must not have 404.html`);
+  assert.ok(!existsSync(new URL(`../dist/${draft}/404/index.html`, import.meta.url)), `Draft ${draft} must not have /404/ directory`);
+  assert.doesNotMatch(notFound, new RegExp(`hreflang="${draft}"`));
+}
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]).sort();
 const expectedUrls = [
   'https://thetoolproject.com/',

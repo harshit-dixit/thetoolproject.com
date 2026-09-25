@@ -74,7 +74,7 @@ export const sitePages: Record<SitePageId, SitePage> = {
     id: 'notFound',
     locales: {
       en: {
-        path: '/404/',
+        path: '/404.html',
         title: "This page doesn't exist | thetoolproject",
         description: 'The page you requested could not be found. Browse the available tools.',
         reviewed: true,
