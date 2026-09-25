@@ -12,12 +12,14 @@ import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
 import ImageTool from '../components/ImageTool.astro';
+import CompressPdfTool from '../components/CompressPdfTool.astro';
 import { tools, publishedToolLocales } from '../data/tools';
 import { t, type TranslationKey } from '../i18n/utils';
 export function getStaticPaths() {
   return Object.values(tools).flatMap(tool => publishedToolLocales(tool).map(([locale, entry]) => ({ params: { tool: entry.path.replace(/^\/|\/$/g, '') }, props: { locale, entry, tool } })));
 }
 const { locale, entry, tool } = Astro.props;
+const pdfTarget = ({ 'compress-pdf-to-100kb': 100, 'compress-pdf-to-200kb': 200, 'compress-pdf-to-500kb': 500 } as Record<string, 100 | 200 | 500>)[tool.id];
 const alternates = Object.fromEntries(publishedToolLocales(tool).map(([lang, item]) => [lang, item.path]));
 const excelRows: [TranslationKey, TranslationKey][] = [
   ['excel.howNumbers', 'excel.howNumbersResult'],
@@ -38,6 +40,35 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
 ---
 <Tool {locale} {entry} category={tool.category} {alternates}>
   <main class="wrap">
+    {tool.id === 'compress-pdf' && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Make a PDF easier to share.</strong> Choose a compression level, compare file sizes, and download the result. Your PDF stays in this browser.</p><p class="caption">Free PDF compressor · No upload · No sign-up</p></div></div>
+      <CompressPdfTool />
+      <section aria-labelledby="pdf-how-title"><div class="sec-head"><h2 id="pdf-how-title">How PDF compression works here</h2></div><div class="how-copy">
+        <p>Choose or drop one PDF, select how to compress it, and click <strong>Compress PDF</strong>. You will see the original size, output size and percentage saved before download. Files up to 30MB and 60 pages are supported. Processing happens in your browser.</p>
+        <h3>Keep text or make a smaller file</h3>
+        <p><strong>Keep text and links</strong> rewrites the PDF structure. It preserves selectable text, links and forms, but often saves little space. <strong>Make it smaller</strong> renders each page as a JPEG image in a new PDF. This can reduce image-heavy and scanned PDFs substantially, but text can no longer be selected or searched, and links, forms, bookmarks and accessibility information are lost. Check the result before sharing it.</p>
+        <p>Do not use either rewrite mode for a digitally signed PDF you need to keep valid. Any change to a signed file can invalidate its signature.</p>
+        <h3>Choose a size limit</h3>
+        <p>Use the maximum-size selector when a website asks for a file under 100KB, 200KB or 500KB. If needed, the tool tries progressively smaller image settings. A target cannot be guaranteed: page count and image detail set a practical minimum. The measured output and a clear target status are always shown. For a preselected limit, use <a href="/compress-pdf-to-100kb/">100KB</a>, <a href="/compress-pdf-to-200kb/">200KB</a> or <a href="/compress-pdf-to-500kb/">500KB</a>.</p>
+        <h3>Frequently asked questions</h3>
+        <p><strong>Will my PDF be uploaded?</strong> No. It is read and processed on your device.</p>
+        <p><strong>Why did the file not get smaller?</strong> A PDF may already contain efficient images and compressed streams. This tool keeps the original if its alternatives would be larger.</p>
+        <p><strong>Can I compress a password-protected PDF?</strong> No. Unlock it first in an app you trust, then choose the unlocked file.</p>
+      </div></section>
+    </>}
+    {pdfTarget && <>
+      <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Check whether your PDF can fit a {pdfTarget}KB limit.</strong> Compress it in your browser, see the exact output size, and download it when it meets your needs.</p><p class="caption">{pdfTarget}KB = {pdfTarget * 1024} bytes · No upload</p></div></div>
+      <CompressPdfTool targetKb={pdfTarget} />
+      <section aria-labelledby="pdf-target-how-title"><div class="sec-head"><h2 id="pdf-target-how-title">How to compress a PDF to {pdfTarget}KB</h2></div><div class="how-copy">
+        <p>Choose a PDF or drag it into the tool. The maximum size is already set to {pdfTarget}KB. Click <strong>Compress PDF</strong> and compare the measured result with the limit before downloading. If your PDF is already at or under {pdfTarget}KB, the original is kept.</p>
+        <p>For a tight limit, the default mode rebuilds pages as compressed images. This removes selectable text, live links, forms, bookmarks and accessibility information. Switch to <strong>Keep text and links</strong> if those features matter; that mode usually achieves a smaller reduction. Image-heavy scans tend to shrink more than text-only PDFs.</p>
+        <p>Not every PDF can reach {pdfTarget}KB. More pages and detailed graphics need more data, and aggressive compression may make small text hard to read. The tool reports when it cannot reach the limit and never labels an oversized result as successful. Check legibility before submitting the file.</p>
+        {pdfTarget === 100 && <p><strong>For a 100KB form limit:</strong> a one-page PDF has a better chance than a long document. If the result is over 100KB or fine print becomes unreadable, reduce the source scan resolution or remove unneeded pages in your PDF editor before trying again.</p>}
+        {pdfTarget === 200 && <p><strong>For a 200KB application upload:</strong> start with Balanced compression, then inspect names, dates and any small printed labels in the download. Choose Strong if size matters more than fine image detail.</p>}
+        {pdfTarget === 500 && <p><strong>For a 500KB attachment:</strong> try Light compression to retain more visual detail. If your PDF already fits, this tool returns it unchanged. If selectable text matters, try Keep text and links and check whether that result fits.</p>}
+        <p>Need another limit? Try <a href="/compress-pdf-to-100kb/">100KB</a>, <a href="/compress-pdf-to-200kb/">200KB</a>, <a href="/compress-pdf-to-500kb/">500KB</a>, or use the <a href="/compress-pdf/">general PDF compressor</a>. Files stay on your device.</p>
+      </div></section>
+    </>}
     {tool.id === 'image-resizer' && <>
       <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>Resize a photo to the size you need.</strong> Set pixels, a percentage, centimetres or a maximum KB. Apply the same settings to a batch and download each result or one ZIP.</p><p class="caption">Free online photo resizer · Up to 20 images · No upload</p></div></div>
       <ImageTool mode="resize" />

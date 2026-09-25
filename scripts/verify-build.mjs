@@ -16,6 +16,10 @@ const qrScanner = read('qr-code-scanner/index.html');
 const imageResizer = read('image-resizer/index.html');
 const jpg100 = read('compress-jpg-to-100kb/index.html');
 const jpg50 = read('compress-jpg-to-50kb/index.html');
+const pdf = read('compress-pdf/index.html');
+const pdf100 = read('compress-pdf-to-100kb/index.html');
+const pdf200 = read('compress-pdf-to-200kb/index.html');
+const pdf500 = read('compress-pdf-to-500kb/index.html');
 const home = read('index.html');
 const hasGuides = existsSync(new URL('../dist/guides/json/index.html', import.meta.url)) && existsSync(new URL('../dist/guides/json-syntax-square-brackets/index.html', import.meta.url));
 const notFound = read('404.html');
@@ -87,6 +91,11 @@ assert.match(jpg100, /rel="canonical" href="https:\/\/thetoolproject\.com\/compr
 assert.match(jpg50, /<h1 class="page-title">Compress JPG to 50KB<\/h1>/);
 assert.match(jpg50, /rel="canonical" href="https:\/\/thetoolproject\.com\/compress-jpg-to-50kb\/"/);
 assert.match(jpg50, /data-target-kb="50"/);
+for (const [page, html, target] of [['compress-pdf', pdf, ''], ['compress-pdf-to-100kb', pdf100, '100'], ['compress-pdf-to-200kb', pdf200, '200'], ['compress-pdf-to-500kb', pdf500, '500']]) {
+  assert.match(html, new RegExp(`rel="canonical" href="https://thetoolproject.com/${page}/"`));
+  assert.match(html, target ? new RegExp(`data-target-kb="${target}"`) : /data-target-kb(?:\s|>)/);
+  assert.match(home, new RegExp(`href="/${page}/"`));
+}
 const qrLd = [...qrScanner.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
 assert.deepEqual(qrLd.map(item => item['@type']), ['WebApplication', 'BreadcrumbList']);
 assert.equal(qrLd[0].applicationCategory, 'UtilitiesApplication');
@@ -131,6 +140,10 @@ const expectedUrls = [
   'https://thetoolproject.com/image-resizer/',
   'https://thetoolproject.com/compress-jpg-to-100kb/',
   'https://thetoolproject.com/compress-jpg-to-50kb/',
+  'https://thetoolproject.com/compress-pdf/',
+  'https://thetoolproject.com/compress-pdf-to-100kb/',
+  'https://thetoolproject.com/compress-pdf-to-200kb/',
+  'https://thetoolproject.com/compress-pdf-to-500kb/',
   'https://thetoolproject.com/privacy/',
   'https://thetoolproject.com/terms/',
   ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/'] : []),
@@ -144,7 +157,7 @@ const firstLoad = page => {
   assert.ok(files.length, `${page} has a client script`);
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);
 assert.ok(readdirSync(jsDir).some(name => name.startsWith('cpexcel.') && name.endsWith('.js')), 'Legacy .xls code pages are a separate chunk');
 console.log(`Built output checks passed. First-load JS: ${Object.entries(sizes).map(([page, size]) => `${page} ${size.gzip} bytes gzip (${size.raw} raw)`).join(', ')}.`);

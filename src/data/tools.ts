@@ -7,6 +7,22 @@ export type ToolLocale = { path: string; title: string; description: string; h1:
 export type Tool = { id: string; category: 'DeveloperApplication' | 'UtilitiesApplication'; locales: Partial<Record<Locale, ToolLocale>> };
 
 export const tools: Record<string, Tool> = {
+  compressPdf: {
+    id: 'compress-pdf', category: 'UtilitiesApplication',
+    locales: { en: { path: '/compress-pdf/', title: 'Compress PDF online: reduce PDF file size | thetoolproject', description: 'Compress a PDF in your browser. Choose visual compression or preserve selectable text, compare exact file sizes, and download privately without uploading.', h1: 'Compress PDF', reviewed: true } },
+  },
+  compressPdf100kb: {
+    id: 'compress-pdf-to-100kb', category: 'UtilitiesApplication',
+    locales: { en: { path: '/compress-pdf-to-100kb/', title: 'Compress PDF to 100KB online | thetoolproject', description: 'Try to reduce a PDF to 100KB or less in your browser. See the exact result size before downloading; no upload or account needed.', h1: 'Compress PDF to 100KB', reviewed: true } },
+  },
+  compressPdf200kb: {
+    id: 'compress-pdf-to-200kb', category: 'UtilitiesApplication',
+    locales: { en: { path: '/compress-pdf-to-200kb/', title: 'Compress PDF to 200KB online | thetoolproject', description: 'Try to reduce a PDF to 200KB or less in your browser. Compare before and after sizes and download without uploading your file.', h1: 'Compress PDF to 200KB', reviewed: true } },
+  },
+  compressPdf500kb: {
+    id: 'compress-pdf-to-500kb', category: 'UtilitiesApplication',
+    locales: { en: { path: '/compress-pdf-to-500kb/', title: 'Compress PDF to 500KB online | thetoolproject', description: 'Try to reduce a PDF to 500KB or less in your browser. Check the measured output size before downloading; your file stays on your device.', h1: 'Compress PDF to 500KB', reviewed: true } },
+  },
   imageResizer: {
     id: 'image-resizer',
     category: 'UtilitiesApplication',

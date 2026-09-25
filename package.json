@@ -9,7 +9,7 @@
     "dev": "astro dev",
     "build": "node scripts/check-translations.mjs && astro build",
     "test": "vitest run",
-    "test:browser": "node scripts/browser-check.mjs && node scripts/json-excel-browser-check.mjs && node scripts/json-csv-browser-check.mjs && node scripts/json-beautifier-browser-check.mjs && node scripts/xml-csv-browser-check.mjs && node scripts/xml-json-browser-check.mjs && node scripts/excel-browser-check.mjs && node scripts/csv-sql-browser-check.mjs && node scripts/csv-viewer-browser-check.mjs && node scripts/csv-json-browser-check.mjs && node scripts/qr-scanner-browser-check.mjs && node scripts/image-browser-check.mjs",
+    "test:browser": "node scripts/browser-check.mjs && node scripts/json-excel-browser-check.mjs && node scripts/json-csv-browser-check.mjs && node scripts/json-beautifier-browser-check.mjs && node scripts/xml-csv-browser-check.mjs && node scripts/xml-json-browser-check.mjs && node scripts/excel-browser-check.mjs && node scripts/csv-sql-browser-check.mjs && node scripts/csv-viewer-browser-check.mjs && node scripts/csv-json-browser-check.mjs && node scripts/qr-scanner-browser-check.mjs && node scripts/image-browser-check.mjs && node scripts/pdf-browser-check.mjs",
     "test:build": "node scripts/verify-build.mjs",
     "preview": "astro preview",
     "astro": "astro"
@@ -17,6 +17,8 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.3.4",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
     "saxes": "^6.0.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zxing-wasm": "^3.1.4"

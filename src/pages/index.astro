@@ -16,13 +16,21 @@ const qrScanner = tools.qrCodeScanner.locales.en!;
 const imageResizer = tools.imageResizer.locales.en!;
 const jpg100 = tools.compressJpg100kb.locales.en!;
 const jpg50 = tools.compressJpg50kb.locales.en!;
+const pdf = tools.compressPdf.locales.en!;
+const pdf100 = tools.compressPdf100kb.locales.en!;
+const pdf200 = tools.compressPdf200kb.locales.en!;
+const pdf500 = tools.compressPdf500kb.locales.en!;
 ---
 <Base locale="en" title={t('home.title')} description={t('home.description')} path="/">
   <main class="wrap">
     <div class="hero"><h1 class="page-title">{t('home.h1')}</h1><p class="lead"><strong>{t('home.leadStrong')}</strong> {t('home.lead')}</p></div>
     <section aria-labelledby="file-tools"><div class="sec-head"><h2 id="file-tools">{t('home.fileTools')}</h2></div>
       <div class="table-scroll"><table class="spec-table"><thead><tr><th scope="col">{t('home.tool')}</th><th scope="col">{t('home.takes')}</th><th scope="col">{t('home.gives')}</th><th scope="col">{t('home.goodFor')}</th></tr></thead>
-        <tbody><tr><td><a href={imageResizer.path}>{imageResizer.h1}</a></td><td class="fmt">JPG, PNG, WebP</td><td class="fmt">Resized image or ZIP</td><td class="note">Resizing photos by pixels, cm or KB, including batches</td></tr>
+        <tbody><tr><td><a href={pdf.path}>{pdf.h1}</a></td><td class="fmt">PDF</td><td class="fmt">Smaller PDF</td><td class="note">Reducing PDF size with a measured result</td></tr>
+        <tr><td><a href={pdf100.path}>{pdf100.h1}</a></td><td class="fmt">PDF</td><td class="fmt">PDF aiming for 100KB</td><td class="note">Checking a 100KB upload limit</td></tr>
+        <tr><td><a href={pdf200.path}>{pdf200.h1}</a></td><td class="fmt">PDF</td><td class="fmt">PDF aiming for 200KB</td><td class="note">Checking a 200KB upload limit</td></tr>
+        <tr><td><a href={pdf500.path}>{pdf500.h1}</a></td><td class="fmt">PDF</td><td class="fmt">PDF aiming for 500KB</td><td class="note">Checking a 500KB upload limit</td></tr>
+        <tr><td><a href={imageResizer.path}>{imageResizer.h1}</a></td><td class="fmt">JPG, PNG, WebP</td><td class="fmt">Resized image or ZIP</td><td class="note">Resizing photos by pixels, cm or KB, including batches</td></tr>
         <tr><td><a href={jpg100.path}>{jpg100.h1}</a></td><td class="fmt">JPG photo</td><td class="fmt">JPG at or under 100KB</td><td class="note">Meeting a 100KB JPG upload limit</td></tr>
         <tr><td><a href={jpg50.path}>{jpg50.h1}</a></td><td class="fmt">JPG photo</td><td class="fmt">JPG at or under 50KB</td><td class="note">Meeting a 50KB JPG upload limit</td></tr>
         <tr><td><a href={qrScanner.path}>{qrScanner.h1}</a></td><td class="fmt">Camera, image or screenshot</td><td class="fmt">QR link or text</td><td class="note">Reading a QR code privately, without installing an app</td></tr>
