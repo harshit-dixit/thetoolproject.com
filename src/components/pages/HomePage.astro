@@ -16,7 +16,7 @@ const alternates = Object.fromEntries(publishedPageLocales(sitePages.home).map((
 const guideLang = locale === 'en' ? undefined : 'en';
 const englishOnly = locale === 'en' ? '' : ` ${t('guide.inEnglish', locale)}`;
 ---
-<Base locale={locale} title={entry.title} description={entry.description} path={entry.path} alternates={alternates}>
+<Base locale={locale} title={entry.title} description={entry.description} path={entry.path} alternates={alternates} pageType="home">
   <main class="wrap">
     <div class="hero"><h1 class="page-title">{t('home.h1', locale)}</h1><p class="lead"><strong>{t('home.leadStrong', locale)}</strong> {t('home.lead', locale)}</p></div>
     <section aria-labelledby="file-tools"><div class="sec-head"><h2 id="file-tools">{t('home.fileTools', locale)}</h2></div>

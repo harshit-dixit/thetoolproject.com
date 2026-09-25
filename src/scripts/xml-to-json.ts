@@ -1,6 +1,7 @@
 import type { XmlJsonConversion, XmlJsonError, XmlJsonOptions } from '../lib/xml-to-json';
 import type { XmlJsonRequest } from '../workers/xml-to-json';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#xml-json-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
@@ -51,23 +52,23 @@ function errorMessage(error: XmlJsonError | { code: 'workerError' }) {
 }
 function run() {
   const source = fileText ?? input.value;
-  if (!source.trim()) { hideResult(); announce(t('xmlJson.errEmpty')); input.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('xmlJson.errTooLarge')); return; }
+  if (!source.trim()) { hideResult(); announce(t('xmlJson.errEmpty')); input.focus(); trackResult('error', { code: 'empty' }); return; }
+  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('xmlJson.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   stopWorker(); busy = true; convertButton.disabled = true; announce(t('xmlJson.working'));
   const id = ++sequence;
   worker ??= new Worker(new URL('../workers/xml-to-json.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<{ id: number; result?: XmlJsonConversion; error?: XmlJsonError | { code: 'workerError' } }>) => {
     if (event.data.id !== sequence) return;
     busy = false; convertButton.disabled = false;
-    if (event.data.result) showResult(event.data.result);
-    else { hideResult(); announce(errorMessage(event.data.error ?? { code: 'workerError' })); }
+    if (event.data.result) { const data = event.data.result; showResult(data); trackResult('success', { elements: data.elements, attribute_prefix: options.attributePrefix, always_array: String(options.alwaysArray), pretty: String(options.pretty), output_size: sizeBucket(data.bytes) }); }
+    else { const error = event.data.error ?? { code: 'workerError' as const }; hideResult(); announce(errorMessage(error)); trackResult('error', { code: error.code }); }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; convertButton.disabled = false; hideResult(); announce(t('xmlJson.errWorker')); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; convertButton.disabled = false; hideResult(); announce(t('xmlJson.errWorker')); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, options } satisfies XmlJsonRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(xml|txt)$/i.test(file.name)) { announce(t('xmlJson.errWrongType')); return; }
-  if (file.size > MAX_BYTES) { announce(t('xmlJson.errTooLarge')); return; }
+  if (!/\.(xml|txt)$/i.test(file.name)) { announce(t('xmlJson.errWrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > MAX_BYTES) { announce(t('xmlJson.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   const id = ++sequence; stopWorker(); announce(t('xmlJson.reading'));
   try {
     const content = await file.text();
@@ -76,7 +77,7 @@ async function loadFile(file: File) {
     if (file.size > TEXTAREA_LIMIT) { input.value = ''; fileText = content; announce(t('xmlJson.fileTooLargeText', { name: file.name })); }
     else { input.value = content; fileText = undefined; announce(t('xmlJson.fileLoaded', { name: file.name, size: formatBytes(file.size) })); }
     $('xml-json-file-name').textContent = file.name; $('xml-json-file-size').textContent = formatBytes(file.size); $('xml-json-file-line').hidden = false; hideResult();
-  } catch { if (id === sequence) announce(t('xmlJson.errRead')); }
+  } catch { if (id === sequence) { announce(t('xmlJson.errRead')); trackResult('error', { code: 'readError' }); } }
 }
 $('xml-json-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });

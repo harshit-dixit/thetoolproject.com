@@ -1,6 +1,7 @@
 import type { ExcelConversion, ExcelError, Nested } from '../lib/json-to-excel';
 import type { ExcelRequest } from '../workers/json-to-excel';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#json-excel-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
@@ -102,7 +103,7 @@ function errorMessage(error: ExcelError) {
 
 function run() {
   const source = fileText ?? textarea.value;
-  if (!source.trim()) { announce(t('tool.empty')); hideResult(); textarea.focus(); return; }
+  if (!source.trim()) { announce(t('tool.empty')); hideResult(); textarea.focus(); trackResult('error', { code: 'empty' }); return; }
   stopWorker();
   setWorking(true);
   const id = ++sequence;
@@ -110,21 +111,21 @@ function run() {
   worker.onmessage = (event: MessageEvent<{ id: number; result?: ExcelConversion; error?: ExcelError }>) => {
     if (event.data.id !== sequence) return;
     setWorking(false);
-    if (event.data.result) { showResult(event.data.result); return; }
+    if (event.data.result) { const data = event.data.result; showResult(data); trackResult('success', { sheets: data.sheets.length, rows: data.sheets.reduce((sum, item) => sum + item.rows, 0), nested, output_size: sizeBucket(data.xlsx.byteLength) }); return; }
     const error = event.data.error;
-    if (!error?.code) { announce(t('jsonExcel.workerError')); return; }
+    if (!error?.code) { announce(t('jsonExcel.workerError')); trackResult('error', { code: 'workerError' }); return; }
     hideResult();
-    announce(errorMessage(error));
+    announce(errorMessage(error)); trackResult('error', { code: error.code });
     if (fileText === undefined && 'position' in error && error.code !== 'depth') { textarea.focus(); textarea.setSelectionRange(error.position, error.position); }
   };
   // A worker that runs out of memory dies without a message, so start a fresh one next time.
-  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('jsonExcel.workerError')); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('jsonExcel.workerError')); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, options: { nested, rootName: rootName(), valueHeader: 'Value' } } satisfies ExcelRequest);
 }
 
 async function loadFile(file: File) {
-  if (!/\.(json|jsonl|ndjson|txt)$/i.test(file.name)) { announce(t('jsonExcel.wrongType')); return; }
-  if (file.size > MAX_BYTES) { announce(t('jsonExcel.tooLarge')); return; }
+  if (!/\.(json|jsonl|ndjson|txt)$/i.test(file.name)) { announce(t('jsonExcel.wrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > MAX_BYTES) { announce(t('jsonExcel.tooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   stopWorker();
   announce(t('tool.reading'));
   try {
@@ -137,7 +138,7 @@ async function loadFile(file: File) {
     $('file-line').hidden = false;
     hideResult();
     announce(t('tool.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
-  } catch { announce(t('tool.readError')); }
+  } catch { announce(t('tool.readError')); trackResult('error', { code: 'readError' }); }
 }
 
 $('choose-file').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });

@@ -1,6 +1,7 @@
 import type { JsonBeautifierError, JsonBeautifierResult, JsonIndent } from '../lib/json-beautifier';
 import type { JsonBeautifierRequest } from '../workers/json-beautifier';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#json-beautifier-tool')!;
 const { t, formatNumber, formatBytes } = i18nFrom(root);
@@ -54,26 +55,26 @@ function errorMessage(error: JsonBeautifierError | { code: 'workerError' }) {
 }
 function run() {
   const source = fileText ?? input.value;
-  if (!source.trim()) { hideResult(); announce(t('jsonBeautifier.errEmpty')); input.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('jsonBeautifier.errTooLarge')); return; }
+  if (!source.trim()) { hideResult(); announce(t('jsonBeautifier.errEmpty')); input.focus(); trackResult('error', { code: 'empty' }); return; }
+  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('jsonBeautifier.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   ++sequence; stopWorker(); busy = true; formatButton.disabled = true; announce(t('jsonBeautifier.working'));
   const id = sequence;
   worker ??= new Worker(new URL('../workers/json-beautifier.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<{ id: number; result?: JsonBeautifierResult; error?: JsonBeautifierError | { code: 'workerError' } }>) => {
     if (event.data.id !== sequence) return;
     busy = false; formatButton.disabled = false;
-    if (event.data.result) showResult(event.data.result);
+    if (event.data.result) { showResult(event.data.result); trackResult('success', { spacing, output_size: sizeBucket(event.data.result.bytes) }); }
     else {
-      hideResult(); const error = event.data.error ?? { code: 'workerError' as const }; announce(errorMessage(error));
+      hideResult(); const error = event.data.error ?? { code: 'workerError' as const }; announce(errorMessage(error)); trackResult('error', { code: error.code });
       if (fileText === undefined && 'position' in error && error.code !== 'depth') { input.focus(); input.setSelectionRange(error.position, error.position); }
     }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; formatButton.disabled = false; hideResult(); announce(t('jsonBeautifier.errWorker')); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; formatButton.disabled = false; hideResult(); announce(t('jsonBeautifier.errWorker')); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, spacing } satisfies JsonBeautifierRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(json|txt)$/i.test(file.name)) { announce(t('jsonBeautifier.errWrongType')); return; }
-  if (file.size > MAX_BYTES) { announce(t('jsonBeautifier.errTooLarge')); return; }
+  if (!/\.(json|txt)$/i.test(file.name)) { announce(t('jsonBeautifier.errWrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > MAX_BYTES) { announce(t('jsonBeautifier.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   const id = ++sequence; stopWorker(); announce(t('jsonBeautifier.reading'));
   try {
     const content = await file.text();
@@ -83,7 +84,7 @@ async function loadFile(file: File) {
     else { input.value = content; fileText = undefined; $('beautifier-hint').textContent = t('jsonBeautifier.inputHint'); }
     $('beautifier-file-name').textContent = file.name; $('beautifier-file-size').textContent = formatBytes(file.size); $('beautifier-file-line').hidden = false;
     hideResult(); announce(t('jsonBeautifier.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
-  } catch { if (id === sequence) announce(t('jsonBeautifier.errRead')); }
+  } catch { if (id === sequence) { announce(t('jsonBeautifier.errRead')); trackResult('error', { code: 'readError' }); } }
 }
 function clearFile() { fileText = undefined; fileName = undefined; fileInput.value = ''; $('beautifier-file-line').hidden = true; $('beautifier-hint').textContent = t('jsonBeautifier.inputHint'); }
 $('beautifier-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });

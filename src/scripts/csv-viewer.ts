@@ -2,6 +2,7 @@ import type { CsvTable, Encoding, Separator } from '../lib/csv-viewer';
 import type { CsvViewerRequest } from '../workers/csv-viewer';
 import { serializeCsv } from '../lib/csv-viewer';
 import { i18nFrom } from '../i18n/client';
+import { trackResult } from '../lib/analytics';
 
 const get = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const root = get<HTMLDivElement>('csv-viewer');
@@ -60,7 +61,7 @@ function errorText(code: string, row?: number) {
 
 function parseSource(source: string | ArrayBuffer, name: string) {
   const size = typeof source === 'string' ? new Blob([source]).size : source.byteLength;
-  if (size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); return; }
+  if (size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); trackResult('error', { code: 'tooLarge' }); return; }
   fileName = name;
   message(importStatus, t('csvViewer.reading'));
   get<HTMLButtonElement>('viewer-choose').disabled = true;
@@ -71,7 +72,7 @@ function parseSource(source: string | ArrayBuffer, name: string) {
     if (event.data.id !== requestId) return;
     get<HTMLButtonElement>('viewer-choose').disabled = false;
     get<HTMLButtonElement>('viewer-open-paste').disabled = false;
-    if (!event.data.ok || !event.data.table) { message(importStatus, errorText(event.data.code || 'invalid', event.data.row)); return; }
+    if (!event.data.ok || !event.data.table) { message(importStatus, errorText(event.data.code || 'invalid', event.data.row)); trackResult('error', { code: event.data.code || 'invalid' }); return; }
     table = event.data.table;
     fileEncoding = event.data.encoding || 'pasted';
     originals.clear(); sortColumn = -1; sortDirection = 1;
@@ -93,6 +94,7 @@ function parseSource(source: string | ArrayBuffer, name: string) {
     message(importStatus, ''); message(status, '');
     scroll.scrollTop = 0;
     scheduleRender();
+    trackResult('success', { rows: table.rows.length, columns: table.headers.length, separator: table.separator, encoding: fileEncoding, irregular_rows: table.irregularRows });
   };
   // A worker that runs out of memory dies without a message, so re-enable the import buttons and say so.
   worker.onerror = () => {
@@ -101,6 +103,7 @@ function parseSource(source: string | ArrayBuffer, name: string) {
     get<HTMLButtonElement>('viewer-choose').disabled = false;
     get<HTMLButtonElement>('viewer-open-paste').disabled = false;
     message(importStatus, t('csvViewer.errWorker'));
+    trackResult('error', { code: 'workerError' });
   };
   const request: CsvViewerRequest = { id, source, separator: separator.value as Separator, encoding: encoding.value as Encoding, firstRowHeaders: headers.checked };
   worker.postMessage(request);
@@ -251,7 +254,7 @@ function download(content: string, type: string, extension: string) {
 get<HTMLButtonElement>('viewer-choose').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', async () => {
   const file = fileInput.files?.[0]; if (!file) return;
-  if (file.size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); return; }
+  if (file.size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); trackResult('error', { code: 'tooLarge' }); return; }
   parseSource(await file.arrayBuffer(), file.name);
 });
 get<HTMLButtonElement>('viewer-paste-toggle').addEventListener('click', event => {
@@ -303,7 +306,7 @@ drop.addEventListener('drop', async event => {
   const file = event.dataTransfer?.files[0]; if (!file) return;
   event.preventDefault();
   if (originals.size && !window.confirm(t('csvViewer.confirmDiscard'))) return;
-  if (file.size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); return; }
+  if (file.size > maxBytes) { message(importStatus, t('csvViewer.errLargeMemory')); trackResult('error', { code: 'tooLarge' }); return; }
   workspace.hidden = true; importPanel.hidden = false;
   parseSource(await file.arrayBuffer(), file.name);
 });

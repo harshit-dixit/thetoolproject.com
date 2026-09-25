@@ -1,6 +1,7 @@
 import type { XmlCsvConversion, XmlCsvError, XmlCsvOptions, XmlCsvSeparator } from '../lib/xml-to-csv';
 import type { XmlCsvRequest } from '../workers/xml-to-csv';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#xml-csv-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
@@ -79,23 +80,24 @@ function errorMessage(error: XmlCsvError | { code: 'workerError' }) {
 }
 function run() {
   const source = fileText ?? textarea.value;
-  if (!source.trim()) { announce(t('xmlCsv.empty')); hideResult(); textarea.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { announce(t('xmlCsv.tooLarge')); hideResult(); return; }
+  if (!source.trim()) { announce(t('xmlCsv.empty')); hideResult(); textarea.focus(); trackResult('error', { code: 'empty' }); return; }
+  if (new Blob([source]).size > MAX_BYTES) { announce(t('xmlCsv.tooLarge')); hideResult(); trackResult('error', { code: 'tooLarge' }); return; }
   stopWorker(); setWorking(true);
   const id = ++sequence;
   worker ??= new Worker(new URL('../workers/xml-to-csv.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<{ id: number; result?: XmlCsvConversion; error?: XmlCsvError | { code: 'workerError' } }>) => {
     if (event.data.id !== sequence) return;
     setWorking(false);
-    if (event.data.result) { showResult(event.data.result); return; }
-    hideResult(); announce(errorMessage(event.data.error ?? { code: 'workerError' }));
+    if (event.data.result) { const data = event.data.result; showResult(data); trackResult('success', { rows: data.rows, columns: data.columns, separator: options.separator, output_size: sizeBucket(new Blob([data.csv]).size) }); return; }
+    const error = event.data.error ?? { code: 'workerError' as const };
+    hideResult(); announce(errorMessage(error)); trackResult('error', { code: error.code });
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('xmlCsv.workerError')); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('xmlCsv.workerError')); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, options } satisfies XmlCsvRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(xml|txt)$/i.test(file.name)) { announce(t('xmlCsv.wrongType')); return; }
-  if (file.size > MAX_BYTES) { announce(t('xmlCsv.tooLarge')); return; }
+  if (!/\.(xml|txt)$/i.test(file.name)) { announce(t('xmlCsv.wrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > MAX_BYTES) { announce(t('xmlCsv.tooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   const id = ++sequence;
   stopWorker(); announce(t('tool.reading'));
   try {
@@ -107,7 +109,7 @@ async function loadFile(file: File) {
     else { textarea.value = content; useTextarea(); }
     fileName = file.name; $('xml-file-name').textContent = file.name; $('xml-file-size').textContent = formatBytes(file.size); $('xml-file-line').hidden = false;
     hideResult(); announce(t('tool.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
-  } catch { if (id === sequence) announce(t('tool.readError')); }
+  } catch { if (id === sequence) { announce(t('tool.readError')); trackResult('error', { code: 'readError' }); } }
 }
 $('xml-choose-file').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });

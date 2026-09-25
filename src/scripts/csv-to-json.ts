@@ -2,6 +2,7 @@ import { decodeCsv, type Encoding, type Separator } from '../lib/csv-viewer';
 import type { CsvJsonOptions, CsvJsonResult } from '../lib/csv-to-json';
 import type { CsvJsonRequest } from '../workers/csv-to-json';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const get = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const root = get<HTMLDivElement>('csv-json-tool');
@@ -25,8 +26,11 @@ let fileBuffer: ArrayBuffer | undefined;
 let fileName = '';
 let fileSource = '';
 let current: CsvJsonResult | undefined;
+let reportTimer: ReturnType<typeof setTimeout> | undefined;
 
 function message(value: string) { status.textContent = value; status.hidden = !value; }
+// Conversion reruns as the user types, so only the outcome the input settles on is reported.
+function report(...args: Parameters<typeof trackResult>) { clearTimeout(reportTimer); reportTimer = setTimeout(() => trackResult(...args), 1500); }
 
 function settings(): CsvJsonOptions {
   return {
@@ -81,12 +85,13 @@ function show(data: CsvJsonResult) {
   get<HTMLElement>('csv-json-preview-note').textContent = counted(data.columns > 25 ? 'csvJson.previewNoteColumns' : 'csvJson.previewNote', data.rows, { shown: formatNumber(data.preview.length) });
   get<HTMLElement>('csv-json-details').hidden = false;
   message('');
+  report('success', { rows: data.rows, columns: data.columns, separator: data.separator, format, output_size: sizeBucket(new Blob([data.json]).size) });
 }
 
 function convert() {
   const source = fileBuffer && !input.value ? fileSource : input.value;
-  if (!source.trim()) { ++requestId; clearOutput(); get<HTMLElement>('csv-json-state').textContent = t('csvJson.stateReady'); message(''); return; }
-  if (new Blob([source]).size > maxBytes) { clearOutput(); message(t('csvJson.errTooLarge')); return; }
+  if (!source.trim()) { ++requestId; clearTimeout(reportTimer); clearOutput(); get<HTMLElement>('csv-json-state').textContent = t('csvJson.stateReady'); message(''); return; }
+  if (new Blob([source]).size > maxBytes) { clearOutput(); message(t('csvJson.errTooLarge')); report('error', { code: 'tooLarge' }); return; }
   const id = ++requestId;
   get<HTMLElement>('csv-json-state').textContent = t('csvJson.stateWorking');
   worker ??= new Worker(new URL('../workers/csv-to-json.ts', import.meta.url), { type: 'module' });
@@ -101,9 +106,10 @@ function convert() {
         : error?.code === 'invalid'
           ? t('csvJson.errInvalidQuote', { row: formatNumber(error.row ?? 1) })
           : t('csvJson.errWorker'));
+      report('error', { code: error?.code === 'tooManyColumns' || error?.code === 'invalid' ? error.code : 'workerError' });
     }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; clearOutput(); message(t('csvJson.errWorker')); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; clearOutput(); message(t('csvJson.errWorker')); report('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, options: settings() } satisfies CsvJsonRequest);
 }
 
@@ -118,12 +124,12 @@ function decodeFile() {
     else input.value = '';
     get<HTMLElement>('csv-json-source-label').textContent = `${fileName} · ${formatBytes(fileBuffer.byteLength)} · ${decoded.encoding.toUpperCase()}${input.value ? '' : ` · ${t('csvJson.tooLargeEditor')}`}`;
     schedule();
-  } catch { message(t('csvJson.errDecode')); }
+  } catch { message(t('csvJson.errDecode')); trackResult('error', { code: 'decodeError' }); }
 }
 
 async function loadFile(file: File) {
-  if (!/\.(csv|tsv|tab|txt)$/i.test(file.name)) { message(t('csvJson.errFileType')); return; }
-  if (file.size > maxBytes) { message(t('csvJson.errTooLarge')); return; }
+  if (!/\.(csv|tsv|tab|txt)$/i.test(file.name)) { message(t('csvJson.errFileType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > maxBytes) { message(t('csvJson.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   const id = ++requestId;
   message(t('csvJson.reading'));
   try {
@@ -131,7 +137,7 @@ async function loadFile(file: File) {
     if (id !== requestId) return;
     fileBuffer = buffer; fileName = file.name;
     decodeFile();
-  } catch { if (id === requestId) message(t('csvJson.errRead')); }
+  } catch { if (id === requestId) { message(t('csvJson.errRead')); trackResult('error', { code: 'readError' }); } }
 }
 
 input.addEventListener('input', () => {
@@ -148,7 +154,7 @@ get<HTMLButtonElement>('csv-json-example').addEventListener('click', () => {
   schedule(); input.focus();
 });
 get<HTMLButtonElement>('csv-json-clear').addEventListener('click', () => {
-  clearTimeout(timer); ++requestId; worker?.terminate(); worker = undefined; fileBuffer = undefined; fileName = ''; fileSource = ''; input.value = '';
+  clearTimeout(timer); clearTimeout(reportTimer); ++requestId; worker?.terminate(); worker = undefined; fileBuffer = undefined; fileName = ''; fileSource = ''; input.value = '';
   get<HTMLElement>('csv-json-source-label').textContent = t('csvJson.sourceLabel');
   get<HTMLElement>('csv-json-state').textContent = t('csvJson.stateReady'); clearOutput(); message(''); input.focus();
 });

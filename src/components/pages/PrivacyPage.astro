@@ -20,6 +20,15 @@ const alternates = Object.fromEntries(publishedPageLocales(sitePages.privacy).ma
   <h2>{t('privacy.h2Web', locale)}</h2>
   <p>{t('privacy.pWeb', locale)}</p>
 
+  <h2>{t('privacy.h2Analytics', locale)}</h2>
+  <p>
+    <RichText
+      text={t('privacy.pAnalytics', locale)}
+      links={{ google: "https://policies.google.com/privacy" }}
+      params={{ googleLink: t('privacy.googleLink', locale) }}
+    />
+  </p>
+
   <h2>{t('privacy.h2Messages', locale)}</h2>
   <p>
     <RichText

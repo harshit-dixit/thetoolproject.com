@@ -1,5 +1,6 @@
 import type { Conversion, ConversionError, Layout, Output } from '../lib/json-to-html';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#json-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
@@ -63,7 +64,7 @@ function errorMessage(error: ConversionError) {
 }
 function run() {
   const source = fileText ?? textarea.value;
-  if (!source.trim()) { announce(t('tool.empty')); result.hidden = true; $('preview-placeholder').hidden = false; textarea.focus(); return; }
+  if (!source.trim()) { announce(t('tool.empty')); result.hidden = true; $('preview-placeholder').hidden = false; textarea.focus(); trackResult('error', { code: 'empty' }); return; }
   stopWorker();
   setWorking(true);
   $('json-lines-help').hidden = true;
@@ -72,21 +73,21 @@ function run() {
   worker.onmessage = (event: MessageEvent<{ id: number; result?: Conversion; error?: ConversionError }>) => {
     if (event.data.id !== sequence) return;
     setWorking(false);
-    if (event.data.result) { showResult(event.data.result); return; }
+    if (event.data.result) { const data = event.data.result; showResult(data); trackResult('success', { rows: data.rows, columns: data.columns, layout, output, output_size: sizeBucket(new Blob([data.html]).size) }); return; }
     const error = event.data.error;
-    if (!error || !error.code) { announce(t('tool.workerError')); return; }
+    if (!error || !error.code) { announce(t('tool.workerError')); trackResult('error', { code: 'workerError' }); return; }
     result.hidden = true; $('preview-placeholder').hidden = false; current = undefined;
-    announce(errorMessage(error));
+    announce(errorMessage(error)); trackResult('error', { code: error.code });
     $('json-lines-help').hidden = error.code !== 'jsonLines';
     if (fileText === undefined) { textarea.focus(); textarea.setSelectionRange(error.position, error.position); }
   };
-  worker.onerror = () => { setWorking(false); announce(t('tool.workerError')); };
+  worker.onerror = () => { setWorking(false); announce(t('tool.workerError')); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, layout, output });
 }
 async function loadFile(file: File) {
   const extension = file.name.split('.').at(-1)?.toLowerCase();
-  if (extension !== 'json' && extension !== 'txt') { announce(t('tool.wrongType')); return; }
-  if (file.size > 50 * 1024 * 1024) { announce(t('tool.tooLarge')); return; }
+  if (extension !== 'json' && extension !== 'txt') { announce(t('tool.wrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > 50 * 1024 * 1024) { announce(t('tool.tooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   stopWorker();
   announce(t('tool.reading'));
   try {
@@ -100,7 +101,7 @@ async function loadFile(file: File) {
     result.hidden = true; $('preview-placeholder').hidden = false; current = undefined;
     announce(t('tool.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
     // Keep the file button focused; moving focus here scrolls the mobile page.
-  } catch { announce(t('tool.readError')); }
+  } catch { announce(t('tool.readError')); trackResult('error', { code: 'readError' }); }
 }
 $('choose-file').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });

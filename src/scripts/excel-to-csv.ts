@@ -1,6 +1,7 @@
 import type { ExcelErrorCode, NumberMode, Separator, SheetInfo } from '../lib/excel-to-csv';
 import type { ConvertedSheet, ExcelRequest } from '../workers/excel-to-csv';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 type ErrorKey = ExcelErrorCode | 'wrongType' | 'tooLarge' | 'workerError';
 type Pending = { resolve: (data: any) => void; reject: (code: ErrorKey) => void };
@@ -90,6 +91,7 @@ function showError(code: ErrorKey) {
   $('drop-hint').textContent = t(`excel.${code}`);
   $('choose-file').textContent = t('excel.chooseAgain');
   announce(`${t(`excel.${code}Title`)}. ${t(`excel.${code}`)}`);
+  trackResult('error', { code });
 }
 
 function setReady(ready: boolean) {
@@ -162,6 +164,7 @@ async function convert(announceResult = true) {
     if (ticket !== generation) return;
     result = data.result;
     renderResult();
+    trackResult('success', { rows: data.result.rows, columns: data.result.columns, sheets: sheets.length, separator, numbers, output_size: sizeBucket(data.result.csv.size) });
     if (announceResult) announce($('result-summary').textContent!);
   } catch (code) {
     if (ticket === generation) showError(errorKey(code));

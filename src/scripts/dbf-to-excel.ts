@@ -1,6 +1,7 @@
 import type { DbfEncoding, DbfError, DbfResult } from '../lib/dbf-to-excel';
 import type { DbfRequest } from '../workers/dbf-to-excel';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#dbf-tool')!;
 const { t, counted, formatBytes } = i18nFrom(root);
@@ -28,8 +29,8 @@ let output: Blob | undefined;
 const showStatus = (message: string) => { status.textContent = message; status.hidden = !message; };
 function resetResult() { output = undefined; result.hidden = true; }
 function chooseFile(next: File) {
-  if (!/\.dbf$/i.test(next.name)) { showStatus(t('dbf.errWrongType')); return; }
-  if (next.size > MAX_BYTES) { showStatus(t('dbf.errTooLarge')); return; }
+  if (!/\.dbf$/i.test(next.name)) { showStatus(t('dbf.errWrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (next.size > MAX_BYTES) { showStatus(t('dbf.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   worker?.terminate(); worker = undefined; ++sequence; convert.disabled = false;
   file = next; resetResult(); showStatus('');
   $('dbf-name').textContent = next.name;
@@ -46,7 +47,7 @@ function run() {
   worker.onmessage = (event: MessageEvent<{ id: number; result?: DbfResult; error?: DbfError }>) => {
     if (event.data.id !== id) return;
     convert.disabled = false; worker?.terminate(); worker = undefined;
-    if (event.data.error) { showStatus(errors[event.data.error.code] || errors.invalid); return; }
+    if (event.data.error) { showStatus(errors[event.data.error.code] || errors.invalid); trackResult('error', { code: errors[event.data.error.code] ? event.data.error.code : 'invalid' }); return; }
     const data = event.data.result!;
     output = new Blob([data.xlsx], { type: XLSX_TYPE });
     $('dbf-summary').textContent = t('dbf.summary', {
@@ -67,8 +68,9 @@ function run() {
     if (data.rows > data.preview.length - 1 || data.columns > data.preview[0].length) notes.push(t('dbf.notePreviewLimited'));
     $('dbf-note').textContent = notes.join(' ');
     result.hidden = false; showStatus(t('dbf.ready'));
+    trackResult('success', { rows: data.rows, columns: data.columns, encoding: data.encoding, output_size: sizeBucket(output.size) });
   };
-  worker.onerror = () => { if (id !== sequence) return; worker?.terminate(); worker = undefined; convert.disabled = false; showStatus(t('dbf.errWorker')); };
+  worker.onerror = () => { if (id !== sequence) return; worker?.terminate(); worker = undefined; convert.disabled = false; showStatus(t('dbf.errWorker')); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, file, encoding: encoding.value as DbfEncoding } satisfies DbfRequest);
 }
 const choose = () => { input.value = ''; input.click(); };

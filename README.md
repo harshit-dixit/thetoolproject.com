@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Fast, clean, privacy-first web utilities and developer tools.</strong><br>
-  Every tool runs 100% in your browser. No server uploads. No tracking. No bloat.
+  Every tool runs 100% in your browser. No server uploads. No bloat.
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 
 - **100% Client-Side and Private:** Files and data never leave your device. All parsing, conversions, image processing, and QR decoding execute directly in your browser.
 - **Blazing Fast:** Powered by Astro static generation with zero unnecessary client JavaScript hydration. Heavy computation is isolated into dedicated Web Workers so the UI remains fluid.
-- **Distraction-Free UX:** No ads, no popups, no tracking cookies, and no multi-step marketing funnels. The tool is the page.
+- **Distraction-Free UX:** No ads, no popups, and no multi-step marketing funnels. The tool is the page.
 - **Internationalized (i18n):** Multi-locale architecture built for global users (`en`, `es`, `pt`, `de`, `fr`, `ja`).
 - **Fully Tested:** Automated test suite with Vitest unit tests, Playwright end-to-end browser tests, translation validation, and production build checks.
 
@@ -94,7 +94,7 @@ thetoolproject.com
 Unlike traditional online converters that upload files to third-party cloud servers:
 1. **Zero Uploads:** Sensitive CSVs, financial sheets, images, and credentials never touch a remote backend.
 2. **Zero Storage:** Files are read into browser memory (`ArrayBuffer` / `Blob`), transformed in-place, and downloaded directly via `URL.createObjectURL`.
-3. **Zero Tracking:** No tracking scripts, analytics fingerprinting, or advertising telemetry.
+3. **Minimal Analytics:** Google Analytics records page views and tool usage (button clicks, whether a conversion succeeded, a file's type and size range). File names, file contents, pasted text, and results never leave the browser. No advertising telemetry.
 
 ---
 

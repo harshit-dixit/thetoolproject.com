@@ -13,7 +13,7 @@ const { locale } = Astro.props;
 const entry = sitePages.notFound.locales[locale] || sitePages.notFound.locales.en!;
 // An error page has no equivalents to declare, so the picker offers each language's home page.
 ---
-<Base locale={locale} title={entry.title} description={entry.description} path={entry.path} alternates={{}} noindex={true}>
+<Base locale={locale} title={entry.title} description={entry.description} path={entry.path} alternates={{}} noindex={true} pageType="not_found">
   <main class="wrap"><div class="hero"><h1 class="page-title">{t('notFound.h1', locale)}</h1><p class="lead">{t('notFound.lead', locale)}</p></div>
     <div class="table-scroll"><table class="spec-table"><thead><tr><th>{t('home.tool', locale)}</th><th>{t('home.takes', locale)}</th><th>{t('home.gives', locale)}</th><th>{t('home.goodFor', locale)}</th></tr></thead>
       <tbody><tr><td><a href={getPublishedToolPath('jsonToHtml', locale)}>{t('tool.h1', locale)}</a></td><td class="fmt">{t('home.jsonInput', locale)}</td><td class="fmt">{t('home.htmlOutput', locale)}</td><td class="note">{t('home.goodForText', locale)}</td></tr>

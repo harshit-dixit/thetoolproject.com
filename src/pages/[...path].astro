@@ -68,7 +68,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
   </>
 )}
 {isTool && tool && entry && (
-  <ToolLayout locale={locale} entry={entry} category={tool.category} alternates={alternates}>
+  <ToolLayout locale={locale} entry={entry} toolId={tool.id} category={tool.category} alternates={alternates}>
     <main class="wrap">
       {tool.id === 'compress-pdf' && <>
         <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('compressPdf.leadStrong', locale)}</strong> {t('compressPdf.lead', locale)}</p><p class="caption">{t('compressPdf.caption', locale)}</p></div></div>

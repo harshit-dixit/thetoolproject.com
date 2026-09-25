@@ -1,5 +1,6 @@
 import type { CompressionErrorCode, CompressionLevel, CompressionMode, CompressionProgress } from '../lib/compress-pdf';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const errorKeys: Record<CompressionErrorCode, string> = {
   invalidPdf: 'pdf.errInvalidPdf',
@@ -55,10 +56,12 @@ if (root) {
     if (!chosen) return;
     if (chosen.size > 30 * 1024 * 1024) {
       message(t('pdf.errTooLarge'), true);
+      trackResult('error', { code: 'tooLarge' });
       return;
     }
     if (!chosen.name.toLowerCase().endsWith('.pdf') && chosen.type !== 'application/pdf') {
       message(t('pdf.errNotPdf'), true);
+      trackResult('error', { code: 'wrongType' });
       return;
     }
     file = chosen;
@@ -120,9 +123,11 @@ if (root) {
       get<HTMLElement>('#pdf-result-note').textContent = note;
       result.hidden = false;
       message('');
+      trackResult('success', { mode, level: mode === 'preserve' ? undefined : level.value, target_kb: target.value || undefined, reached_target: selectedTarget ? String(output.reachedTarget) : undefined, method: output.method, pages: output.pages, output_size: sizeBucket(output.bytes.length) });
     } catch (error) {
       // pdf.js and pdf-lib throw English, technical messages; only known failures get a specific explanation.
       message(compressionError && error instanceof compressionError ? t(errorKeys[error.code]) : t('pdf.errGeneral'), true);
+      trackResult('error', { code: compressionError && error instanceof compressionError ? error.code : 'general' });
     } finally {
       run.disabled = false;
     }

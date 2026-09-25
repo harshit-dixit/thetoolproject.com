@@ -24,7 +24,7 @@ const breadcrumbs = {
 };
 ---
 
-<Base locale="en" {title} {description} {path}>
+<Base locale="en" {title} {description} {path} pageType="guide">
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbs).replaceAll('<', '\\u003c')} />
   </Fragment>

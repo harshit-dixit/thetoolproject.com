@@ -1,6 +1,7 @@
 import type { CsvConversion, CsvError, CsvOptions, CsvSeparator } from '../lib/json-to-csv';
 import type { CsvRequest } from '../workers/json-to-csv';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#json-csv-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
@@ -83,25 +84,25 @@ function errorMessage(error: CsvError | { code: 'workerError' }) {
 }
 function run() {
   const source = fileText ?? textarea.value;
-  if (!source.trim()) { announce(t('tool.empty')); hideResult(); textarea.focus(); return; }
+  if (!source.trim()) { announce(t('tool.empty')); hideResult(); textarea.focus(); trackResult('error', { code: 'empty' }); return; }
   stopWorker(); setWorking(true);
   const id = ++sequence;
   worker ??= new Worker(new URL('../workers/json-to-csv.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<{ id: number; result?: CsvConversion; error?: CsvError | { code: 'workerError' } }>) => {
     if (event.data.id !== sequence) return;
     setWorking(false);
-    if (event.data.result) { showResult(event.data.result); return; }
+    if (event.data.result) { const data = event.data.result; showResult(data); trackResult('success', { rows: data.rows, columns: data.columns, separator: options.separator, output_size: sizeBucket(new Blob([data.csv]).size) }); return; }
     hideResult();
     const error = event.data.error;
-    announce(error ? errorMessage(error) : t('jsonCsv.workerError'));
+    announce(error ? errorMessage(error) : t('jsonCsv.workerError')); trackResult('error', { code: error?.code ?? 'workerError' });
     if (fileText === undefined && error && 'position' in error && error.code !== 'depth') { textarea.focus(); textarea.setSelectionRange(error.position, error.position); }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('jsonCsv.workerError')); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; setWorking(false); hideResult(); announce(t('jsonCsv.workerError')); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, options } satisfies CsvRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(json|jsonl|ndjson|txt)$/i.test(file.name)) { announce(t('jsonCsv.wrongType')); return; }
-  if (file.size > MAX_BYTES) { announce(t('jsonCsv.tooLarge')); return; }
+  if (!/\.(json|jsonl|ndjson|txt)$/i.test(file.name)) { announce(t('jsonCsv.wrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > MAX_BYTES) { announce(t('jsonCsv.tooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   stopWorker(); announce(t('tool.reading'));
   try {
     const content = await file.text();
@@ -109,7 +110,7 @@ async function loadFile(file: File) {
     else { textarea.value = content; useTextarea(); }
     fileName = file.name; $('file-name').textContent = file.name; $('file-size').textContent = formatBytes(file.size); $('file-line').hidden = false;
     hideResult(); announce(t('tool.fileLoaded', { name: file.name, size: formatBytes(file.size) }));
-  } catch { announce(t('tool.readError')); }
+  } catch { announce(t('tool.readError')); trackResult('error', { code: 'readError' }); }
 }
 $('choose-file').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });

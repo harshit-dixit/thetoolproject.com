@@ -1,13 +1,14 @@
 import { createZip } from '../lib/zip';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.getElementById('image-tool') as HTMLDivElement;
 const resize = root.dataset.mode === 'resize';
 const targetKb = Number(root.dataset.targetKb) || 100;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
 
-// Errors meant for the user carry an already translated message; anything else shows a generic one.
-class UserError extends Error {}
+// Errors meant for the user carry an already translated message and a fixed code for analytics; anything else shows a generic one.
+class UserError extends Error { code: string; constructor(message: string, code: string) { super(message); this.code = code; } }
 const userMessage = (error: unknown, fallbackKey: string) => error instanceof UserError ? error.message : t(fallbackKey);
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -111,7 +112,7 @@ function syncDimension(changed: 'width' | 'height') {
 async function decode(file: File): Promise<ImageBitmap> {
   try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
   catch {
-    throw new UserError(t('image.errRead', { name: file.name }));
+    throw new UserError(t('image.errRead', { name: file.name }), 'readError');
   }
 }
 
@@ -125,6 +126,7 @@ async function setFiles(next: File[]) {
   drop.hidden = false;
   if ((!resize && next.length !== 1) || (resize && next.length > 20)) {
     message(resize ? t('image.errBatchLimit') : t('image.errSingleJpg'), true);
+    trackResult('error', { code: resize ? 'batchLimit' : 'singleJpg' });
     return;
   }
   const allowed = resize ? ['image/jpeg', 'image/png', 'image/webp'] : ['image/jpeg'];
@@ -134,6 +136,7 @@ async function setFiles(next: File[]) {
       name: bad.name,
       formats: resize ? t('image.formatsResize') : 'JPG'
     }), true);
+    trackResult('error', { code: bad.size > 25 * 1024 * 1024 ? 'tooLarge' : 'wrongType' });
     return;
   }
   try {
@@ -141,7 +144,7 @@ async function setFiles(next: File[]) {
     originalWidth = bitmap.width;
     originalHeight = bitmap.height;
     bitmap.close();
-    if (!originalWidth || !originalHeight) throw new UserError(t('image.errNoDimensions'));
+    if (!originalWidth || !originalHeight) throw new UserError(t('image.errNoDimensions'), 'noDimensions');
     files = next;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     previewUrl = URL.createObjectURL(next[0]);
@@ -153,7 +156,7 @@ async function setFiles(next: File[]) {
     drop.hidden = true;
     workspace.hidden = false;
     if (resize) updateMode();
-  } catch (error) { message(userMessage(error, 'image.errReadGeneric'), true); }
+  } catch (error) { message(userMessage(error, 'image.errReadGeneric'), true); trackResult('error', { code: error instanceof UserError ? error.code : 'readError' }); }
 }
 
 function dimensions(sourceWidth: number, sourceHeight: number) {
@@ -163,15 +166,15 @@ function dimensions(sourceWidth: number, sourceHeight: number) {
   let height: number;
   if (mode === 'percent') {
     const scale = Number($<HTMLInputElement>('image-percent').value) / 100;
-    if (!Number.isFinite(scale) || scale < .01 || scale > 5) throw new UserError(t('image.errPercentRange'));
+    if (!Number.isFinite(scale) || scale < .01 || scale > 5) throw new UserError(t('image.errPercentRange'), 'percentRange');
     width = Math.round(sourceWidth * scale);
     height = Math.round(sourceHeight * scale);
   } else {
     const w = Number(widthInput.value);
     const h = Number(heightInput.value);
-    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) throw new UserError(t('image.errDimPositive'));
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) throw new UserError(t('image.errDimPositive'), 'dimPositive');
     const dpi = Number(dpiInput.value);
-    if (mode === 'cm' && (!Number.isFinite(dpi) || dpi < 1 || dpi > 1200)) throw new UserError(t('image.errDpiRange'));
+    if (mode === 'cm' && (!Number.isFinite(dpi) || dpi < 1 || dpi > 1200)) throw new UserError(t('image.errDpiRange'), 'dpiRange');
     const factor = mode === 'cm' ? dpi / 2.54 : 1;
     const targetWidth = Math.round(w * factor);
     const targetHeight = Math.round(h * factor);
@@ -191,7 +194,7 @@ function dimensions(sourceWidth: number, sourceHeight: number) {
   }
   width = Math.max(1, width);
   height = Math.max(1, height);
-  if (width > 16000 || height > 16000 || width * height > 40_000_000) throw new UserError(t('image.errOutputTooLarge'));
+  if (width > 16000 || height > 16000 || width * height > 40_000_000) throw new UserError(t('image.errOutputTooLarge'), 'outputTooLarge');
   return { width, height };
 }
 
@@ -200,7 +203,7 @@ function canvasFor(bitmap: ImageBitmap, width: number, height: number, mime: str
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext('2d');
-  if (!context) throw new UserError(t('image.errCanvas'));
+  if (!context) throw new UserError(t('image.errCanvas'), 'canvas');
   if (mime === 'image/jpeg') { context.fillStyle = '#ffffff'; context.fillRect(0, 0, width, height); }
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
@@ -209,7 +212,7 @@ function canvasFor(bitmap: ImageBitmap, width: number, height: number, mime: str
 }
 
 function encode(canvas: HTMLCanvasElement, mime: string, quality?: number): Promise<Blob> {
-  return new Promise((resolve, reject) => canvas.toBlob(blob => blob && blob.type === mime ? resolve(blob) : reject(new UserError(t('image.errSaveFormat', { format: mime.split('/')[1].toUpperCase() }))), mime, quality));
+  return new Promise((resolve, reject) => canvas.toBlob(blob => blob && blob.type === mime ? resolve(blob) : reject(new UserError(t('image.errSaveFormat', { format: mime.split('/')[1].toUpperCase() }), 'saveFormat')), mime, quality));
 }
 
 async function fitJpeg(bitmap: ImageBitmap, maxBytes: number) {
@@ -236,7 +239,7 @@ async function fitJpeg(bitmap: ImageBitmap, maxBytes: number) {
     width = Math.max(1, Math.floor(width * .8));
     height = Math.max(1, Math.floor(height * .8));
   }
-  throw new UserError(t('image.errFitLimit'));
+  throw new UserError(t('image.errFitLimit'), 'fitLimit');
 }
 
 function extension(mime: string) { return mime === 'image/jpeg' ? 'jpg' : mime === 'image/png' ? 'png' : 'webp'; }
@@ -252,7 +255,7 @@ async function process(file: File): Promise<Output> {
     if (!resize || selectedMode() === 'kb') {
       mime = 'image/jpeg';
       const limit = resize ? Number($<HTMLInputElement>('image-kb').value) : targetKb;
-      if (!Number.isInteger(limit) || limit < 1 || limit > 20000) throw new UserError(t('image.errKbRange'));
+      if (!Number.isInteger(limit) || limit < 1 || limit > 20000) throw new UserError(t('image.errKbRange'), 'kbRange');
       if (file.type === mime && file.size <= limit * 1024) {
         blob = file;
         width = bitmap.width;
@@ -305,9 +308,12 @@ async function run() {
     downloadAll.hidden = outputs.length < 2;
     results.hidden = false;
     results.scrollIntoView({ block: 'nearest' });
+    const mode = resize ? selectedMode() : 'kb';
+    trackResult('success', { mode, image_count: outputs.length, format: mode === 'kb' ? 'image/jpeg' : formatInput.value, target_kb: mode === 'kb' ? (resize ? Number($<HTMLInputElement>('image-kb').value) : targetKb) : undefined, output_size: sizeBucket(outputs.reduce((sum, item) => sum + item.blob.size, 0)) });
   } catch (error) {
     clearOutputs();
     message(userMessage(error, 'image.errGenericProcess'), true);
+    trackResult('error', { code: error instanceof UserError ? error.code : 'processError' });
   } finally {
     runButton.disabled = false;
     if (resize) estimateButton.disabled = false;

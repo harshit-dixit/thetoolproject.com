@@ -1,6 +1,7 @@
 import wasmUrl from '../../node_modules/zxing-wasm/dist/reader/zxing_reader.wasm?url';
 import type { ReaderOptions } from 'zxing-wasm/reader';
 import { i18nFrom } from '../i18n/client';
+import { trackResult } from '../lib/analytics';
 
 const root = document.getElementById('qr-tool') as HTMLElement;
 const { t } = i18nFrom(root);
@@ -121,6 +122,7 @@ async function startCamera() {
   clearResult();
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
     showStatus(t('qr.errSecureContext'), true);
+    trackResult('error', { code: 'secureContext' });
     return;
   }
   const run = cameraRun;
@@ -165,12 +167,14 @@ async function startCamera() {
           if (run !== cameraRun) return;
           if (found) {
             showResult(found.text);
+            trackResult('success', { source: 'camera' });
             return;
           }
         } catch {
           if (run !== cameraRun) return;
           stopCamera();
           showStatus(t('qr.errReaderStopped'), true);
+          trackResult('error', { code: 'readerStopped' });
           return;
         }
       }
@@ -182,6 +186,7 @@ async function startCamera() {
     stopCamera();
     const name = error instanceof DOMException ? error.name : '';
     showStatus(name === 'NotAllowedError' ? t('qr.errPermissionDenied') : name === 'NotFoundError' ? t('qr.errNotFound') : t('qr.errStartFailed'), true);
+    trackResult('error', { code: name === 'NotAllowedError' ? 'permissionDenied' : name === 'NotFoundError' ? 'noCamera' : 'startFailed' });
   } finally {
     if (run === cameraRun) startButton.disabled = false;
   }
@@ -209,10 +214,12 @@ async function scanImage(file: File) {
   const supportedExtension = /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name);
   if ((file.type && !supportedMime) || (!supportedMime && !supportedExtension)) {
     showStatus(t('qr.errImageType'), true);
+    trackResult('error', { code: 'wrongType' });
     return;
   }
   if (file.size > 20 * 1024 * 1024) {
     showStatus(t('qr.errImageTooLarge'), true);
+    trackResult('error', { code: 'tooLarge' });
     return;
   }
   showStatus(t('qr.readingImage', { name: file.name || t('qr.pastedImage') }));
@@ -228,10 +235,10 @@ async function scanImage(file: File) {
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
     const found = (await decode.readBarcodes(pixels, scanOptions)).find(item => item.isValid);
     if (run !== imageRun) return;
-    if (found) showResult(found.text);
-    else showStatus(t('qr.errNotFoundInImage'), true);
+    if (found) { showResult(found.text); trackResult('success', { source: 'image' }); }
+    else { showStatus(t('qr.errNotFoundInImage'), true); trackResult('error', { code: 'notFoundInImage' }); }
   } catch {
-    if (run === imageRun) showStatus(t('qr.errImageRead'), true);
+    if (run === imageRun) { showStatus(t('qr.errImageRead'), true); trackResult('error', { code: 'readError' }); }
   }
 }
 

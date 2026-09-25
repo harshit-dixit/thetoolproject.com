@@ -4,8 +4,8 @@ import { t } from '../i18n/utils';
 import type { Locale, Tool, ToolLocale } from '../data/tools';
 import { getPublishedHomePath } from '../data/pages';
 
-interface Props { locale: Locale; entry: ToolLocale; category: Tool['category']; alternates: Partial<Record<Locale, string>> }
-const { locale, entry, category, alternates } = Astro.props;
+interface Props { locale: Locale; entry: ToolLocale; toolId: Tool['id']; category: Tool['category']; alternates: Partial<Record<Locale, string>> }
+const { locale, entry, toolId, category, alternates } = Astro.props;
 const url = new URL(entry.path, 'https://thetoolproject.com').href;
 const homePath = getPublishedHomePath(locale) ?? '/';
 const homeUrl = new URL(homePath, 'https://thetoolproject.com').href;
@@ -15,7 +15,7 @@ const breadcrumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList
   { '@type': 'ListItem', position: 2, name: entry.h1, item: url },
 ] };
 ---
-<Base {locale} title={entry.title} description={entry.description} path={entry.path} {alternates}>
+<Base {locale} title={entry.title} description={entry.description} path={entry.path} {alternates} pageType="tool" {toolId}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(application).replaceAll('<', '\\u003c')} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbs).replaceAll('<', '\\u003c')} />

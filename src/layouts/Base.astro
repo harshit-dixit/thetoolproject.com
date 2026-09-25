@@ -11,9 +11,12 @@ interface Props {
   path: string;
   alternates?: Partial<Record<Locale, string>>;
   noindex?: boolean;
+  // Analytics content group and, on tool pages, the tool id sent with every event.
+  pageType?: 'home' | 'tool' | 'guide' | 'page' | 'not_found';
+  toolId?: string;
 }
 
-const { locale, title, description, path, alternates = { en: path }, noindex = false } = Astro.props;
+const { locale, title, description, path, alternates = { en: path }, noindex = false, pageType = 'page', toolId } = Astro.props;
 const canonical = new URL(path, 'https://thetoolproject.com').href;
 const alternateEntries = Object.entries(alternates);
 
@@ -40,9 +43,31 @@ const privacyUrl = getPublishedPagePath('privacy', locale);
 const termsUrl = getPublishedPagePath('terms', locale);
 ---
 <!doctype html>
-<html lang={langTag(locale)}>
+<html lang={langTag(locale)} data-locale={locale} data-page-type={pageType} data-tool={toolId}>
   <head>
     <meta charset="utf-8" />
+    <!-- Google tag (gtag.js). Loads only on the live site, or anywhere with ?ga_debug=1 to test in GA DebugView. -->
+    <script is:inline>
+      (function () {
+        var id = 'G-065HLW5DZ3';
+        var page = document.documentElement.dataset;
+        var debug = /[?&]ga_debug=1(&|$)/.test(location.search);
+        var host = location.hostname;
+        window.dataLayer = window.dataLayer || [];
+        var gtag = window.gtag = function () { window.dataLayer.push(arguments); };
+        if (!debug && host !== 'thetoolproject.com' && host !== 'www.thetoolproject.com') return;
+        var tag = document.createElement('script');
+        tag.async = true;
+        tag.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+        document.head.appendChild(tag);
+        gtag('js', new Date());
+        // Config parameters are sent with the page_view and every later event on the page.
+        var settings = { content_group: page.pageType, page_locale: page.locale };
+        if (page.tool) settings.tool_id = page.tool;
+        if (debug) settings.debug_mode = true;
+        gtag('config', id, settings);
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -86,5 +111,6 @@ const termsUrl = getPublishedPagePath('terms', locale);
         </div>
       </div>
     </footer>
+    <script src="../scripts/analytics.ts"></script>
   </body>
 </html>

@@ -1,6 +1,7 @@
 import type { CsvSqlOptions, CsvSqlResult, CsvSqlErrorCode } from '../lib/csv-to-sql';
 import type { CsvSqlRequest } from '../workers/csv-to-sql';
 import { i18nFrom } from '../i18n/client';
+import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#csv-sql-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
@@ -94,8 +95,8 @@ function errorMessage(error: { code: CsvSqlErrorCode | 'workerError'; row?: numb
 }
 function run() {
   const source = fileText ?? input.value;
-  if (!source.trim()) { hideResult(); announce(errorMessage({ code: 'empty' })); input.focus(); return; }
-  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('csvSql.errTooLarge')); return; }
+  if (!source.trim()) { hideResult(); announce(errorMessage({ code: 'empty' })); trackResult('error', { code: 'empty' }); input.focus(); return; }
+  if (new Blob([source]).size > MAX_BYTES) { hideResult(); announce(t('csvSql.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   ++sequence; stopWorker();
   const id = sequence;
   busy = true; convert.disabled = true; announce(t('csvSql.working'));
@@ -103,15 +104,15 @@ function run() {
   worker.onmessage = (event: MessageEvent<{ id: number; result?: CsvSqlResult; error?: { code: CsvSqlErrorCode | 'workerError'; row?: number } }>) => {
     if (event.data.id !== sequence) return;
     busy = false; convert.disabled = false;
-    if (event.data.result) showResult(event.data.result);
-    else { hideResult(); announce(errorMessage(event.data.error ?? { code: 'workerError' })); }
+    if (event.data.result) { const data = event.data.result; showResult(data); trackResult('success', { rows: data.rows, columns: data.columns, dialect: options().dialect, delimiter: data.delimiter, output_size: sizeBucket(new Blob([data.sql]).size) }); }
+    else { hideResult(); announce(errorMessage(event.data.error ?? { code: 'workerError' })); trackResult('error', { code: event.data.error?.code ?? 'workerError' }); }
   };
-  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; convert.disabled = false; hideResult(); announce(errorMessage({ code: 'workerError' })); };
+  worker.onerror = () => { worker?.terminate(); worker = undefined; busy = false; convert.disabled = false; hideResult(); announce(errorMessage({ code: 'workerError' })); trackResult('error', { code: 'workerError' }); };
   worker.postMessage({ id, source, options: options() } satisfies CsvSqlRequest);
 }
 async function loadFile(file: File) {
-  if (!/\.(csv|tsv|txt)$/i.test(file.name)) { announce(t('csvSql.errWrongType')); return; }
-  if (file.size > MAX_BYTES) { announce(t('csvSql.errTooLarge')); return; }
+  if (!/\.(csv|tsv|txt)$/i.test(file.name)) { announce(t('csvSql.errWrongType')); trackResult('error', { code: 'wrongType' }); return; }
+  if (file.size > MAX_BYTES) { announce(t('csvSql.errTooLarge')); trackResult('error', { code: 'tooLarge' }); return; }
   ++sequence; stopWorker();
   const id = sequence; announce(t('csvSql.reading'));
   try {
@@ -121,7 +122,7 @@ async function loadFile(file: File) {
     else { input.value = content; fileText = undefined; $('csv-sql-hint').textContent = t('csvSql.editHint'); }
     fileName = file.name; $('csv-sql-file-name').textContent = file.name; $('csv-sql-file-size').textContent = formatBytes(file.size); $('csv-sql-file-line').hidden = false;
     hideResult(); announce(t('csvSql.loadedReady', { name: file.name, size: formatBytes(file.size) }));
-  } catch { if (id === sequence) announce(t('csvSql.errRead')); }
+  } catch { if (id === sequence) { announce(t('csvSql.errRead')); trackResult('error', { code: 'readError' }); } }
 }
 $('csv-sql-choose').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) void loadFile(fileInput.files[0]); });
