@@ -93,7 +93,7 @@ const termsUrl = getPublishedPagePath('terms', locale);
               <label for="language-select" class="visually-hidden">{t('footer.language', locale)}</label>
               <select id="language-select" name="language" class="language-select">
                 {switcherOptions.map((opt) => (
-                  <option value={opt.url} selected={opt.locale === locale} lang={langTag(opt.locale)}>
+                  <option value={opt.url} selected={opt.locale === locale} lang={langTag(opt.locale)} data-locale={opt.locale}>
                     {opt.label}
                   </option>
                 ))}

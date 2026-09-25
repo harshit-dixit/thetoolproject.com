@@ -1,5 +1,6 @@
 import { locales, type Locale } from './tools';
 import { dictionaries } from '../i18n/dictionaries';
+import { reviewedLocales } from '../i18n/locales.mjs';
 
 export type PageLocale = {
   path: string;
@@ -30,7 +31,7 @@ export function createPageLocales(
   for (const locale of locales) {
     const d = dictionaries[locale];
     const defaultPath = pathGen(locale);
-    const defaultReviewed = locale === 'en';
+    const defaultReviewed = reviewedLocales.includes(locale);
     const override = overrides?.[locale];
     result[locale] = {
       path: override?.path ?? defaultPath,

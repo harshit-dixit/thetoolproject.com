@@ -6,6 +6,9 @@ export const defaultLocale = 'en';
 /** @type {readonly ['en', 'es', 'pt', 'de', 'fr', 'ja']} */
 export const locales = /** @type {const} */ (['en', 'es', 'pt', 'de', 'fr', 'ja']);
 
+// Approved for publication. Add a new locale here only after its pages and tools are reviewed.
+export const reviewedLocales = Object.freeze(['en', 'es', 'pt', 'de', 'fr', 'ja']);
+
 // BCP 47 tags for <html lang> and hreflang. The URL prefix stays /pt/, but the copy is
 // Brazilian Portuguese, so search engines and screen readers are told pt-BR.
 export const htmlLang = /** @type {const} */ ({

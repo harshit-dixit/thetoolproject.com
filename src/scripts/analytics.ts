@@ -55,7 +55,7 @@ document.addEventListener('paste', event => {
 
 document.querySelector<HTMLFormElement>('footer .language-picker')?.addEventListener('submit', event => {
   const select = (event.currentTarget as HTMLFormElement).elements.namedItem('language') as HTMLSelectElement;
-  track('language_switch', { from_locale: document.documentElement.dataset.locale, to_locale: select.selectedOptions[0]?.lang });
+  track('language_switch', { from_locale: document.documentElement.dataset.locale, to_locale: select.selectedOptions[0]?.dataset.locale });
 });
 
 let reportedErrors = 0;

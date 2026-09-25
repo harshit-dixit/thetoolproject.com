@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tools, publishedToolLocales, getPublishedToolPath, createToolLocales, type Tool, type Locale } from './tools';
+import { tools, locales, publishedToolLocales, getPublishedToolPath, createToolLocales, type Tool, type Locale } from './tools';
 import { sitePages, publishedPageLocales, getPublishedPagePath, getPublishedHomePath, createPageLocales, type SitePage } from './pages';
 import { buildStaticPaths } from './routes';
 
@@ -12,20 +12,20 @@ describe('routing and review gate', () => {
     }
   });
 
-  it('all non-English tool locales have draft entries with reviewed: false and non-empty metadata', () => {
+  it('all non-English tool locales are reviewed and have non-empty metadata', () => {
     const nonEnLocales: Locale[] = ['es', 'pt', 'de', 'fr', 'ja'];
     for (const [key, tool] of Object.entries(tools)) {
       for (const loc of nonEnLocales) {
         const entry = tool.locales[loc];
-        expect(entry, `tool ${key} should have draft entry for ${loc}`).toBeDefined();
-        expect(entry?.reviewed, `tool ${key} ${loc} must have reviewed: false`).toBe(false);
+        expect(entry, `tool ${key} should have entry for ${loc}`).toBeDefined();
+        expect(entry?.reviewed, `tool ${key} ${loc} must be reviewed`).toBe(true);
         expect(entry?.path).toBe(`/${loc}/${tool.id}/`);
         expect(entry?.title).toBeTruthy();
         expect(entry?.description).toBeTruthy();
         expect(entry?.h1).toBeTruthy();
       }
       const published = publishedToolLocales(tool);
-      expect(published.map(([l]) => l)).toEqual(['en']);
+      expect(published.map(([l]) => l)).toEqual(locales);
     }
   });
 
@@ -36,26 +36,25 @@ describe('routing and review gate', () => {
     }
   });
 
-  it('all non-English site pages have draft entries with reviewed: false and non-empty metadata', () => {
+  it('all non-English site pages are reviewed and have non-empty metadata', () => {
     const nonEnLocales: Locale[] = ['es', 'pt', 'de', 'fr', 'ja'];
     for (const [id, page] of Object.entries(sitePages)) {
       for (const loc of nonEnLocales) {
         const entry = page.locales[loc];
-        expect(entry, `page ${id} should have draft entry for ${loc}`).toBeDefined();
-        expect(entry?.reviewed, `page ${id} ${loc} must have reviewed: false`).toBe(false);
+        expect(entry, `page ${id} should have entry for ${loc}`).toBeDefined();
+        expect(entry?.reviewed, `page ${id} ${loc} must be reviewed`).toBe(true);
         expect(entry?.title).toBeTruthy();
         expect(entry?.description).toBeTruthy();
       }
       const published = publishedPageLocales(page);
-      expect(published.map(([l]) => l), `page ${id} published locales`).toEqual(['en']);
+      expect(published.map(([l]) => l), `page ${id} published locales`).toEqual(locales);
     }
   });
 
-  it('getPublishedToolPath resolves paths for English and falls back safely for unreviewed locales', () => {
+  it('getPublishedToolPath resolves reviewed localized paths', () => {
     expect(getPublishedToolPath('compressPdf', 'en')).toBe('/compress-pdf/');
     expect(getPublishedToolPath('compress-pdf', 'en')).toBe('/compress-pdf/');
-    // When non-English is unreviewed, it safely links to English so links never 404
-    expect(getPublishedToolPath('compressPdf', 'es')).toBe('/compress-pdf/');
+    expect(getPublishedToolPath('compressPdf', 'es')).toBe('/es/compress-pdf/');
     expect(() => getPublishedToolPath('nonexistent', 'en')).toThrow(/Unknown tool/);
   });
 
@@ -70,7 +69,7 @@ describe('routing and review gate', () => {
 
   it('getPublishedHomePath resolves home path only for reviewed locales', () => {
     expect(getPublishedHomePath('en')).toBe('/');
-    expect(getPublishedHomePath('es')).toBeUndefined();
+    expect(getPublishedHomePath('es')).toBe('/es/');
   });
 
   it('publishedPageLocales filters out unreviewed locales and includes reviewed ones', () => {
@@ -87,10 +86,10 @@ describe('routing and review gate', () => {
     expect(published.map(([, entry]) => entry.path)).toEqual(['/about/', '/es/about/']);
   });
 
-  it('getPublishedPagePath falls back to English when locale is unreviewed or missing', () => {
-    expect(getPublishedPagePath('about', 'es')).toBe('/about/');
-    expect(getPublishedPagePath('privacy', 'de')).toBe('/privacy/');
-    expect(getPublishedPagePath('notFound', 'es')).toBe('/404.html');
+  it('getPublishedPagePath resolves reviewed localized paths', () => {
+    expect(getPublishedPagePath('about', 'es')).toBe('/es/about/');
+    expect(getPublishedPagePath('privacy', 'de')).toBe('/de/privacy/');
+    expect(getPublishedPagePath('notFound', 'es')).toBe('/es/404.html');
   });
 
   it('supports per-item and per-locale approval and translated slugs: approved fixture builds and links while draft fixture emits no public route', () => {
@@ -103,14 +102,21 @@ describe('routing and review gate', () => {
           path: '/es/comprimir-pdf/',
           reviewed: true,
         },
+        pt: { reviewed: false },
+        de: { reviewed: false },
+        fr: { reviewed: false },
+        ja: { reviewed: false },
       }),
     };
 
-    // 2. Draft fixture: standard unreviewed draft tool
+    // 2. Draft fixture: explicit per-locale rejection remains supported.
     const draftToolFixture: Tool = {
       id: 'compress-pdf-to-100kb',
       category: 'UtilitiesApplication',
-      locales: createToolLocales('compress-pdf-to-100kb', 'compressPdf100kb'),
+      locales: createToolLocales('compress-pdf-to-100kb', 'compressPdf100kb', {
+        es: { reviewed: false }, pt: { reviewed: false }, de: { reviewed: false },
+        fr: { reviewed: false }, ja: { reviewed: false },
+      }),
     };
 
     // Verify approved fixture route decisions and review status
@@ -120,7 +126,7 @@ describe('routing and review gate', () => {
     // Translated slug differs from the English slug
     expect(approvedToolFixture.locales.es?.path).toBe('/es/comprimir-pdf/');
     expect(approvedToolFixture.locales.es?.path).not.toBe(`/${'es'}/${approvedToolFixture.id}/`);
-    // Other non-English locales remain draft with reviewed: false
+    // Explicitly unreviewed locales remain excluded.
     expect(approvedToolFixture.locales.de?.reviewed).toBe(false);
     expect(approvedToolFixture.locales.pt?.reviewed).toBe(false);
     expect(approvedToolFixture.locales.fr?.reviewed).toBe(false);
@@ -178,6 +184,10 @@ describe('routing and review gate', () => {
           path: '/es/acerca-de/',
           reviewed: true,
         },
+        pt: { reviewed: false },
+        de: { reviewed: false },
+        fr: { reviewed: false },
+        ja: { reviewed: false },
       }),
     };
     const publishedPages = publishedPageLocales(approvedPageFixture);
@@ -192,10 +202,10 @@ describe('routing and review gate', () => {
     const { pathToFileURL } = await import('node:url');
     const { localized404Integration } = await import('../../astro.config.mjs');
 
-    // 1. Verify that in current Phase 2, drafts have reviewed: false and are excluded from published
-    expect(sitePages.notFound.locales.es?.reviewed).toBe(false);
+    // The real localized 404 routes are published.
+    expect(sitePages.notFound.locales.es?.reviewed).toBe(true);
     const publishedCurrent = publishedPageLocales(sitePages.notFound);
-    expect(publishedCurrent.map(([l]) => l)).toEqual(['en']);
+    expect(publishedCurrent.map(([l]) => l)).toEqual(locales);
 
     // 2. Isolated fixture: simulate a reviewed non-English notFound without mutating actual sitePages
     const fixtureNotFound: SitePage = {
@@ -250,15 +260,18 @@ describe('routing and review gate', () => {
     }
   });
 
-  it('production routes contain only reviewed English pages; the draft preview adds every locale', () => {
+  it('production routes contain every reviewed locale', () => {
     const production = buildStaticPaths({ allowDrafts: false });
-    expect(production.every(route => route.props.locale === 'en')).toBe(true);
-    // 19 tools + home, about, contact, privacy, terms (English 404 is src/pages/404.astro).
-    expect(production).toHaveLength(Object.keys(tools).length + 5);
+    // Every locale has 19 tools and 6 site pages, except English 404 is a separate Astro page.
+    expect(production).toHaveLength(locales.length * (Object.keys(tools).length + 6) - 1);
+    for (const loc of locales) {
+      const expected = Object.keys(tools).length + (loc === 'en' ? 5 : 6);
+      expect(production.filter(route => route.props.locale === loc)).toHaveLength(expected);
+    }
     expect(production.find(route => route.params.path === undefined)?.props.kind).toBe('page');
 
     const preview = buildStaticPaths({ allowDrafts: true });
-    expect(preview.filter(route => route.props.locale === 'ja')).toHaveLength(Object.keys(tools).length + 6);
+    expect(preview).toEqual(production);
     expect(preview.some(route => route.params.path === 'ja/404')).toBe(true);
     expect(preview.some(route => route.params.path === 'ja')).toBe(true);
   });
@@ -272,4 +285,3 @@ describe('routing and review gate', () => {
     expect(() => buildStaticPaths({ allowDrafts: false, tools: { clash }, pages: {} })).toThrow(/Duplicate route: \/compress-pdf/);
   });
 });
-

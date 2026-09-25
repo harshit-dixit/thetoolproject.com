@@ -1,4 +1,4 @@
-import { locales } from '../i18n/locales.mjs';
+import { locales, reviewedLocales } from '../i18n/locales.mjs';
 import { dictionaries, type Locale } from '../i18n/dictionaries';
 
 export { locales };
@@ -22,7 +22,7 @@ export function createToolLocales(
   for (const locale of locales) {
     const d = dictionaries[locale];
     const defaultPath = locale === 'en' ? `/${id}/` : `/${locale}/${id}/`;
-    const defaultReviewed = locale === 'en';
+    const defaultReviewed = reviewedLocales.includes(locale);
     const override = overrides?.[locale];
     result[locale] = {
       path: override?.path ?? defaultPath,

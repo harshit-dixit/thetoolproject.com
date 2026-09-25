@@ -145,17 +145,18 @@ assert.match(read('csv-viewer/index.html'), /CSV downloads use commas and UTF-8/
 assert.match(read('csv-to-json/index.html'), /Files are limited to 10 MB and 500 columns/);
 assert.match(read('qr-code-scanner/index.html'), /<code>https:\/\/<\/code> addresses can be opened from the result/);
 assert.match(read('compress-jpg-to-100kb/index.html'), /within 100KB \(102,400 bytes\)/);
-// Only one language is published, so no page shows a language picker.
-assert.doesNotMatch(home, /id="language-select"/);
+assert.match(home, /id="language-select"/);
 assert.ok(existsSync(new URL('../dist/404.html', import.meta.url)));
 assert.ok(!existsSync(new URL('../dist/404/index.html', import.meta.url)));
-for (const draft of ['es', 'pt', 'de', 'fr', 'ja']) {
-  assert.ok(!existsSync(new URL(`../dist/${draft}/404.html`, import.meta.url)), `Draft ${draft} must not have 404.html`);
-  assert.ok(!existsSync(new URL(`../dist/${draft}/404/index.html`, import.meta.url)), `Draft ${draft} must not have /404/ directory`);
-  assert.doesNotMatch(notFound, new RegExp(`hreflang="${draft}"`));
+for (const locale of ['es', 'pt', 'de', 'fr', 'ja']) {
+  assert.match(home, new RegExp(`<option value="/${locale}/"`));
+  assert.match(home, new RegExp(`hreflang="${locale === 'pt' ? 'pt-BR' : locale}"`));
+  assert.match(read(`${locale}/index.html`), /id="language-select"/);
+  assert.ok(existsSync(new URL(`../dist/${locale}/404.html`, import.meta.url)), `${locale} must have a localized 404.html`);
+  assert.ok(!existsSync(new URL(`../dist/${locale}/404/index.html`, import.meta.url)), `${locale} must not retain /404/ directory`);
 }
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]).sort();
-const expectedUrls = [
+const englishUrls = [
   'https://thetoolproject.com/',
   'https://thetoolproject.com/about/',
   'https://thetoolproject.com/contact/',
@@ -181,6 +182,14 @@ const expectedUrls = [
   'https://thetoolproject.com/privacy/',
   'https://thetoolproject.com/terms/',
   ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/'] : []),
+];
+const expectedUrls = [
+  ...englishUrls,
+  ...['es', 'pt', 'de', 'fr', 'ja'].flatMap(locale =>
+    englishUrls
+      .filter(url => !new URL(url).pathname.startsWith('/guides/'))
+      .map(url => `https://thetoolproject.com/${locale}${new URL(url).pathname}`)
+  ),
 ].sort();
 assert.deepEqual(sitemapUrls, expectedUrls);
 assert.ok(existsSync(new URL('../dist/404.html', import.meta.url)));
