@@ -21,6 +21,7 @@ import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
 import ImageTool from '../components/ImageTool.astro';
 import CompressPdfTool from '../components/CompressPdfTool.astro';
+import EmlToPdfTool from '../components/EmlToPdfTool.astro';
 import { publishedToolLocales, getPublishedToolPath } from '../data/tools';
 import { buildStaticPaths, type RouteProps } from '../data/routes';
 import { t, formatNumber, type TranslationKey } from '../i18n/utils';
@@ -311,6 +312,23 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><strong>{t('dbfExcel.faqQ1', locale)}</strong> {t('dbfExcel.faqA1', locale)}</p>
           <p><strong>{t('dbfExcel.faqQ2', locale)}</strong> {t('dbfExcel.faqA2', locale)}</p>
           <p><strong>{t('dbfExcel.faqQ3', locale)}</strong> {t('dbfExcel.faqA3', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'eml-to-pdf' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('emlPdf.leadStrong', locale)}</strong> {t('emlPdf.lead', locale)}</p><p class="caption">{t('emlPdf.caption', locale)}</p></div></div>
+        <EmlToPdfTool locale={locale} />
+        <section aria-labelledby="eml-how-title"><div class="sec-head"><h2 id="eml-how-title">{t('emlPdf.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('emlPdf.howIntro', locale)} /></p>
+          <h3>{t('emlPdf.howBodyTitle', locale)}</h3>
+          <p>{t('emlPdf.howBodyP', locale)}</p>
+          <h3>{t('emlPdf.howAttachTitle', locale)}</h3>
+          <p><RichText text={t('emlPdf.howAttachP', locale, { embed: t('eml.attachEmbed', locale), list: t('eml.attachList', locale) })} /></p>
+          <h3>{t('emlPdf.howLimitsTitle', locale)}</h3>
+          <p><RichText text={t('emlPdf.howLimitsP', locale)} /></p>
+          <h3>{t('emlPdf.faqTitle', locale)}</h3>
+          <p><strong>{t('emlPdf.faqQ1', locale)}</strong> {t('emlPdf.faqA1', locale)}</p>
+          <p><strong>{t('emlPdf.faqQ2', locale)}</strong> {t('emlPdf.faqA2', locale)}</p>
+          <p><strong>{t('emlPdf.faqQ3', locale)}</strong> {t('emlPdf.faqA3', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'json-to-csv' && <>

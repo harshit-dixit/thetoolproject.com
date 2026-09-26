@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { t } from '../../i18n/utils';
-import { getPublishedToolPath } from '../../data/tools';
+import { getPublishedToolPath, tools } from '../../data/tools';
 import { sitePages, publishedPageLocales } from '../../data/pages';
 import type { Locale } from '../../data/tools';
 
@@ -40,6 +40,7 @@ const englishOnly = locale === 'en' ? '' : ` ${t('guide.inEnglish', locale)}`;
           <tr><td><a href={getPublishedToolPath('xmlToJson', locale)}>{t('xmlJson.h1', locale)}</a></td><td class="fmt">{t('home.xmlInput', locale)}</td><td class="fmt">{t('home.xmlJsonOutput', locale)}</td><td class="note">{t('home.xmlJsonGoodFor', locale)}</td></tr>
           <tr><td><a href={getPublishedToolPath('excelToCsv', locale)}>{t('excel.h1', locale)}</a></td><td class="fmt">{t('home.excelInput', locale)}</td><td class="fmt">{t('home.csvOutput', locale)}</td><td class="note">{t('home.excelGoodFor', locale)}</td></tr>
           <tr><td><a href={getPublishedToolPath('dbfToExcel', locale)}>{t('dbfExcel.h1', locale)}</a></td><td class="fmt">{t('home.takes.dbf', locale)}</td><td class="fmt">{t('home.gives.dbfExcel', locale)}</td><td class="note">{t('home.note.dbfExcel', locale)}</td></tr>
+          {tools.emlToPdf.locales[locale]?.reviewed && <tr><td><a href={getPublishedToolPath('emlToPdf', locale)}>{t('emlPdf.h1', locale)}</a></td><td class="fmt">{t('home.takes.eml', locale)}</td><td class="fmt">{t('home.gives.emlPdf', locale)}</td><td class="note">{t('home.note.emlPdf', locale)}</td></tr>}
           <tr><td><a href={getPublishedToolPath('csvToSql', locale)}>{t('csvSql.h1', locale)}</a></td><td class="fmt">{t('home.takes.csv', locale)}</td><td class="fmt">{t('home.gives.csvSql', locale)}</td><td class="note">{t('home.note.csvSql', locale)}</td></tr>
         </tbody>
       </table></div>

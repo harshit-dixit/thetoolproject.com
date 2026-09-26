@@ -40,6 +40,7 @@
 | **[JSON to Excel](https://thetoolproject.com/json-to-excel/)** | Transform JSON datasets into native `.xlsx` workbooks generated inside a Web Worker. |
 | **[Excel to CSV](https://thetoolproject.com/excel-to-csv/)** | Extract sheets from Excel workbooks (`.xlsx`, `.xls`) to clean CSV files locally. |
 | **[DBF to Excel](https://thetoolproject.com/dbf-to-excel/)** | Convert dBASE/FoxPro `.dbf` tables to Excel `.xlsx` with record preview and legacy text encoding selection. |
+| **[EML to PDF](https://thetoolproject.com/eml-to-pdf/)** | Convert `.eml` emails to PDF with selectable text, sender/recipient header table, inline images, clickable links, and optional embedded attachments. |
 | **[XML to JSON](https://thetoolproject.com/xml-to-json/)** | High-performance XML parser converting complex XML tree structures into idiomatic JSON via streaming SAX. |
 | **[XML to CSV](https://thetoolproject.com/xml-to-csv/)** | Flatten XML record hierarchies directly into CSV format without memory exhaustion. |
 | **[CSV to SQL](https://thetoolproject.com/csv-to-sql/)** | Generate batch SQL `INSERT` statements from CSV data for PostgreSQL, MySQL, SQLite, and SQL Server. |
@@ -83,6 +84,7 @@ thetoolproject.com
 ├── Core Engines
 │   ├── SheetJS (xlsx)  Native Excel workbook parsing & generation
 │   ├── saxes           Streaming event-driven XML SAX parser
+│   ├── pdf-lib         PDF building for EML to PDF and Compress PDF (Noto Sans, SIL OFL, via fontkit)
 │   └── zxing-wasm      WebAssembly-powered barcode & QR computer vision
 └── Quality Assurance
     ├── Vitest          Unit tests for core parsing algorithms

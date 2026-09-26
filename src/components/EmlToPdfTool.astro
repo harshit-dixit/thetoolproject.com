@@ -1,0 +1,68 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'eml.errEmpty', 'eml.errFont', 'eml.errGeneral', 'eml.errNotEmail',
+  'eml.errOutlookMsg', 'eml.errTooLarge', 'eml.errTooManyPages', 'eml.errTimeout', 'eml.errUnsupportedScript', 'eml.errWorker',
+  'eml.errWrongType', 'eml.fromLine', 'eml.noSubject', 'eml.noteCharset', 'eml.noteDropped.one', 'eml.noteDropped.other',
+  'eml.noteEmbedded.one', 'eml.noteEmbedded.other', 'eml.noteEncrypted', 'eml.noteListed.one', 'eml.noteListed.other',
+  'eml.noteRemoteImages.one', 'eml.noteRemoteImages.other', 'eml.noteSkippedImages.one', 'eml.noteSkippedImages.other',
+  'eml.pages.one', 'eml.pages.other', 'eml.pdfAttachments', 'eml.pdfBcc', 'eml.pdfCc', 'eml.pdfDate', 'eml.pdfEncrypted',
+  'eml.pdfFrom', 'eml.pdfNoBody', 'eml.pdfPage', 'eml.pdfReplyTo', 'eml.pdfTo', 'eml.ready', 'eml.reading', 'eml.summary',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+// Letter where it's the paper standard (US English), A4 elsewhere. The translation file decides.
+const pageSize = t('eml.defaultPageSize', locale);
+if (pageSize !== 'letter' && pageSize !== 'a4') throw new Error(`eml.defaultPageSize must be letter or a4 in "${locale}", not "${pageSize}"`);
+---
+<div class="drop" id="eml-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <input class="visually-hidden" type="file" id="eml-file" accept=".eml,.emlx,.msg,message/rfc822" tabindex="-1" aria-label={t('eml.fileAria', locale)} />
+    <div class="drop-empty" id="eml-empty">
+      <h2 class="drop-title">{t('eml.dropTitle', locale)}</h2>
+      <p class="drop-hint">{t('eml.dropHint', locale)}</p>
+      <button class="btn" type="button" id="eml-choose">{t('eml.chooseButton', locale)}</button>
+    </div>
+    <div id="eml-panel" hidden>
+      <div class="file-line"><span class="file-name" id="eml-name"></span><span class="file-size" id="eml-size"></span></div>
+      <h2 class="panel-title eml-subject" id="eml-subject"></h2>
+      <p class="panel-advice eml-from" id="eml-from"></p>
+      <div class="option-row">
+        <fieldset><legend>{t('eml.pageSize', locale)}</legend><div class="chips" role="group" aria-label={t('eml.pageSize', locale)}>
+          <button type="button" data-page-size="letter" aria-pressed={pageSize === 'letter' ? 'true' : 'false'}>{t('eml.pageLetter', locale)}</button>
+          <button type="button" data-page-size="a4" aria-pressed={pageSize === 'a4' ? 'true' : 'false'}>{t('eml.pageA4', locale)}</button>
+        </div></fieldset>
+        <fieldset id="eml-body-group" hidden><legend>{t('eml.bodyLabel', locale)}</legend><div class="chips" role="group" aria-label={t('eml.bodyLabel', locale)}>
+          <button type="button" data-body="html" aria-pressed="true">{t('eml.bodyFormatted', locale)}</button>
+          <button type="button" data-body="text" aria-pressed="false">{t('eml.bodyPlain', locale)}</button>
+        </div></fieldset>
+        <fieldset id="eml-attachments-group" hidden><legend>{t('eml.attachLabel', locale)}</legend><div class="chips" role="group" aria-label={t('eml.attachLabel', locale)}>
+          <button type="button" data-attachments="embed" aria-pressed="true">{t('eml.attachEmbed', locale)}</button>
+          <button type="button" data-attachments="list" aria-pressed="false">{t('eml.attachList', locale)}</button>
+        </div></fieldset>
+      </div>
+      <p id="eml-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+      <div id="eml-result" class="result" hidden>
+        <p class="result-summary" id="eml-summary"></p>
+        <p class="result-note" id="eml-note"></p>
+      </div>
+      <div class="actions input-actions">
+        <button class="btn" type="button" id="eml-download" disabled>{t('eml.download', locale)}</button>
+        <button class="btn alt" type="button" id="eml-change">{t('eml.changeButton', locale)}</button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .eml-subject { overflow-wrap: anywhere; }
+  .eml-from { overflow-wrap: anywhere; }
+  #eml-panel .option-row { margin-block-start: 22px; }
+  #eml-result { margin-block-start: 22px; }
+  #eml-download:disabled { opacity: 0.5; cursor: default; }
+</style>
+<script src="../scripts/eml-to-pdf.ts"></script>

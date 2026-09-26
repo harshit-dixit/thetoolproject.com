@@ -131,7 +131,17 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('dbf-to-excel', 'dbfExcel'),
   },
+  emlToPdf: {
+    id: 'eml-to-pdf',
+    category: 'UtilitiesApplication',
+    // The PDF font covers Latin, Greek and Cyrillic only, so a Japanese page would promise emails it can't convert.
+    // Publish ja once a Japanese font is added.
+    locales: createToolLocales('eml-to-pdf', 'emlPdf', { ja: { reviewed: false } }),
+  },
 };
+
+/** Tool locales held back on purpose, with the reason in tools.ts. Everything else must be published in every locale. */
+export const unpublishedToolLocales: Partial<Record<string, Locale[]>> = { emlToPdf: ['ja'] };
 
 export function publishedToolLocales(tool: Tool): [Locale, ToolLocale][] {
   return Object.entries(tool.locales).filter((entry): entry is [Locale, ToolLocale] => !!entry[1]?.reviewed);

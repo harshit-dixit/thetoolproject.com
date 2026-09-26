@@ -5,6 +5,7 @@ const read = path => readFileSync(new URL(`../dist/${path}`, import.meta.url), '
 const tool = read('json-to-html/index.html');
 const excel = read('excel-to-csv/index.html');
 const dbfExcel = read('dbf-to-excel/index.html');
+const emlPdf = read('eml-to-pdf/index.html');
 const jsonExcel = read('json-to-excel/index.html');
 const jsonCsv = read('json-to-csv/index.html');
 const xmlCsv = read('xml-to-csv/index.html');
@@ -42,6 +43,12 @@ assert.match(home, /href="\/excel-to-csv\/"/);
 assert.match(home, /href="\/dbf-to-excel\/"/);
 assert.match(dbfExcel, /<h1 class="page-title">DBF to Excel<\/h1>/);
 assert.match(dbfExcel, /rel="canonical" href="https:\/\/thetoolproject\.com\/dbf-to-excel\/"/);
+assert.match(home, /href="\/eml-to-pdf\/"/);
+assert.match(emlPdf, /<h1 class="page-title">EML to PDF<\/h1>/);
+assert.match(emlPdf, /rel="canonical" href="https:\/\/thetoolproject\.com\/eml-to-pdf\/"/);
+assert.doesNotMatch(emlPdf, /hreflang="ja"/);
+assert.ok(!existsSync(new URL('../dist/ja/eml-to-pdf/index.html', import.meta.url)), 'EML to PDF has no Japanese page yet');
+assert.doesNotMatch(read('ja/index.html'), /eml-to-pdf/);
 assert.match(excel, /<title>Excel to CSV converter for XLSX and XLS \| thetoolproject<\/title>/);
 assert.match(excel, /<meta name="description" content="Convert Excel XLSX, XLS and ODS sheets to CSV/);
 assert.match(excel, /rel="canonical" href="https:\/\/thetoolproject\.com\/excel-to-csv\/"/);
@@ -168,6 +175,7 @@ const englishUrls = [
   'https://thetoolproject.com/xml-to-json/',
   'https://thetoolproject.com/excel-to-csv/',
   'https://thetoolproject.com/dbf-to-excel/',
+  'https://thetoolproject.com/eml-to-pdf/',
   'https://thetoolproject.com/csv-to-sql/',
   'https://thetoolproject.com/csv-viewer/',
   'https://thetoolproject.com/csv-to-json/',
@@ -188,6 +196,8 @@ const expectedUrls = [
   ...['es', 'pt', 'de', 'fr', 'ja'].flatMap(locale =>
     englishUrls
       .filter(url => !new URL(url).pathname.startsWith('/guides/'))
+      // EML to PDF has no Japanese page until the PDF font covers Japanese (src/data/tools.ts).
+      .filter(url => !(locale === 'ja' && new URL(url).pathname === '/eml-to-pdf/'))
       .map(url => `https://thetoolproject.com/${locale}${new URL(url).pathname}`)
   ),
 ].sort();
@@ -205,7 +215,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

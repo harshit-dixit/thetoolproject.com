@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tools, locales, publishedToolLocales, getPublishedToolPath, createToolLocales, type Tool, type Locale } from './tools';
+import { tools, locales, publishedToolLocales, getPublishedToolPath, createToolLocales, unpublishedToolLocales, type Tool, type Locale } from './tools';
 import { sitePages, publishedPageLocales, getPublishedPagePath, getPublishedHomePath, createPageLocales, type SitePage } from './pages';
 import { buildStaticPaths } from './routes';
 
@@ -15,17 +15,18 @@ describe('routing and review gate', () => {
   it('all non-English tool locales are reviewed and have non-empty metadata', () => {
     const nonEnLocales: Locale[] = ['es', 'pt', 'de', 'fr', 'ja'];
     for (const [key, tool] of Object.entries(tools)) {
+      const heldBack = unpublishedToolLocales[key] ?? [];
       for (const loc of nonEnLocales) {
         const entry = tool.locales[loc];
         expect(entry, `tool ${key} should have entry for ${loc}`).toBeDefined();
-        expect(entry?.reviewed, `tool ${key} ${loc} must be reviewed`).toBe(true);
+        expect(entry?.reviewed, `tool ${key} ${loc} must be reviewed`).toBe(!heldBack.includes(loc));
         expect(entry?.path).toBe(`/${loc}/${tool.id}/`);
         expect(entry?.title).toBeTruthy();
         expect(entry?.description).toBeTruthy();
         expect(entry?.h1).toBeTruthy();
       }
       const published = publishedToolLocales(tool);
-      expect(published.map(([l]) => l)).toEqual(locales);
+      expect(published.map(([l]) => l)).toEqual(locales.filter(l => !heldBack.includes(l)));
     }
   });
 
@@ -262,16 +263,20 @@ describe('routing and review gate', () => {
 
   it('production routes contain every reviewed locale', () => {
     const production = buildStaticPaths({ allowDrafts: false });
-    // Every locale has 19 tools and 6 site pages, except English 404 is a separate Astro page.
-    expect(production).toHaveLength(locales.length * (Object.keys(tools).length + 6) - 1);
+    const heldBack = (loc: Locale) => Object.values(unpublishedToolLocales).filter(list => list?.includes(loc)).length;
+    const heldBackTotal = locales.reduce((sum, loc) => sum + heldBack(loc), 0);
+    // Every locale has every tool (minus the ones held back in tools.ts) and 6 site pages, except English 404 is a separate Astro page.
+    expect(production).toHaveLength(locales.length * (Object.keys(tools).length + 6) - 1 - heldBackTotal);
     for (const loc of locales) {
-      const expected = Object.keys(tools).length + (loc === 'en' ? 5 : 6);
+      const expected = Object.keys(tools).length + (loc === 'en' ? 5 : 6) - heldBack(loc);
       expect(production.filter(route => route.props.locale === loc)).toHaveLength(expected);
     }
     expect(production.find(route => route.params.path === undefined)?.props.kind).toBe('page');
 
+    // The dev draft preview adds exactly the held-back tool locales.
     const preview = buildStaticPaths({ allowDrafts: true });
-    expect(preview).toEqual(production);
+    expect(preview).toHaveLength(production.length + heldBackTotal);
+    expect(preview.filter(route => !production.some(other => other.params.path === route.params.path)).map(route => route.params.path)).toEqual(['ja/eml-to-pdf']);
     expect(preview.some(route => route.params.path === 'ja/404')).toBe(true);
     expect(preview.some(route => route.params.path === 'ja')).toBe(true);
   });
