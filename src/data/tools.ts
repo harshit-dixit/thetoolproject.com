@@ -71,6 +71,32 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('compress-jpg-to-50kb', 'compressJpg50kb'),
   },
+  webpConverter: {
+    id: 'webp-converter',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('webp-converter', 'webpConverter'),
+  },
+  webpToPng: {
+    id: 'webp-to-png',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('webp-to-png', 'webpPng'),
+  },
+  // One page for JPG and JPEG: they are the same format, and two near-identical pages would compete with each other.
+  webpToJpg: {
+    id: 'webp-to-jpg',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('webp-to-jpg', 'webpJpg'),
+  },
+  webpToGif: {
+    id: 'webp-to-gif',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('webp-to-gif', 'webpGif'),
+  },
+  webpToSvg: {
+    id: 'webp-to-svg',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('webp-to-svg', 'webpSvg'),
+  },
   qrCodeScanner: {
     id: 'qr-code-scanner',
     category: 'UtilitiesApplication',

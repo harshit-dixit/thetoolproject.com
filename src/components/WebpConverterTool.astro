@@ -1,0 +1,101 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { LIMITS, OUTPUT_FORMATS, QUALITIES, TRACE_COLORS, type OutputFormat } from '../lib/webp-convert';
+
+// Without a format this is the converter hub, with a chip for each output format.
+interface Props { format?: OutputFormat; locale?: Locale }
+const { format, locale = 'en' } = Astro.props;
+const initial: OutputFormat = format ?? 'png';
+
+const clientKeys: TranslationKey[] = [
+  'webp.adviceEmbed', 'webp.adviceGif', 'webp.adviceJpg', 'webp.advicePng', 'webp.adviceTrace',
+  'webp.convertButton', 'webp.converted.one', 'webp.converted.other', 'webp.converting', 'webp.download',
+  'webp.downloadOne', 'webp.downloadZip', 'webp.errNoWebp', 'webp.errNoneConverted', 'webp.errNotZip', 'webp.errTooMany',
+  'webp.errWorker', 'webp.errZipLocked', 'webp.errZipTooLarge', 'webp.errZipUnsupported', 'webp.fileCount.one', 'webp.fileCount.other',
+  'webp.noteFailed.one', 'webp.noteFailed.other', 'webp.noteFirstFrame.one', 'webp.noteFirstFrame.other',
+  'webp.noteLocked.one', 'webp.noteLocked.other', 'webp.noteNoAnimation.one', 'webp.noteNoAnimation.other',
+  'webp.notePartialAlpha', 'webp.noteSkipped.one', 'webp.noteSkipped.other', 'webp.noteTraced.one', 'webp.noteTraced.other',
+  'webp.reading', 'webp.reasonAnimationTooLong', 'webp.reasonCanvas', 'webp.reasonDecode', 'webp.reasonGeneral',
+  'webp.reasonTimeout', 'webp.reasonTooLarge', 'webp.reasonTooManyPixels', 'webp.reasonWorker', 'webp.rowMeta',
+  'webp.summary.one', 'webp.summary.other', 'webp.title.one', 'webp.title.other',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const qualityLabels: TranslationKey[] = ['webp.qualityMax', 'webp.qualityHigh', 'webp.qualitySmall'];
+const label = (value: OutputFormat) => value.toUpperCase();
+---
+<div class="drop webp-drop" id="webp-tool" data-initial-format={initial} data-fixed={format ? 'true' : 'false'} data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <input class="visually-hidden" type="file" id="webp-files" accept=".webp,image/webp,.zip,application/zip" multiple tabindex="-1" aria-label={t('webp.fileAria', locale)} />
+    <div class="drop-empty" id="webp-empty">
+      <h2 class="drop-title">{t('webp.dropTitle', locale)}</h2>
+      <p class="drop-hint">{t('webp.dropHint', locale, { files: LIMITS.files, size: LIMITS.fileBytes / 1024 / 1024 })}</p>
+      <button class="btn" type="button" id="webp-choose">{t('webp.chooseButton', locale)}</button>
+    </div>
+    <div class="webp-panel" id="webp-panel" hidden>
+      <div class="file-line"><span class="file-name" id="webp-name"></span><span class="file-size" id="webp-size"></span></div>
+      <h2 class="panel-title" id="webp-title"></h2>
+      <p class="panel-advice" id="webp-advice"></p>
+      <div class="option-row">
+        {!format && <fieldset><legend>{t('webp.formatLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.formatLabel', locale)}>
+          {OUTPUT_FORMATS.map(value => <button type="button" data-format={value} aria-pressed={value === initial ? 'true' : 'false'}>{label(value)}</button>)}
+        </div></fieldset>}
+        {(!format || format === 'jpg') && <>
+          <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.qualityLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.qualityLabel', locale)}>
+            {QUALITIES.map((value, i) => <button type="button" data-quality={value} aria-pressed={i === 1 ? 'true' : 'false'}>{t(qualityLabels[i], locale)}</button>)}
+          </div></fieldset>
+          <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.backgroundLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.backgroundLabel', locale)}>
+            <button type="button" data-background="white" aria-pressed="true">{t('webp.backgroundWhite', locale)}</button>
+            <button type="button" data-background="black" aria-pressed="false">{t('webp.backgroundBlack', locale)}</button>
+          </div></fieldset>
+        </>}
+        {(!format || format === 'svg') && <>
+          <fieldset data-show="svg" hidden={initial !== 'svg'}><legend>{t('webp.svgModeLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.svgModeLabel', locale)}>
+            <button type="button" data-svg-mode="trace" aria-pressed="true">{t('webp.svgTrace', locale)}</button>
+            <button type="button" data-svg-mode="embed" aria-pressed="false">{t('webp.svgEmbed', locale)}</button>
+          </div></fieldset>
+          <fieldset data-show="trace" hidden={initial !== 'svg'}><legend>{t('webp.colorsLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.colorsLabel', locale)}>
+            {TRACE_COLORS.map(value => <button type="button" data-colors={value} aria-pressed={value === 16 ? 'true' : 'false'}>{value}</button>)}
+          </div></fieldset>
+        </>}
+      </div>
+      <div class="actions input-actions">
+        <button class="btn" type="button" id="webp-convert"></button>
+        <button class="btn alt" type="button" id="webp-change">{t('webp.changeButton', locale)}</button>
+      </div>
+      <div id="webp-result" class="result webp-result" hidden>
+        <p class="result-summary" id="webp-summary"></p>
+        <ul class="webp-list" id="webp-list" aria-label={t('webp.listAria', locale)}></ul>
+        <p class="result-note" id="webp-note"></p>
+        <div class="actions"><button class="btn" type="button" id="webp-download"></button></div>
+      </div>
+    </div>
+    <p id="webp-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+  </div>
+</div>
+<style>
+  /* Choosing files grows the frame after the file dialog closes, which doesn't count as input.
+     Filling the first screen keeps the section below out of view, so that growth isn't a layout shift. */
+  .webp-drop { display: flex; flex-direction: column; min-height: max(320px, min(calc(100svh - 320px), 800px)); }
+  .webp-drop > .tool-frame { width: 100%; flex: 1; display: flex; flex-direction: column; }
+  .webp-drop .drop-empty { flex: 1; }
+  .webp-panel .option-row { margin-block-start: 22px; }
+  .webp-panel .option-row:empty { display: none; }
+  #webp-status.error { font-weight: 600; }
+  .webp-result { margin-block-start: 26px; }
+  .webp-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px; max-height: 420px; overflow-y: auto; }
+  /* The rows are created by the script, so they don't carry this component's scoped attribute. */
+  .webp-list :global(.webp-row) { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); }
+  .webp-list :global(.webp-row img) { width: 48px; height: 48px; object-fit: contain; background: var(--fog); }
+  .webp-list :global(.webp-row strong) { display: block; overflow-wrap: anywhere; font-weight: 600; }
+  .webp-list :global(.webp-row span) { color: var(--slate); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .webp-list :global(.webp-row a) { font-weight: 600; color: var(--ink); }
+  .webp-list :global(.webp-row a:hover) { color: var(--cobalt); }
+  .webp-list :global(.webp-row.failed) { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 480px) {
+    .webp-list :global(.webp-row) { grid-template-columns: 48px minmax(0, 1fr); }
+    .webp-list :global(.webp-row a) { grid-column: 2; }
+  }
+</style>
+<script src="../scripts/webp-converter.ts"></script>

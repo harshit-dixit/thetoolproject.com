@@ -22,6 +22,8 @@ import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
 import ImageTool from '../components/ImageTool.astro';
 import CompressPdfTool from '../components/CompressPdfTool.astro';
 import EmlToPdfTool from '../components/EmlToPdfTool.astro';
+import WebpConverterTool from '../components/WebpConverterTool.astro';
+import type { OutputFormat } from '../lib/webp-convert';
 import { publishedToolLocales, getPublishedToolPath } from '../data/tools';
 import { buildStaticPaths, type RouteProps } from '../data/routes';
 import { t, formatNumber, type TranslationKey } from '../i18n/utils';
@@ -40,6 +42,26 @@ const tool = isTool ? props.tool : undefined;
 const entry = isTool ? props.entry : undefined;
 const alternates = isTool && tool ? Object.fromEntries(publishedToolLocales(tool).map(([lang, item]) => [lang, item.path])) : {};
 const pdfTarget = isTool && tool ? ({ 'compress-pdf-to-100kb': 100, 'compress-pdf-to-200kb': 200, 'compress-pdf-to-500kb': 500 } as Record<string, 100 | 200 | 500>)[tool.id] : undefined;
+// The WebP converter hub and its four format pages share one tool and one page frame.
+const webpPages: Record<string, { prefix: 'webpConverter' | 'webpPng' | 'webpJpg' | 'webpGif' | 'webpSvg'; format?: OutputFormat }> = {
+  'webp-converter': { prefix: 'webpConverter' },
+  'webp-to-png': { prefix: 'webpPng', format: 'png' },
+  'webp-to-jpg': { prefix: 'webpJpg', format: 'jpg' },
+  'webp-to-gif': { prefix: 'webpGif', format: 'gif' },
+  'webp-to-svg': { prefix: 'webpSvg', format: 'svg' },
+};
+const webp = isTool && tool ? webpPages[tool.id] : undefined;
+const webpLinks = {
+  hub: getPublishedToolPath('webpConverter', locale), png: getPublishedToolPath('webpToPng', locale), jpg: getPublishedToolPath('webpToJpg', locale),
+  gif: getPublishedToolPath('webpToGif', locale), svg: getPublishedToolPath('webpToSvg', locale),
+};
+const webpButton = t('webp.convertButton', locale, { format: (webp?.format ?? 'png').toUpperCase() });
+const webpFormatRows: [keyof typeof webpLinks, TranslationKey, TranslationKey, TranslationKey][] = [
+  ['png', 'webpPng.h1', 'webpConverter.pngBest', 'webpConverter.pngKeeps'],
+  ['jpg', 'webpJpg.h1', 'webpConverter.jpgBest', 'webpConverter.jpgKeeps'],
+  ['gif', 'webpGif.h1', 'webpConverter.gifBest', 'webpConverter.gifKeeps'],
+  ['svg', 'webpSvg.h1', 'webpConverter.svgBest', 'webpConverter.svgKeeps'],
+];
 
 const excelRows: [TranslationKey, TranslationKey][] = [
   ['excel.howNumbers', 'excel.howNumbersResult'],
@@ -143,6 +165,58 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           /></p>
           <h3>{t('imageResizer.howFormatsTitle', locale)}</h3>
           <p>{t('imageResizer.howFormatsP', locale)}</p>
+        </div></section>
+      </>}
+      {webp && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t(`${webp.prefix}.leadStrong`, locale)}</strong> {t(`${webp.prefix}.lead`, locale)}</p><p class="caption">{t(`${webp.prefix}.caption`, locale)}</p></div></div>
+        <WebpConverterTool locale={locale} format={webp.format} />
+        <section aria-labelledby="webp-how-title"><div class="sec-head"><h2 id="webp-how-title">{t(`${webp.prefix}.howTitle`, locale)}</h2></div><div class="how-copy">
+          {webp.prefix === 'webpConverter' && <>
+            <p><RichText text={t('webpConverter.howIntro', locale, { formatLabel: t('webp.formatLabel', locale), button: webpButton })} /></p>
+            <h3>{t('webpConverter.howChooseTitle', locale)}</h3>
+            <div class="table-scroll"><table class="spec-table"><thead><tr><th scope="col">{t('webpConverter.tableFormat', locale)}</th><th scope="col">{t('webpConverter.tableBestFor', locale)}</th><th scope="col">{t('webpConverter.tableKeeps', locale)}</th></tr></thead><tbody>
+              {webpFormatRows.map(([format, name, best, keeps]) => <tr><td><a href={webpLinks[format]}>{t(name, locale)}</a></td><td class="note">{t(best, locale)}</td><td class="note">{t(keeps, locale)}</td></tr>)}
+            </tbody></table></div>
+            <h3>{t('webpConverter.howBulkTitle', locale)}</h3>
+            <p><RichText text={t('webpConverter.howBulkP', locale)} /></p>
+            <h3>{t('webpConverter.howLimitsTitle', locale)}</h3>
+            <p>{t('webpConverter.howLimitsP', locale)}</p>
+          </>}
+          {webp.prefix === 'webpPng' && <>
+            <p><RichText text={t('webpPng.howIntro', locale, { button: webpButton })} /></p>
+            <h3>{t('webpPng.howQualityTitle', locale)}</h3>
+            <p><RichText text={t('webpPng.howQualityP', locale)} links={webpLinks} /></p>
+            <h3>{t('webpPng.howAnimatedTitle', locale)}</h3>
+            <p><RichText text={t('webpPng.howAnimatedP', locale)} links={webpLinks} /></p>
+          </>}
+          {webp.prefix === 'webpJpg' && <>
+            <p><RichText text={t('webpJpg.howIntro', locale, { button: webpButton })} /></p>
+            <h3>{t('webpJpg.howQualityTitle', locale)}</h3>
+            <p><RichText text={t('webpJpg.howQualityP', locale, { max: t('webp.qualityMax', locale), high: t('webp.qualityHigh', locale), small: t('webp.qualitySmall', locale) })} /></p>
+            <h3>{t('webpJpg.howTransparencyTitle', locale)}</h3>
+            <p><RichText text={t('webpJpg.howTransparencyP', locale)} links={webpLinks} /></p>
+            <h3>{t('webpJpg.howJpegTitle', locale)}</h3>
+            <p><RichText text={t('webpJpg.howJpegP', locale)} links={webpLinks} /></p>
+          </>}
+          {webp.prefix === 'webpGif' && <>
+            <p><RichText text={t('webpGif.howIntro', locale, { button: webpButton })} /></p>
+            <h3>{t('webpGif.howColorsTitle', locale)}</h3>
+            <p><RichText text={t('webpGif.howColorsP', locale)} links={webpLinks} /></p>
+            <h3>{t('webpGif.howBrowserTitle', locale)}</h3>
+            <p><RichText text={t('webpGif.howBrowserP', locale)} links={webpLinks} /></p>
+          </>}
+          {webp.prefix === 'webpSvg' && <>
+            <p><RichText text={t('webpSvg.howIntro', locale, { button: webpButton })} /></p>
+            <h3>{t('webpSvg.howTypesTitle', locale)}</h3>
+            <p><RichText text={t('webpSvg.howTraceP', locale, { trace: t('webp.svgTrace', locale) })} /></p>
+            <p><RichText text={t('webpSvg.howEmbedP', locale, { embed: t('webp.svgEmbed', locale) })} /></p>
+            <h3>{t('webpSvg.howColorsTitle', locale)}</h3>
+            <p>{t('webpSvg.howColorsP', locale)}</p>
+          </>}
+          <h3>{t('webp.faqTitle', locale)}</h3>
+          <p><strong>{t(`${webp.prefix}.faqQ1`, locale)}</strong> <RichText text={t(`${webp.prefix}.faqA1`, locale)} links={webpLinks} params={{ trace: t('webp.svgTrace', locale), embed: t('webp.svgEmbed', locale) }} /></p>
+          <p><strong>{t(`${webp.prefix}.faqQ2`, locale)}</strong> <RichText text={t(`${webp.prefix}.faqA2`, locale)} links={webpLinks} /></p>
+          <p><strong>{t('webp.faqUploadQ', locale)}</strong> {t('webp.faqUploadA', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'compress-jpg-to-100kb' && <>

@@ -67,6 +67,11 @@
 | Tool | Description |
 |---|---|
 | **[Image Resizer](https://thetoolproject.com/image-resizer/)** | Resize single or batch images (up to 20 files) by exact pixels, percentage, or centimeters, with KB target limits. |
+| **[WebP converter](https://thetoolproject.com/webp-converter/)** | Convert WebP images to PNG, JPG, GIF or SVG, one at a time, in batches of up to 200, or from a ZIP file, with a ZIP download. |
+| **[WebP to PNG](https://thetoolproject.com/webp-to-png/)** | Lossless WebP to PNG conversion that keeps transparency, for single images, batches and ZIP files. |
+| **[WebP to JPG (JPEG)](https://thetoolproject.com/webp-to-jpg/)** | WebP to JPG with a quality choice and a white or black fill for transparent areas. |
+| **[WebP to GIF](https://thetoolproject.com/webp-to-gif/)** | Animated WebP to animated GIF with every frame, its timing and the loop setting (ImageDecoder + gifenc). |
+| **[WebP to SVG](https://thetoolproject.com/webp-to-svg/)** | Trace WebP logos and icons into real vector paths (imagetracerjs), or embed the exact pixels in an SVG. |
 | **[Compress JPG to 100KB](https://thetoolproject.com/compress-jpg-to-100kb/)** | Target-driven canvas compression reducing JPG files to under 100 KB with real-time size readout. |
 | **[Compress JPG to 50KB](https://thetoolproject.com/compress-jpg-to-50kb/)** | Target-driven canvas compression reducing JPG files to 50 KB or less with exact file size shown before download. |
 | **[QR Code Scanner](https://thetoolproject.com/qr-code-scanner/)** | Scan QR codes via live webcam stream or decode from screenshots and image files using WebAssembly (`zxing-wasm`). |
@@ -85,6 +90,8 @@ thetoolproject.com
 │   ├── SheetJS (xlsx)  Native Excel workbook parsing & generation
 │   ├── saxes           Streaming event-driven XML SAX parser
 │   ├── pdf-lib         PDF building for EML to PDF and Compress PDF (Noto Sans, SIL OFL, via fontkit)
+│   ├── gifenc          GIF encoding for WebP to GIF (per-frame 256-color palettes)
+│   ├── imagetracerjs   Bitmap-to-vector tracing for WebP to SVG
 │   └── zxing-wasm      WebAssembly-powered barcode & QR computer vision
 └── Quality Assurance
     ├── Vitest          Unit tests for core parsing algorithms

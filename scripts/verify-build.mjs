@@ -6,6 +6,7 @@ const tool = read('json-to-html/index.html');
 const excel = read('excel-to-csv/index.html');
 const dbfExcel = read('dbf-to-excel/index.html');
 const emlPdf = read('eml-to-pdf/index.html');
+const webpPages = Object.fromEntries(['webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg'].map(id => [id, read(`${id}/index.html`)]));
 const jsonExcel = read('json-to-excel/index.html');
 const jsonCsv = read('json-to-csv/index.html');
 const xmlCsv = read('xml-to-csv/index.html');
@@ -49,6 +50,18 @@ assert.match(emlPdf, /rel="canonical" href="https:\/\/thetoolproject\.com\/eml-t
 assert.doesNotMatch(emlPdf, /hreflang="ja"/);
 assert.ok(!existsSync(new URL('../dist/ja/eml-to-pdf/index.html', import.meta.url)), 'EML to PDF has no Japanese page yet');
 assert.doesNotMatch(read('ja/index.html'), /eml-to-pdf/);
+for (const [id, h1] of [['webp-converter', 'WebP converter'], ['webp-to-png', 'WebP to PNG'], ['webp-to-jpg', 'WebP to JPG (JPEG)'], ['webp-to-gif', 'WebP to GIF'], ['webp-to-svg', 'WebP to SVG']]) {
+  assert.match(home, new RegExp(`href="/${id}/"`));
+  assert.ok(webpPages[id].includes(`<h1 class="page-title">${h1}</h1>`), `${id} has the H1 "${h1}"`);
+  assert.ok(webpPages[id].includes(`rel="canonical" href="https://thetoolproject.com/${id}/"`), `${id} canonical`);
+  assert.ok(webpPages[id].includes(`hreflang="ja" href="https://thetoolproject.com/ja/${id}/"`), `${id} links its Japanese page`);
+}
+// The format pages link to each other and to the hub, and each fixed page shows only its own options.
+assert.match(webpPages['webp-to-png'], /href="\/webp-to-jpg\/"/);
+assert.match(webpPages['webp-to-png'], /href="\/webp-converter\/"/);
+assert.match(webpPages['webp-converter'], /data-format="svg"/);
+assert.doesNotMatch(webpPages['webp-to-png'], /data-quality=|data-svg-mode=/);
+assert.match(webpPages['webp-to-svg'], /data-svg-mode="trace" aria-pressed="true"/);
 assert.match(excel, /<title>Excel to CSV converter for XLSX and XLS \| thetoolproject<\/title>/);
 assert.match(excel, /<meta name="description" content="Convert Excel XLSX, XLS and ODS sheets to CSV/);
 assert.match(excel, /rel="canonical" href="https:\/\/thetoolproject\.com\/excel-to-csv\/"/);
@@ -181,6 +194,11 @@ const englishUrls = [
   'https://thetoolproject.com/csv-to-json/',
   'https://thetoolproject.com/qr-code-scanner/',
   'https://thetoolproject.com/image-resizer/',
+  'https://thetoolproject.com/webp-converter/',
+  'https://thetoolproject.com/webp-to-png/',
+  'https://thetoolproject.com/webp-to-jpg/',
+  'https://thetoolproject.com/webp-to-gif/',
+  'https://thetoolproject.com/webp-to-svg/',
   'https://thetoolproject.com/compress-jpg-to-100kb/',
   'https://thetoolproject.com/compress-jpg-to-50kb/',
   'https://thetoolproject.com/compress-pdf/',
@@ -215,7 +233,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);
