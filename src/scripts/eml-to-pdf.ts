@@ -14,6 +14,10 @@ const result = $('eml-result');
 const download = $<HTMLButtonElement>('eml-download');
 const bodyGroup = $('eml-body-group');
 const attachmentsGroup = $('eml-attachments-group');
+const preview = $('eml-preview');
+const frame = $<HTMLIFrameElement>('eml-preview-frame');
+// Phones mostly can't show a PDF inside a page, so they get the summary and the download only.
+const canPreview = navigator.pdfViewerEnabled === true;
 const MAX_BYTES = 50 * 1024 * 1024;
 // A worker stuck on a damaged file is stopped rather than left spinning.
 const TIMEOUT_MS = 90_000;
@@ -26,7 +30,7 @@ let file: File | undefined;
 let worker: Worker | undefined;
 let timer: number | undefined;
 let sequence = 0;
-let output: Blob | undefined;
+let outputUrl: string | undefined;
 let pageSize = (root.querySelector<HTMLButtonElement>('[data-page-size][aria-pressed="true"]')?.dataset.pageSize ?? 'a4') as PageSize;
 let body: BodyChoice = 'html';
 let attachments: AttachmentMode = 'embed';
@@ -35,6 +39,15 @@ const showStatus = (message: string) => { status.textContent = message; status.h
 const press = (selector: string, active: (button: HTMLButtonElement) => boolean) =>
   root.querySelectorAll<HTMLButtonElement>(selector).forEach(button => button.setAttribute('aria-pressed', String(active(button))));
 
+// The preview and the download share one URL, released whenever the PDF is replaced.
+function setOutput(next?: Blob) {
+  if (outputUrl) URL.revokeObjectURL(outputUrl);
+  outputUrl = next && URL.createObjectURL(next);
+  preview.hidden = !(outputUrl && canPreview);
+  // The reader's own toolbar would add a second download button, so it's hidden.
+  if (canPreview) frame.src = outputUrl ? `${outputUrl}#toolbar=0&navpanes=0&view=FitH` : 'about:blank';
+}
+
 function stopWorker() {
   worker?.terminate();
   worker = undefined;
@@ -42,7 +55,7 @@ function stopWorker() {
 }
 
 function fail(code: string, message = t(ERROR_KEYS[code] ?? 'eml.errGeneral')) {
-  output = undefined;
+  setOutput();
   result.hidden = true;
   download.disabled = true;
   showStatus(message);
@@ -71,7 +84,7 @@ function chooseFile(next: File) {
 function run() {
   if (!file) return;
   const id = ++sequence;
-  output = undefined;
+  setOutput();
   result.hidden = true;
   download.disabled = true;
   showStatus(t('eml.reading'));
@@ -88,12 +101,13 @@ function createWorker() {
     clearTimeout(timer);
     if ('error' in event.data) { fail(event.data.error.code); return; }
     const { result: data, summary } = event.data;
-    output = new Blob([data.pdf as BlobPart], { type: 'application/pdf' });
+    const pdf = new Blob([data.pdf as BlobPart], { type: 'application/pdf' });
+    setOutput(pdf);
     $('eml-subject').textContent = summary.subject || t('eml.noSubject');
     $('eml-from').textContent = summary.from ? t('eml.fromLine', { from: summary.from }) : '';
     bodyGroup.hidden = !(summary.hasHtml && summary.hasText);
     attachmentsGroup.hidden = !data.attachments;
-    $('eml-summary').textContent = t('eml.summary', { pages: counted('eml.pages', data.pages), size: formatBytes(output.size) });
+    $('eml-summary').textContent = t('eml.summary', { pages: counted('eml.pages', data.pages), size: formatBytes(pdf.size) });
     const notes: string[] = [];
     if (data.attachments) notes.push(counted(attachments === 'embed' ? 'eml.noteEmbedded' : 'eml.noteListed', data.attachments));
     if (data.remoteImages) notes.push(counted('eml.noteRemoteImages', data.remoteImages));
@@ -105,7 +119,7 @@ function createWorker() {
     result.hidden = false;
     download.disabled = false;
     showStatus(t('eml.ready'));
-    trackResult('success', { pages: data.pages, body: data.body, attachments: data.attachments, attachment_mode: data.attachments ? attachments : undefined, page_size: pageSize, remote_images: data.remoteImages, output_size: sizeBucket(output.size) });
+    trackResult('success', { pages: data.pages, body: data.body, attachments: data.attachments, attachment_mode: data.attachments ? attachments : undefined, page_size: pageSize, remote_images: data.remoteImages, output_size: sizeBucket(pdf.size) });
   };
   // A worker that runs out of memory dies with the message.
   next.onerror = () => { stopWorker(); fail('workerError', t('eml.errWorker')); };
@@ -134,14 +148,14 @@ root.querySelectorAll<HTMLButtonElement>('[data-attachments]').forEach(button =>
 }));
 
 download.addEventListener('click', () => {
-  if (!output || !file) return;
-  const url = URL.createObjectURL(output);
+  if (!outputUrl || !file) return;
   const link = document.createElement('a');
-  link.href = url;
+  link.href = outputUrl;
   link.download = `${file.name.replace(/\.(eml|emlx|msg)$/i, '') || 'email'}.pdf`;
   link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 });
+// A page kept for the back button keeps its PDF, so Download still works on return.
+window.addEventListener('pagehide', event => { if (!event.persisted) setOutput(); });
 
 root.addEventListener('dragover', event => { event.preventDefault(); root.classList.add('over'); });
 root.addEventListener('dragleave', event => { if (!root.contains(event.relatedTarget as Node)) root.classList.remove('over'); });

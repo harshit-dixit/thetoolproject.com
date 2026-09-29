@@ -108,7 +108,7 @@ assert.match(qrScanner, /<h1 class="page-title">QR code scanner<\/h1>/);
 assert.match(home, /href="\/image-resizer\/"/);
 assert.match(home, /href="\/compress-jpg-to-100kb\/"/);
 assert.match(home, /href="\/compress-jpg-to-50kb\/"/);
-assert.match(imageResizer, /<h1 class="page-title">Image resizer<\/h1>/);
+assert.match(imageResizer, /<h1 class="page-title">Image resizer and compressor<\/h1>/);
 assert.match(imageResizer, /rel="canonical" href="https:\/\/thetoolproject\.com\/image-resizer\/"/);
 assert.match(jpg100, /<h1 class="page-title">Compress JPG to 100KB<\/h1>/);
 assert.match(jpg100, /rel="canonical" href="https:\/\/thetoolproject\.com\/compress-jpg-to-100kb\/"/);

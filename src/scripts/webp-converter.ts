@@ -307,7 +307,11 @@ function chipGroup(attribute: string, apply: (value: string) => void) {
 }
 
 if (!fixed) chipGroup('format', value => { options = { ...options, format: value as OutputFormat }; });
-chipGroup('quality', value => { options = { ...options, quality: Number(value) }; });
+chipGroup('quality', value => {
+  options = { ...options, quality: Number(value) };
+  const hint = document.getElementById('webp-quality-hint');
+  if (hint) hint.textContent = root.querySelector<HTMLElement>(`[data-quality="${value}"]`)?.dataset.hint ?? '';
+});
 chipGroup('background', value => { options = { ...options, background: value as Background }; });
 chipGroup('svg-mode', value => { options = { ...options, svgMode: value as SvgMode }; });
 chipGroup('colors', value => { options = { ...options, colors: Number(value) }; });

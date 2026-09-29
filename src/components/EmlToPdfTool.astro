@@ -49,6 +49,7 @@ if (pageSize !== 'letter' && pageSize !== 'a4') throw new Error(`eml.defaultPage
       <p id="eml-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
       <div id="eml-result" class="result" hidden>
         <p class="result-summary" id="eml-summary"></p>
+        <div class="result-view" id="eml-preview" hidden><iframe class="preview-frame eml-preview-frame" id="eml-preview-frame" title={t('eml.previewTitle', locale)}></iframe></div>
         <p class="result-note" id="eml-note"></p>
       </div>
       <div class="actions input-actions">
@@ -64,5 +65,8 @@ if (pageSize !== 'letter' && pageSize !== 'a4') throw new Error(`eml.defaultPage
   #eml-panel .option-row { margin-block-start: 22px; }
   #eml-result { margin-block-start: 22px; }
   #eml-download:disabled { opacity: 0.5; cursor: default; }
+  /* Tall enough to read most of the first page at the panel's width. */
+  .eml-preview-frame { height: 560px; }
+  @media (max-width: 560px) { .eml-preview-frame { height: 420px; } }
 </style>
 <script src="../scripts/eml-to-pdf.ts"></script>

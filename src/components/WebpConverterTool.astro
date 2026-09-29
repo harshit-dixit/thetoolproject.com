@@ -23,6 +23,7 @@ const clientKeys: TranslationKey[] = [
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 const qualityLabels: TranslationKey[] = ['webp.qualityMax', 'webp.qualityHigh', 'webp.qualitySmall'];
+const qualityHints: TranslationKey[] = ['webp.qualityHintMax', 'webp.qualityHintHigh', 'webp.qualityHintSmall'];
 const label = (value: OutputFormat) => value.toUpperCase();
 ---
 <div class="drop webp-drop" id="webp-tool" data-initial-format={initial} data-fixed={format ? 'true' : 'false'} data-strings={JSON.stringify(strings)} data-locale={locale}>
@@ -42,9 +43,9 @@ const label = (value: OutputFormat) => value.toUpperCase();
           {OUTPUT_FORMATS.map(value => <button type="button" data-format={value} aria-pressed={value === initial ? 'true' : 'false'}>{label(value)}</button>)}
         </div></fieldset>}
         {(!format || format === 'jpg') && <>
-          <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.qualityLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.qualityLabel', locale)}>
-            {QUALITIES.map((value, i) => <button type="button" data-quality={value} aria-pressed={i === 1 ? 'true' : 'false'}>{t(qualityLabels[i], locale)}</button>)}
-          </div></fieldset>
+          <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.qualityLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.qualityLabel', locale)} aria-describedby="webp-quality-hint">
+            {QUALITIES.map((value, i) => <button type="button" data-quality={value} data-hint={t(qualityHints[i], locale)} aria-pressed={i === 1 ? 'true' : 'false'}>{t(qualityLabels[i], locale)}</button>)}
+          </div><p class="option-hint" id="webp-quality-hint">{t(qualityHints[1], locale)}</p></fieldset>
           <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.backgroundLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.backgroundLabel', locale)}>
             <button type="button" data-background="white" aria-pressed="true">{t('webp.backgroundWhite', locale)}</button>
             <button type="button" data-background="black" aria-pressed="false">{t('webp.backgroundBlack', locale)}</button>
@@ -82,6 +83,7 @@ const label = (value: OutputFormat) => value.toUpperCase();
   .webp-drop .drop-empty { flex: 1; }
   .webp-panel .option-row { margin-block-start: 22px; }
   .webp-panel .option-row:empty { display: none; }
+  .option-hint { margin: 8px 0 0; max-width: 34ch; font-size: 14px; color: var(--slate); }
   #webp-status.error { font-weight: 600; }
   .webp-result { margin-block-start: 26px; }
   .webp-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px; max-height: 420px; overflow-y: auto; }

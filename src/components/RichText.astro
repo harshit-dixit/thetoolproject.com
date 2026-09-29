@@ -50,10 +50,20 @@ function resolveHref(linkId: string): string {
   if (!href) throw new Error(`RichText: no link provided for <a:${linkId}> in "${text}"`);
   return href;
 }
+
+// http(s) links leave the site, so they open in a new tab; mailto: and internal paths stay as-is.
+function isExternal(href: string): boolean {
+  return /^https?:\/\//i.test(href);
+}
 ---
 {tokens.map((token) => {
   if (token.type === 'code') return <code>{token.content}</code>;
   if (token.type === 'strong') return <strong>{token.content}</strong>;
-  if (token.type === 'link') return <a href={resolveHref(token.linkId)}>{token.content}</a>;
+  if (token.type === 'link') {
+    const href = resolveHref(token.linkId);
+    return isExternal(href)
+      ? <a href={href} target="_blank" rel="noopener noreferrer">{token.content}</a>
+      : <a href={href}>{token.content}</a>;
+  }
   return token.content;
 })}
