@@ -117,6 +117,11 @@ export const tools: Record<string, Tool> = {
     category: 'DeveloperApplication',
     locales: createToolLocales('json-beautifier', 'jsonBeautifier'),
   },
+  wordCounter: {
+    id: 'word-counter',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('word-counter', 'wordCounter'),
+  },
   csvToSql: {
     id: 'csv-to-sql',
     category: 'DeveloperApplication',

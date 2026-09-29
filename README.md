@@ -53,6 +53,12 @@
 | **[JSON Beautifier](https://thetoolproject.com/json-beautifier/)** | Validate, format, and beautify JSON with configurable indentation, error markers, and single-click copy. |
 | **[CSV Viewer](https://thetoolproject.com/csv-viewer/)** | Open large CSV/TSV files in browser, search, sort, filter, inline edit, and re-export to CSV or JSON. |
 
+### Text Utilities
+
+| Tool | Description |
+|---|---|
+| **[Word Counter](https://thetoolproject.com/word-counter/)** | Count words and characters (with and without spaces), letters, sentences, paragraphs, reading time and keyword density as you type, with an optional character or word limit. |
+
 ### PDF Utilities
 
 | Tool | Description |

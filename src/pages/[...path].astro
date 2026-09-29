@@ -16,6 +16,7 @@ import XmlToCsvTool from '../components/XmlToCsvTool.astro';
 import XmlToJsonTool from '../components/XmlToJsonTool.astro';
 import CsvToSqlTool from '../components/CsvToSqlTool.astro';
 import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
+import WordCounterTool from '../components/WordCounterTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
@@ -308,6 +309,30 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p>{t('jsonBeautifier.howP1', locale)}</p>
           <p>{t('jsonBeautifier.howP2', locale)}</p>
           <p>{t('jsonBeautifier.howP3', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'word-counter' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('wordCounter.leadStrong', locale)}</strong> {t('wordCounter.lead', locale)}</p><p class="caption">{t('wordCounter.caption', locale)}</p></div></div>
+        <WordCounterTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('wordCounter.howTitle', locale)}</h2></div><div class="how-copy">
+          <p>{t('wordCounter.howIntro', locale)}</p>
+          <h3>{t('wordCounter.howWordsTitle', locale)}</h3>
+          <p><RichText text={t('wordCounter.howWordsP1', locale)} /></p>
+          <p>{t('wordCounter.howWordsP2', locale)}</p>
+          <h3>{t('wordCounter.howCharsTitle', locale)}</h3>
+          <p><RichText text={t('wordCounter.howCharsP1', locale)} /></p>
+          <p>{t('wordCounter.howCharsP2', locale)}</p>
+          <h3>{t('wordCounter.howSentencesTitle', locale)}</h3>
+          <p>{t('wordCounter.howSentencesP', locale)}</p>
+          <h3>{t('wordCounter.howTimeTitle', locale)}</h3>
+          <p><RichText text={t('wordCounter.howTimeP', locale)} links={{ study: 'https://doi.org/10.1016/j.jml.2019.104047' }} /></p>
+          <h3>{t('wordCounter.howTopTitle', locale)}</h3>
+          <p>{t('wordCounter.howTopP', locale)}</p>
+          <h3>{t('wordCounter.howLimitTitle', locale)}</h3>
+          <p>{t('wordCounter.howLimitP', locale)}</p>
+          <h3>{t('wordCounter.faqTitle', locale)}</h3>
+          <p><strong>{t('wordCounter.faqQ1', locale)}</strong> {t('wordCounter.faqA1', locale)}</p>
+          <p><strong>{t('wordCounter.faqQ2', locale)}</strong> {t('wordCounter.faqA2', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'csv-to-sql' && <>

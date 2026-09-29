@@ -1,0 +1,111 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'wordCounter.charactersLeft.one', 'wordCounter.charactersLeft.other', 'wordCounter.charactersOver.one',
+  'wordCounter.charactersOver.other', 'wordCounter.colPhrase', 'wordCounter.colWord', 'wordCounter.counting',
+  'wordCounter.errRead', 'wordCounter.errTooLarge', 'wordCounter.errWorker', 'wordCounter.errWrongType',
+  'wordCounter.fileLoaded', 'wordCounter.limitEmpty', 'wordCounter.liveSummary', 'wordCounter.noPhrases',
+  'wordCounter.reading', 'wordCounter.stopWords', 'wordCounter.topEmpty', 'wordCounter.wordsLeft.one',
+  'wordCounter.wordsLeft.other', 'wordCounter.wordsOver.one', 'wordCounter.wordsOver.other',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const readouts: [string, TranslationKey][] = [['words', 'wordCounter.words'], ['characters', 'wordCounter.characters'], ['charactersNoSpaces', 'wordCounter.charactersNoSpaces']];
+const details: [string, TranslationKey][] = [
+  ['letters', 'wordCounter.letters'], ['sentences', 'wordCounter.sentences'], ['paragraphs', 'wordCounter.paragraphs'],
+  ['lines', 'wordCounter.lines'], ['readingSeconds', 'wordCounter.readingTime'], ['speakingSeconds', 'wordCounter.speakingTime'],
+];
+---
+<div class="drop wc-drop" id="word-counter-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <dl class="wc-readout">
+      {readouts.map(([stat, label]) => <div><dt>{t(label, locale)}</dt><dd data-stat={stat}>0</dd></div>)}
+    </dl>
+    <label class="field-label" for="word-counter-input">{t('wordCounter.inputLabel', locale)}</label>
+    <textarea id="word-counter-input" class="wc-input" rows="10" placeholder={t('wordCounter.inputPlaceholder', locale)}></textarea>
+    <p class="input-hint">{t('wordCounter.inputHint', locale)}</p>
+    <div class="actions input-actions">
+      <input class="visually-hidden" type="file" id="word-counter-file" accept=".txt,.text,.md,.markdown,text/plain,text/markdown" tabindex="-1" />
+      <button class="btn alt" type="button" id="word-counter-choose">{t('wordCounter.chooseFile', locale)}</button>
+      <button class="text-button" type="button" id="word-counter-clear">{t('wordCounter.clear', locale)}</button>
+    </div>
+    <p id="word-counter-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+    <dl class="wc-details">
+      {details.map(([stat, label]) => <div><dt>{t(label, locale)}</dt><dd data-stat={stat}>0</dd></div>)}
+    </dl>
+    <div class="wc-limit">
+      <label class="field-label" for="word-counter-limit">{t('wordCounter.limitLabel', locale)}</label>
+      <div class="wc-limit-row">
+        <input class="wc-limit-input" type="number" id="word-counter-limit" min="1" max="10000000" step="1" inputmode="numeric" />
+        <div class="chips" role="group" aria-label={t('wordCounter.limitUnit', locale)}>
+          <button type="button" data-limit-unit="characters" aria-pressed="true">{t('wordCounter.characters', locale)}</button>
+          <button type="button" data-limit-unit="words" aria-pressed="false">{t('wordCounter.words', locale)}</button>
+        </div>
+      </div>
+      <p class="wc-limit-status" id="word-counter-limit-status">{t('wordCounter.limitEmpty', locale)}</p>
+    </div>
+    <div class="wc-top">
+      <div class="result-head">
+        <h2 class="panel-title">{t('wordCounter.topTitle', locale)}</h2>
+        <div class="chips" role="group" aria-label={t('wordCounter.topShow', locale)}>
+          <button type="button" data-phrase="1" aria-pressed="true">{t('wordCounter.topWords', locale)}</button>
+          <button type="button" data-phrase="2" aria-pressed="false">{t('wordCounter.topPhrases2', locale)}</button>
+          <button type="button" data-phrase="3" aria-pressed="false">{t('wordCounter.topPhrases3', locale)}</button>
+        </div>
+      </div>
+      <label class="csv-safety wc-skip"><input type="checkbox" id="word-counter-stop-words" checked /> {t('wordCounter.skipCommon', locale)}</label>
+      <div class="wc-top-list">
+        <table class="spec-table mapping-table wc-top-table" id="word-counter-top" hidden>
+          <thead><tr><th scope="col" id="word-counter-top-head">{t('wordCounter.colWord', locale)}</th><th scope="col">{t('wordCounter.colTimes', locale)}</th><th scope="col">{t('wordCounter.colShare', locale)}</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="wc-top-empty" id="word-counter-top-empty">{t('wordCounter.topEmpty', locale)}</p>
+      </div>
+    </div>
+    <p class="visually-hidden" id="word-counter-live" aria-live="polite" aria-atomic="true"></p>
+  </div>
+</div>
+<style>
+  .wc-drop { min-height: 0; }
+  .wc-readout, .wc-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+  .wc-readout { gap: 16px; margin-block-end: 24px; }
+  .wc-readout div, .wc-details div { min-width: 0; }
+  /* A label that wraps (German runs long) keeps its number level with the others. */
+  .wc-readout div { display: flex; flex-direction: column; justify-content: space-between; }
+  .wc-readout dt, .wc-details dt { font-size: 14px; font-weight: 500; color: var(--slate); }
+  .wc-readout dd, .wc-details dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .wc-readout dd { font-size: clamp(32px, 6vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; margin-block-start: 6px; }
+  .wc-input { display: block; width: 100%; min-width: 0; resize: vertical; background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 12px 14px; font: 17px/1.6 var(--font); }
+  .wc-input:focus { border-color: var(--cobalt); }
+  .wc-details { gap: 20px 16px; margin-block-start: 28px; padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  .wc-details dd { font-size: 24px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin-block-start: 2px; }
+  .wc-limit { margin-block-start: 28px; padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  .wc-limit-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .wc-limit-input { width: 9em; background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 10px 14px; font: 600 17px/1.2 var(--font); font-variant-numeric: tabular-nums; min-height: 44px; }
+  .wc-limit-input:focus { border-color: var(--cobalt); }
+  .wc-limit-status { margin-block: 12px 0; font-variant-numeric: tabular-nums; }
+  .wc-limit-status.is-empty { color: var(--slate); font-size: 14px; }
+  .wc-limit-status:not(.is-empty) { font-weight: 600; }
+  .wc-top { margin-block-start: 12px; border-block-start: 1px solid var(--line); }
+  .wc-top .result-head { align-items: center; }
+  .wc-skip { margin-block: 16px 20px; }
+  /* Ten rows are reserved so the section below doesn't move when the list fills in. */
+  .wc-top-list { min-height: 590px; }
+  .wc-top-table { border: 1.5px solid var(--line); }
+  /* The rows are built by the script, so they don't carry this component's scoped attribute. */
+  .wc-top-table :global(td) { padding-block: 12px; }
+  .wc-top-table :global(td:first-child) { overflow-wrap: anywhere; font-weight: 600; width: 100%; }
+  .wc-top-table :global(td:not(:first-child)), .wc-top-table th:not(:first-child) { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .wc-top-empty { color: var(--slate); font-size: 14px; margin: 0; }
+  @media (max-width: 560px) {
+    .wc-readout { gap: 10px; }
+    .wc-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .wc-top-list { min-height: 530px; }
+  }
+</style>
+<script src="../scripts/word-counter.ts"></script>
