@@ -1,0 +1,180 @@
+---
+import { t, langTag, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { LETTERS, LEVELS } from '../lib/high-school-gpa';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'hsGpa.classLegend', 'hsGpa.removeLabel', 'hsGpa.breakdownEmpty', 'hsGpa.breakdownClasses.one', 'hsGpa.breakdownClasses.other',
+  'hsGpa.breakdownCredits.one', 'hsGpa.breakdownCredits.other', 'hsGpa.breakdownLetter', 'hsGpa.breakdownBonus',
+  'hsGpa.breakdownPassFail.one', 'hsGpa.breakdownPassFail.other', 'hsGpa.errPercent', 'hsGpa.errCredits', 'hsGpa.errEarlierGpa',
+  'hsGpa.errEarlierUnits', 'hsGpa.earlierClasses', 'hsGpa.earlierCredits', 'hsGpa.liveSummary', 'hsGpa.classesFull',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const lang = langTag(locale);
+const oneDecimal = (value: number) => new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value);
+const levelKey: Record<(typeof LEVELS)[number], TranslationKey> = { regular: 'hsGpa.levelRegular', honors: 'hsGpa.levelHonors', ap: 'hsGpa.levelAp' };
+const START_ROWS = 6;
+const rows = Array.from({ length: START_ROWS }, (_, index) => index + 1);
+---
+<div class="drop hs-gpa-drop" id="hs-gpa-tool" data-strings={JSON.stringify(strings)} data-locale={locale} data-start-rows={START_ROWS}>
+  <div class="tool-frame hs-gpa-grid">
+    <div class="hs-gpa-main">
+      <div class="hs-gpa-options">
+        <div class="hs-gpa-option">
+          <span class="field-label" id="hs-gpa-grade-type-label">{t('hsGpa.gradeTypeLabel', locale)}</span>
+          <div class="chips" role="group" aria-labelledby="hs-gpa-grade-type-label">
+            <button type="button" data-grade-type="letter" aria-pressed="true">{t('hsGpa.gradeTypeLetter', locale)}</button>
+            <button type="button" data-grade-type="percent" aria-pressed="false">{t('hsGpa.gradeTypePercent', locale)}</button>
+          </div>
+        </div>
+        <div class="hs-gpa-option">
+          <span class="field-label" id="hs-gpa-credits-label">{t('hsGpa.creditsLabel', locale)}</span>
+          <div class="chips" role="group" aria-labelledby="hs-gpa-credits-label">
+            <button type="button" data-credits="off" aria-pressed="true">{t('hsGpa.creditsOff', locale)}</button>
+            <button type="button" data-credits="on" aria-pressed="false">{t('hsGpa.creditsOn', locale)}</button>
+          </div>
+        </div>
+        <div class="hs-gpa-option">
+          <span class="field-label" id="hs-gpa-a-plus-label">{t('hsGpa.aPlusLabel', locale)}</span>
+          <div class="chips" role="group" aria-labelledby="hs-gpa-a-plus-label">
+            <button type="button" data-a-plus="4" aria-pressed="true">{oneDecimal(4)}</button>
+            <button type="button" data-a-plus="4.3" aria-pressed="false">{oneDecimal(4.3)}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hs-gpa-classes" id="hs-gpa-classes">
+        <div class="hs-gpa-row hs-gpa-head" aria-hidden="true">
+          <span>{t('hsGpa.colClass', locale)}</span><span>{t('hsGpa.colGrade', locale)}</span><span>{t('hsGpa.colLevel', locale)}</span><span data-credits-cell hidden>{t('hsGpa.colCredits', locale)}</span><span></span>
+        </div>
+        <div id="hs-gpa-rows">
+          {rows.map(n => (
+            <fieldset class="hs-gpa-row" data-row>
+              <legend class="visually-hidden">{t('hsGpa.classLegend', locale, { n })}</legend>
+              <input class="hs-gpa-input hs-gpa-name" type="text" autocomplete="off" data-field="name" placeholder={t('hsGpa.namePlaceholder', locale)} aria-label={t('hsGpa.colClass', locale)} />
+              <div class="hs-gpa-grade">
+                <select class="hs-gpa-input" data-field="grade" aria-label={t('hsGpa.colGrade', locale)}>
+                  <option value="">–</option>
+                  {LETTERS.map(letter => <option value={letter}>{letter}</option>)}
+                  <option value="P">{t('hsGpa.gradePass', locale)}</option>
+                </select>
+                <span class="hs-gpa-percent" hidden>
+                  <input class="hs-gpa-input" type="text" inputmode="decimal" autocomplete="off" data-field="percent" aria-label={t('hsGpa.colGradePercent', locale)} />
+                  <span class="hs-gpa-derived" data-derived aria-hidden="true"></span>
+                </span>
+              </div>
+              <select class="hs-gpa-input" data-field="level" aria-label={t('hsGpa.colLevel', locale)}>
+                {LEVELS.map(level => <option value={level}>{t(levelKey[level], locale)}</option>)}
+              </select>
+              <input class="hs-gpa-input hs-gpa-credits" type="text" inputmode="decimal" autocomplete="off" data-field="credits" data-credits-cell value={oneDecimal(1)} aria-label={t('hsGpa.colCredits', locale)} hidden />
+              <button class="text-button hs-gpa-remove" type="button" data-remove aria-label={t('hsGpa.removeLabel', locale, { n })}>{t('hsGpa.remove', locale)}</button>
+            </fieldset>
+          ))}
+        </div>
+        <p class="hs-gpa-error" id="hs-gpa-classes-error" hidden></p>
+        <div class="actions hs-gpa-actions">
+          <button class="btn alt" type="button" id="hs-gpa-add">{t('hsGpa.add', locale)}</button>
+          <button class="text-button" type="button" id="hs-gpa-clear">{t('hsGpa.clear', locale)}</button>
+        </div>
+        <p class="input-hint" id="hs-gpa-add-hint">{t('hsGpa.savedHint', locale)}</p>
+      </div>
+    </div>
+
+    <div class="hs-gpa-results">
+      <dl class="hs-gpa-readout">
+        <div><dt>{t('hsGpa.resultUnweighted', locale)}</dt><dd data-result="unweighted">–</dd></div>
+        <div><dt>{t('hsGpa.resultWeighted', locale)}</dt><dd data-result="weighted">–</dd></div>
+      </dl>
+      <dl class="hs-gpa-readout hs-gpa-cumulative" id="hs-gpa-cumulative" hidden>
+        <div data-cumulative="unweighted"><dt>{t('hsGpa.resultCumUnweighted', locale)}</dt><dd data-result="cumulativeUnweighted">–</dd></div>
+        <div data-cumulative="weighted"><dt>{t('hsGpa.resultCumWeighted', locale)}</dt><dd data-result="cumulativeWeighted">–</dd></div>
+      </dl>
+      <p class="hs-gpa-breakdown" id="hs-gpa-breakdown">{t('hsGpa.breakdownEmpty', locale)}</p>
+
+      <div class="hs-gpa-earlier">
+        <span class="field-label" id="hs-gpa-earlier-label">{t('hsGpa.earlierLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="hs-gpa-earlier-label">
+          <button type="button" data-earlier="off" aria-pressed="true">{t('hsGpa.earlierNo', locale)}</button>
+          <button type="button" data-earlier="on" aria-pressed="false">{t('hsGpa.earlierYes', locale)}</button>
+        </div>
+        <div class="hs-gpa-earlier-fields" id="hs-gpa-earlier-fields" hidden>
+          <div>
+            <label class="field-label" for="hs-gpa-earlier-unweighted">{t('hsGpa.earlierUnweighted', locale)}</label>
+            <input class="hs-gpa-input" id="hs-gpa-earlier-unweighted" type="text" inputmode="decimal" autocomplete="off" aria-describedby="hs-gpa-earlier-hint hs-gpa-earlier-error" />
+          </div>
+          <div>
+            <label class="field-label" for="hs-gpa-earlier-weighted">{t('hsGpa.earlierWeighted', locale)}</label>
+            <input class="hs-gpa-input" id="hs-gpa-earlier-weighted" type="text" inputmode="decimal" autocomplete="off" aria-describedby="hs-gpa-earlier-hint hs-gpa-earlier-error" />
+          </div>
+          <div>
+            <label class="field-label" for="hs-gpa-earlier-units" id="hs-gpa-earlier-units-label">{t('hsGpa.earlierClasses', locale)}</label>
+            <input class="hs-gpa-input" id="hs-gpa-earlier-units" type="text" inputmode="decimal" autocomplete="off" aria-describedby="hs-gpa-earlier-hint hs-gpa-earlier-error" />
+          </div>
+          <p class="input-hint" id="hs-gpa-earlier-hint">{t('hsGpa.earlierHint', locale)}</p>
+          <p class="hs-gpa-error" id="hs-gpa-earlier-error" hidden></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="visually-hidden" id="hs-gpa-live" aria-live="polite" aria-atomic="true"></p>
+</div>
+<style>
+  .hs-gpa-drop { min-height: 0; }
+  .hs-gpa-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 24px 40px; align-items: start; max-width: 1080px; }
+  .hs-gpa-main, .hs-gpa-results { min-width: 0; }
+  .hs-gpa-options { display: flex; flex-wrap: wrap; gap: 20px 28px; margin-block-end: 28px; }
+  .hs-gpa-option .field-label, .hs-gpa-earlier .field-label { margin-block-end: 8px; }
+  .hs-gpa-input { font: 500 16px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 10px 12px; width: 100%; min-width: 0; min-height: 44px; transition: border-color 0.15s; }
+  .hs-gpa-input:focus { border-color: var(--cobalt); }
+  .hs-gpa-input[aria-invalid="true"] { border-color: var(--ink); }
+  select.hs-gpa-input { padding-inline-end: 8px; }
+  /* Name, grade, level, credits (only with credits on), remove. */
+  .hs-gpa-row { display: grid; grid-template-columns: minmax(0, 1fr) 8.5em minmax(0, 11em) 5em auto; gap: 8px; align-items: center; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .hs-gpa-classes:not(.has-credits) .hs-gpa-row { grid-template-columns: minmax(0, 1fr) 8.5em minmax(0, 11em) auto; }
+  #hs-gpa-rows .hs-gpa-row + .hs-gpa-row { margin-block-start: 8px; }
+  .hs-gpa-head { font-size: 14px; font-weight: 500; color: var(--slate); margin-block-end: 8px; }
+  .hs-gpa-grade { min-width: 0; }
+  .hs-gpa-percent { display: flex; align-items: center; gap: 8px; }
+  .hs-gpa-percent[hidden] { display: none; }
+  .hs-gpa-derived { font-weight: 600; font-stretch: 75%; color: var(--slate); min-width: 2ch; flex: none; }
+  .hs-gpa-remove { padding: 8px 4px; font-size: 14px; min-height: 40px; }
+  .hs-gpa-error { margin-block: 12px 0; font-weight: 600; font-size: 14px; }
+  .hs-gpa-actions { margin-block-start: 16px; }
+  .hs-gpa-readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; }
+  .hs-gpa-readout + .hs-gpa-readout { margin-block-start: 20px; padding-block-start: 20px; border-block-start: 1px solid var(--line); }
+  .hs-gpa-readout div { min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .hs-gpa-readout div[hidden] { display: none; }
+  .hs-gpa-readout dt { font-size: 14px; font-weight: 500; color: var(--slate); }
+  .hs-gpa-readout dd { margin: 6px 0 0; font-size: clamp(40px, 5vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .hs-gpa-cumulative dd { font-size: clamp(32px, 4vw, 40px); }
+  .hs-gpa-breakdown { color: var(--slate); margin-block: 16px 0; min-height: 4.65em; }
+  .hs-gpa-earlier { margin-block-start: 28px; padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  .hs-gpa-earlier-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-block-start: 16px; }
+  .hs-gpa-earlier-fields[hidden] { display: none; }
+  .hs-gpa-earlier-fields .field-label { margin-block-end: 6px; }
+  .hs-gpa-earlier-fields .input-hint, .hs-gpa-earlier-fields .hs-gpa-error { grid-column: 1 / -1; margin: 0; }
+  @media (max-width: 860px) {
+    .hs-gpa-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .hs-gpa-results { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    /* The name gets its own line; grade, level, credits and remove share the next. */
+    .hs-gpa-head { display: none; }
+    .hs-gpa-row, .hs-gpa-classes:not(.has-credits) .hs-gpa-row {
+      grid-template-columns: 7em minmax(0, 1fr) 4.5em auto;
+      grid-template-areas: "name name name remove" "grade level level level";
+      padding-block-end: 12px; border-block-end: 1px solid var(--line);
+    }
+    .hs-gpa-classes.has-credits .hs-gpa-row { grid-template-areas: "name name credits remove" "grade level level level"; }
+    .hs-gpa-name { grid-area: name; }
+    .hs-gpa-grade { grid-area: grade; }
+    .hs-gpa-row [data-field="level"] { grid-area: level; }
+    .hs-gpa-credits { grid-area: credits; }
+    .hs-gpa-remove { grid-area: remove; }
+    .hs-gpa-input { padding-inline: 10px; }
+  }
+</style>
+<script src="../scripts/high-school-gpa.ts"></script>

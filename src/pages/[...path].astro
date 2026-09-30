@@ -18,6 +18,7 @@ import CsvToSqlTool from '../components/CsvToSqlTool.astro';
 import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
 import WordCounterTool from '../components/WordCounterTool.astro';
 import TipCalculatorTool from '../components/TipCalculatorTool.astro';
+import HighSchoolGpaTool from '../components/HighSchoolGpaTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
@@ -30,6 +31,7 @@ import { publishedToolLocales, getPublishedToolPath } from '../data/tools';
 import { buildStaticPaths, type RouteProps } from '../data/routes';
 import { t, formatNumber, langTag, type TranslationKey } from '../i18n/utils';
 import { tipDefaults } from '../data/tip-defaults';
+import { gradePoints, LETTERS, percentRange } from '../lib/high-school-gpa';
 
 export function getStaticPaths() {
   const allowDrafts = import.meta.env.DEV && process.env.PREVIEW_DRAFTS === 'true';
@@ -79,6 +81,21 @@ const tipSources = {
   usnews: 'https://money.usnews.com/money/personal-finance/spending/articles/how-much-should-you-tip-a-tattoo-artist',
   doordash: 'https://help.doordash.com/en-us/dashers/article/do-dashers-receive-tips',
   instacart: 'https://www.instacart.com/help/section/360007902791/360049068552',
+};
+
+// The GPA scale table: each letter's percent range and its points in regular, honors and AP/IB classes.
+const hsGpaPoints = (value: number) => new Intl.NumberFormat(langTag(locale), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value);
+const hsGpaScaleRows = LETTERS.map(letter => {
+  const [min, max] = percentRange(letter);
+  const cell = (level: 'regular' | 'honors' | 'ap') => letter === 'A+'
+    ? t('hsGpa.scaleAPlus', locale, { low: hsGpaPoints(gradePoints('A+', level, 4).weighted), high: hsGpaPoints(gradePoints('A+', level, 4.3).weighted) })
+    : hsGpaPoints(gradePoints(letter, level).weighted);
+  return { letter, percent: letter === 'F' ? t('hsGpa.scaleBelow', locale, { min: formatNumber(60, locale) }) : `${formatNumber(min, locale)}–${formatNumber(max, locale)}`, regular: cell('regular'), honors: cell('honors'), ap: cell('ap') };
+});
+const hsGpaFaqs = [1, 2, 3, 4, 5, 6] as const;
+const hsGpaSources = {
+  bigfuture: 'https://bigfuture.collegeboard.org/plan-for-college/get-started/how-to-calculate-gpa-4.0-scale',
+  hsts: 'https://www.nationsreportcard.gov/hstsreport/',
 };
 
 const excelRows: [TranslationKey, TranslationKey][] = [
@@ -374,6 +391,32 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         </section>
         <section aria-labelledby="tip-faq-title"><div class="sec-head"><h2 id="tip-faq-title">{t('tip.faqTitle', locale)}</h2></div><div class="how-copy">
           {tipFaqs.map(n => <p><strong>{t(`tip.faqQ${n}` as TranslationKey, locale)}</strong> {t(`tip.faqA${n}` as TranslationKey, locale, n === 1 ? { default: tipDefaultPercent } : undefined)}</p>)}
+        </div></section>
+      </>}
+      {tool.id === 'high-school-gpa-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('hsGpa.leadStrong', locale)}</strong> {t('hsGpa.lead', locale)}</p><p class="caption">{t('hsGpa.caption', locale)}</p></div></div>
+        <HighSchoolGpaTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('hsGpa.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('hsGpa.howStep1', locale)} /></p>
+          <p><RichText text={t('hsGpa.howStep2', locale)} /></p>
+          <h3>{t('hsGpa.howWeightedTitle', locale)}</h3>
+          <p>{t('hsGpa.howWeightedP', locale)}</p>
+          <h3>{t('hsGpa.howCreditsTitle', locale)}</h3>
+          <p>{t('hsGpa.howCreditsP', locale)}</p>
+          <h3>{t('hsGpa.howCumulativeTitle', locale)}</h3>
+          <p>{t('hsGpa.howCumulativeP', locale)}</p>
+        </div></section>
+        <section aria-labelledby="hs-gpa-scale-title"><div class="sec-head"><h2 id="hs-gpa-scale-title">{t('hsGpa.scaleTitle', locale)}</h2><p>{t('hsGpa.scaleIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table hs-gpa-scale"><thead><tr><th scope="col">{t('hsGpa.scaleColLetter', locale)}</th><th scope="col">{t('hsGpa.scaleColPercent', locale)}</th><th scope="col">{t('hsGpa.resultUnweighted', locale)}</th><th scope="col">{t('hsGpa.levelHonors', locale)}</th><th scope="col">{t('hsGpa.levelAp', locale)}</th></tr></thead>
+            <tbody>
+              {hsGpaScaleRows.map(row => <tr><th scope="row">{row.letter}</th><td class="fmt">{row.percent}</td><td class="fmt">{row.regular}</td><td class="fmt">{row.honors}</td><td class="fmt">{row.ap}</td></tr>)}
+              <tr><th scope="row">P</th><td class="fmt">{t('hsGpa.scalePass', locale)}</td><td class="note" colspan="3">{t('hsGpa.scaleNotCounted', locale)}</td></tr>
+            </tbody>
+          </table></div>
+          <div class="how-copy"><p class="hs-gpa-scale-note"><RichText text={t('hsGpa.scaleNote', locale)} links={hsGpaSources} /></p></div>
+        </section>
+        <section aria-labelledby="hs-gpa-faq-title"><div class="sec-head"><h2 id="hs-gpa-faq-title">{t('hsGpa.faqTitle', locale)}</h2></div><div class="how-copy">
+          {hsGpaFaqs.map(n => <p><strong>{t(`hsGpa.faqQ${n}` as TranslationKey, locale)}</strong> <RichText text={t(`hsGpa.faqA${n}` as TranslationKey, locale)} links={hsGpaSources} /></p>)}
         </div></section>
       </>}
       {tool.id === 'csv-to-sql' && <>

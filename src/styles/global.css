@@ -866,3 +866,14 @@ footer .wrap {
   .tip-guide td.fmt { padding: 14px 14px 4px; text-align: end; }
   .tip-guide td.note { grid-column: 1 / -1; padding: 0 14px 14px; }
 }
+/* High school GPA scale: five short columns that fit a phone without scrolling. */
+.hs-gpa-scale { font-variant-numeric: tabular-nums; }
+.hs-gpa-scale tbody th { font-size: 16px; font-weight: 600; color: var(--ink); padding: 14px 20px; }
+.hs-gpa-scale td { padding-block: 14px; white-space: nowrap; }
+.hs-gpa-scale td.note { white-space: normal; }
+.hs-gpa-scale-note { margin-block-start: 16px; font-size: 14px; color: var(--slate); }
+@media (max-width: 560px) {
+  .hs-gpa-scale th, .hs-gpa-scale td, .hs-gpa-scale tbody th { padding: 10px 6px; font-size: 14px; }
+  /* Long German and French headers break at syllables, not mid-letter. */
+  .hs-gpa-scale thead th { white-space: normal; overflow-wrap: normal; hyphens: auto; }
+}
