@@ -16,6 +16,7 @@ const csvViewer = read('csv-viewer/index.html');
 const csvJson = read('csv-to-json/index.html');
 const jsonBeautifier = read('json-beautifier/index.html');
 const wordCounter = read('word-counter/index.html');
+const tipCalculator = read('tip-calculator/index.html');
 const qrScanner = read('qr-code-scanner/index.html');
 const imageResizer = read('image-resizer/index.html');
 const jpg100 = read('compress-jpg-to-100kb/index.html');
@@ -93,6 +94,14 @@ assert.match(wordCounter, /rel="canonical" href="https:\/\/thetoolproject\.com\/
 assert.match(wordCounter, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/word-counter\/"/);
 assert.match(wordCounter, /href="https:\/\/doi\.org\/10\.1016\/j\.jml\.2019\.104047" target="_blank"/);
 assert.match(read('ja/word-counter/index.html'), /<h1 class="page-title">文字数カウント<\/h1>/);
+assert.match(home, /href="\/tip-calculator\/"/);
+assert.match(tipCalculator, /<title>Tip calculator: how much to tip and split the bill \| thetoolproject<\/title>/);
+assert.match(tipCalculator, /<h1 class="page-title">Tip calculator<\/h1>/);
+assert.match(tipCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/tip-calculator\/"/);
+assert.match(tipCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/tip-calculator\/"/);
+assert.match(tipCalculator, /<option value="USD" selected[ >]/);
+assert.match(read('ja/tip-calculator/index.html'), /<h1 class="page-title">割り勘計算<\/h1>/);
+assert.match(read('ja/tip-calculator/index.html'), /<option value="JPY" selected[ >]/);
 assert.match(jsonCsv, /<title>JSON to CSV converter: convert JSON files online \| thetoolproject<\/title>/);
 assert.match(jsonCsv, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
 assert.match(jsonCsv, /hreflang="x-default" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
@@ -193,6 +202,7 @@ const englishUrls = [
   'https://thetoolproject.com/json-to-csv/',
   'https://thetoolproject.com/json-beautifier/',
   'https://thetoolproject.com/word-counter/',
+  'https://thetoolproject.com/tip-calculator/',
   'https://thetoolproject.com/xml-to-csv/',
   'https://thetoolproject.com/xml-to-json/',
   'https://thetoolproject.com/excel-to-csv/',
@@ -242,7 +252,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

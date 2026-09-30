@@ -59,6 +59,12 @@
 |---|---|
 | **[Word Counter](https://thetoolproject.com/word-counter/)** | Count words and characters (with and without spaces), letters, sentences, paragraphs, reading time and keyword density as you type, with an optional character or word limit. |
 
+### Calculators
+
+| Tool | Description |
+|---|---|
+| **[Tip Calculator](https://thetoolproject.com/tip-calculator/)** | Work out the tip and total, tip before or after tax, split the bill between up to 100 people and round up each share, in 27 currencies. The Japanese page is a bill splitter (割り勘). |
+
 ### PDF Utilities
 
 | Tool | Description |

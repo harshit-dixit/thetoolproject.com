@@ -122,6 +122,11 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('word-counter', 'wordCounter'),
   },
+  tipCalculator: {
+    id: 'tip-calculator',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('tip-calculator', 'tip'),
+  },
   csvToSql: {
     id: 'csv-to-sql',
     category: 'DeveloperApplication',

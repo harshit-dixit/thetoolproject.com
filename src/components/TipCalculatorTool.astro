@@ -1,0 +1,174 @@
+---
+import { t, langTag, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { tipDefaults } from '../data/tip-defaults';
+import { currencies, currencyAffix, currencyDigits, roundingSteps } from '../lib/tip-calculator';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'tip.breakdownBill', 'tip.breakdownPreTax', 'tip.breakdownRounding', 'tip.breakdownRoundingTip', 'tip.breakdownEmpty',
+  'tip.errBill', 'tip.errTip', 'tip.errPeople', 'tip.errTax', 'tip.liveSummary', 'tip.liveSummaryOne',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const defaults = tipDefaults[locale];
+const lang = langTag(locale);
+const digits = currencyDigits(defaults.currency);
+const affix = currencyAffix(lang, defaults.currency);
+const names = new Intl.DisplayNames(lang, { type: 'currency' });
+// The page's own currency first, then the rest in the usual order.
+const currencyOptions = [defaults.currency, ...currencies.filter(code => code !== defaults.currency)].map(code => ({ code, label: `${names.of(code)} (${code})` }));
+const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent', maximumFractionDigits: 1 }).format(value / 100);
+const money = (value: number, fraction = digits) => new Intl.NumberFormat(lang, { style: 'currency', currency: defaults.currency, minimumFractionDigits: fraction, maximumFractionDigits: fraction }).format(value);
+const zero = money(0);
+const steps = roundingSteps(digits);
+---
+<div class="drop tip-drop" id="tip-calculator-tool" data-strings={JSON.stringify(strings)} data-locale={locale} data-defaults={JSON.stringify(defaults)}>
+  <div class="tool-frame tip-grid">
+    <div class="tip-main">
+      <div class="tip-field">
+        <div class="tip-label-row">
+          <label class="field-label" for="tip-bill">{t('tip.billLabel', locale)}</label>
+          <label class="visually-hidden" for="tip-currency">{t('tip.currencyLabel', locale)}</label>
+          <select class="tool-select tip-currency" id="tip-currency">
+            {currencyOptions.map(option => <option value={option.code} selected={option.code === defaults.currency}>{option.label}</option>)}
+          </select>
+        </div>
+        <div class:list={['tip-box', { 'is-suffix': affix.suffix }]}>
+          <span class="tip-affix" data-currency-symbol aria-hidden="true">{affix.symbol}</span>
+          <input class="tip-input" id="tip-bill" type="text" inputmode="decimal" autocomplete="off" placeholder={new Intl.NumberFormat(lang, { minimumFractionDigits: digits }).format(0)} aria-describedby="tip-bill-error" />
+        </div>
+        <p class="tip-error" id="tip-bill-error" hidden></p>
+      </div>
+
+      <div class="tip-field">
+        <label class="field-label" for="tip-percent">{t('tip.tipLabel', locale)}</label>
+        <div class="tip-tip-row">
+          <div class="chips" role="group" aria-label={t('tip.tipPresets', locale)}>
+            {defaults.presets.map(value => <button type="button" data-tip={value} aria-pressed={value === defaults.tip ? 'true' : 'false'}>{percent(value)}</button>)}
+          </div>
+          <div class="tip-box is-suffix tip-percent-box">
+            <span class="tip-affix" aria-hidden="true">%</span>
+            <input class="tip-input" id="tip-percent" type="text" inputmode="decimal" autocomplete="off" value={new Intl.NumberFormat(lang).format(defaults.tip)} aria-describedby="tip-percent-error" />
+          </div>
+        </div>
+        <p class="tip-error" id="tip-percent-error" hidden></p>
+      </div>
+
+      <div class="tip-field">
+        <label class="field-label" for="tip-people">{t('tip.peopleLabel', locale)}</label>
+        <div class="tip-stepper">
+          <button class="btn alt" type="button" id="tip-people-down" aria-label={t('tip.peopleFewer', locale)} aria-controls="tip-people">−</button>
+          <input class="tip-input tip-people" id="tip-people" type="text" inputmode="numeric" autocomplete="off" value="1" aria-describedby="tip-people-error" />
+          <button class="btn alt" type="button" id="tip-people-up" aria-label={t('tip.peopleMore', locale)} aria-controls="tip-people">+</button>
+        </div>
+        <p class="tip-error" id="tip-people-error" hidden></p>
+      </div>
+    </div>
+
+    <div class="tip-options">
+      <div class="tip-field">
+        <span class="field-label" id="tip-on-label">{t('tip.tipOnLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="tip-on-label">
+          <button type="button" data-tip-on="bill" aria-pressed="true">{t('tip.tipOnBill', locale)}</button>
+          <button type="button" data-tip-on="preTax" aria-pressed="false">{t('tip.tipOnPreTax', locale)}</button>
+        </div>
+        <div class="tip-tax" id="tip-tax-field" hidden>
+          <label class="field-label" for="tip-tax">{t('tip.taxLabel', locale)}</label>
+          <div class:list={['tip-box', { 'is-suffix': affix.suffix }]}>
+            <span class="tip-affix" data-currency-symbol aria-hidden="true">{affix.symbol}</span>
+            <input class="tip-input" id="tip-tax" type="text" inputmode="decimal" autocomplete="off" aria-describedby="tip-tax-hint tip-tax-error" />
+          </div>
+          <p class="input-hint" id="tip-tax-hint">{t('tip.taxHint', locale)}</p>
+          <p class="tip-error" id="tip-tax-error" hidden></p>
+        </div>
+      </div>
+
+      <div class="tip-field">
+        <span class="field-label" id="tip-round-label">{t('tip.roundLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="tip-round-label">
+          <button type="button" data-round="0" aria-pressed="true">{t('tip.roundOff', locale)}</button>
+          {steps.map((step, index) => <button type="button" data-round={index + 1} aria-pressed="false">{money(step, 0)}</button>)}
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-results">
+      <dl class="tip-readout">
+        <div><dt>{t('tip.resultTip', locale)}</dt><dd data-result="tip">{zero}</dd></div>
+        <div><dt>{t('tip.resultTotal', locale)}</dt><dd data-result="total">{zero}</dd></div>
+      </dl>
+      <dl class="tip-readout tip-split" id="tip-split" hidden>
+        <div><dt>{t('tip.resultTipEach', locale)}</dt><dd data-result="tipPerPerson">{zero}</dd></div>
+        <div><dt>{t('tip.resultEach', locale)}</dt><dd data-result="perPerson">{zero}</dd></div>
+      </dl>
+      <p class="tip-breakdown" id="tip-breakdown">{t('tip.breakdownEmpty', locale)}</p>
+    </div>
+
+    <div class="tip-others">
+      <h2 class="tip-table-title" id="tip-table-title">{t('tip.tableTitle', locale)}</h2>
+      <div class="table-scroll">
+        <table class="spec-table mapping-table tip-table" aria-labelledby="tip-table-title">
+          <thead><tr><th scope="col">{t('tip.colTip', locale)}</th><th scope="col">{t('tip.colAmount', locale)}</th><th scope="col">{t('tip.colTotal', locale)}</th><th scope="col" data-split-column hidden>{t('tip.colEach', locale)}</th></tr></thead>
+          <tbody>
+            {defaults.presets.map(value => <tr data-row={value}><th scope="row">{percent(value)}</th><td>–</td><td>–</td><td data-split-column hidden>–</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="visually-hidden" id="tip-live" aria-live="polite" aria-atomic="true"></p>
+</div>
+<style>
+  .tip-drop { min-height: 0; }
+  /* Beside the fields on wide screens. On phones the answer comes straight after the bill, tip and people, before the options. */
+  .tip-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "main results" "options others"; gap: 24px 40px; align-items: start; max-width: 1000px; }
+  .tip-main { grid-area: main; }
+  .tip-results { grid-area: results; }
+  .tip-options { grid-area: options; }
+  .tip-others { grid-area: others; min-width: 0; }
+  .tip-field + .tip-field { margin-block-start: 24px; }
+  .tip-label-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-block-end: 8px; }
+  .tip-label-row .field-label { margin: 0; }
+  .tip-currency { font-size: 14px; min-width: 0; max-width: 100%; }
+  .tip-box { display: flex; align-items: center; background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; transition: border-color 0.15s; min-width: 0; }
+  .tip-box:focus-within { border-color: var(--cobalt); outline: 2px solid var(--cobalt); outline-offset: 3px; }
+  .tip-box .tip-input:focus-visible { outline: none; }
+  .tip-box.is-suffix { flex-direction: row-reverse; }
+  .tip-affix { padding-inline: 14px 0; color: var(--slate); font-weight: 600; font-size: 20px; flex: none; }
+  .tip-box.is-suffix .tip-affix { padding-inline: 0 14px; }
+  .tip-input { font: 600 20px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: transparent; border: 0; border-radius: 4px; padding: 12px 14px; width: 100%; min-width: 0; min-height: 50px; }
+  .tip-tip-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .tip-percent-box { width: 7em; }
+  .tip-stepper { display: flex; gap: 8px; align-items: stretch; }
+  .tip-stepper .btn { min-width: 50px; padding: 0 14px; font-size: 22px; }
+  .tip-people { width: 5em; text-align: center; border: 1.5px solid var(--line); background: var(--paper); }
+  .tip-people:focus { border-color: var(--cobalt); }
+  .tip-tax { margin-block-start: 16px; }
+  .tip-error { margin-block: 8px 0; font-weight: 600; font-size: 14px; }
+  .tip-results { min-width: 0; }
+  .tip-readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; }
+  .tip-readout + .tip-readout { margin-block-start: 20px; padding-block-start: 20px; border-block-start: 1px solid var(--line); }
+  .tip-readout div { min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .tip-readout dt { font-size: 14px; font-weight: 500; color: var(--slate); }
+  .tip-readout dd { margin: 6px 0 0; font-size: clamp(32px, 4.4vw, 48px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .tip-breakdown { color: var(--slate); margin-block: 16px 0; min-height: 3.1em; }
+  .tip-table-title { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin-block: 0 12px; }
+  .tip-table { border: 1.5px solid var(--line); font-variant-numeric: tabular-nums; }
+  .tip-table th, .tip-table td { padding: 10px 14px; }
+  .tip-table tbody th { font-weight: 600; font-size: 16px; color: var(--ink); }
+  .tip-table td { text-align: end; white-space: nowrap; }
+  .tip-table thead th:not(:first-child) { text-align: end; }
+  .tip-table tr.is-current { background: var(--cobalt-wash); }
+  @media (max-width: 860px) {
+    .tip-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "results" "options" "others"; gap: 28px; }
+    .tip-results, .tip-options { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    .tip-table th, .tip-table td { padding: 10px 8px; font-size: 15px; }
+    /* Four columns don't fit a phone, so a split shows each person's share instead of the group total. */
+    .tip-table.is-split th:nth-child(3), .tip-table.is-split td:nth-child(3) { display: none; }
+  }
+</style>
+<script src="../scripts/tip-calculator.ts"></script>

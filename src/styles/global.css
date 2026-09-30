@@ -469,6 +469,23 @@ section {
 .cards a:hover {
   background: var(--cobalt-wash);
 }
+/* As many columns as there are cards, up to 3 (DESIGN.md §8). */
+.cards[style*="--cards"] {
+  grid-template-columns: repeat(var(--cards), minmax(0, 1fr));
+}
+.card-title {
+  font-size: 24px;
+  font-weight: 700;
+  font-stretch: 88%;
+  line-height: 1.1;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.cards a p {
+  color: var(--slate);
+  margin: 0;
+  max-width: 48ch;
+}
 .how-copy {
   max-width: 70ch;
 }
@@ -600,7 +617,8 @@ footer .wrap {
     flex-direction: column;
     align-items: start;
   }
-  .cards {
+  .cards,
+  .cards[style*="--cards"] {
     grid-template-columns: 1fr;
   }
   .spec-table:not(.mapping-table) th:nth-child(4),
@@ -833,4 +851,18 @@ footer .wrap {
 .how-copy .mapping-table th:first-child,
 .how-copy .mapping-table td:first-child {
   min-width: 14ch;
+}
+/* Tip calculator "How much to tip" table: the service names are row headers. */
+.tip-guide tbody th { font-size: 16px; font-weight: 600; color: var(--ink); padding: 20px; vertical-align: top; min-width: 12ch; }
+.tip-guide .fmt { white-space: nowrap; }
+.tip-guide-sources { margin-block-start: 16px; font-size: 14px; color: var(--slate); }
+/* On phones each row stacks: service and tip on one line, the notes under them at full width. */
+@media (max-width: 560px) {
+  .tip-guide tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; border-block-end: 1px solid var(--line); }
+  .tip-guide tbody tr:last-child { border-block-end: 0; }
+  .tip-guide th, .tip-guide td { border-block-end: 0; min-width: 0; }
+  .tip-guide thead th:last-child { display: none; }
+  .tip-guide tbody th { padding: 14px 14px 4px; }
+  .tip-guide td.fmt { padding: 14px 14px 4px; text-align: end; }
+  .tip-guide td.note { grid-column: 1 / -1; padding: 0 14px 14px; }
 }
