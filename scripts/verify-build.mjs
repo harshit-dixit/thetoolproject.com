@@ -18,6 +18,8 @@ const jsonBeautifier = read('json-beautifier/index.html');
 const wordCounter = read('word-counter/index.html');
 const tipCalculator = read('tip-calculator/index.html');
 const highSchoolGpa = read('high-school-gpa-calculator/index.html');
+const gpaCalculator = read('gpa-calculator/index.html');
+const cumLaudeGuide = read('guides/cum-laude/index.html');
 const qrScanner = read('qr-code-scanner/index.html');
 const imageResizer = read('image-resizer/index.html');
 const jpg100 = read('compress-jpg-to-100kb/index.html');
@@ -112,6 +114,22 @@ assert.match(highSchoolGpa, /href="https:\/\/bigfuture\.collegeboard\.org\/[^"]+
 // The scale table gives A+ both values, and the German page formats points with a decimal comma.
 assert.match(highSchoolGpa, /<th scope="row">A\+<\/th><td class="fmt">97–100<\/td><td class="fmt">4\.0 or 4\.3<\/td>/);
 assert.match(read('de/high-school-gpa-calculator/index.html'), /<th scope="row">B\+<\/th><td class="fmt">87–89<\/td><td class="fmt">3,3<\/td><td class="fmt">3,8<\/td><td class="fmt">4,3<\/td>/);
+assert.match(highSchoolGpa, /href="\/gpa-calculator\/"/);
+assert.match(home, /href="\/gpa-calculator\/"/);
+assert.match(home, /href="\/guides\/cum-laude\/"/);
+assert.match(gpaCalculator, /<title>GPA calculator: college semester and cumulative GPA \| thetoolproject<\/title>/);
+assert.match(gpaCalculator, /<h1 class="page-title">GPA calculator<\/h1>/);
+assert.match(gpaCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/gpa-calculator\/"/);
+assert.match(gpaCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/gpa-calculator\/"/);
+assert.match(gpaCalculator, /href="https:\/\/registrar\.utah\.edu\/handbook\/honors\.php" target="_blank"/);
+assert.match(gpaCalculator, /href="\/guides\/cum-laude\/"/);
+// The scale table shows each letter in 0.3 steps and in thirds, and the French page uses a decimal comma.
+assert.match(gpaCalculator, /<th scope="row">A\+<\/th><td class="fmt">97–100<\/td><td class="fmt">4\.0 or 4\.3<\/td><td class="fmt">4\.0 or 4\.33<\/td>/);
+assert.match(gpaCalculator, /<th scope="row">B\+<\/th><td class="fmt">87–89<\/td><td class="fmt">3\.3<\/td><td class="fmt">3\.33<\/td>/);
+assert.match(read('fr/gpa-calculator/index.html'), /<th scope="row">B<\/th><td class="fmt">83–86<\/td><td class="fmt">3,0<\/td><td class="fmt">3,0<\/td>/);
+assert.match(cumLaudeGuide, /<h1>What is cum laude\? Magna and summa cum laude explained<\/h1>/);
+assert.match(cumLaudeGuide, /rel="canonical" href="https:\/\/thetoolproject\.com\/guides\/cum-laude\/"/);
+assert.match(cumLaudeGuide, /href="\/gpa-calculator\/"/);
 assert.match(jsonCsv, /<title>JSON to CSV converter: convert JSON files online \| thetoolproject<\/title>/);
 assert.match(jsonCsv, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
 assert.match(jsonCsv, /hreflang="x-default" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
@@ -214,6 +232,7 @@ const englishUrls = [
   'https://thetoolproject.com/word-counter/',
   'https://thetoolproject.com/tip-calculator/',
   'https://thetoolproject.com/high-school-gpa-calculator/',
+  'https://thetoolproject.com/gpa-calculator/',
   'https://thetoolproject.com/xml-to-csv/',
   'https://thetoolproject.com/xml-to-json/',
   'https://thetoolproject.com/excel-to-csv/',
@@ -237,7 +256,7 @@ const englishUrls = [
   'https://thetoolproject.com/compress-pdf-to-500kb/',
   'https://thetoolproject.com/privacy/',
   'https://thetoolproject.com/terms/',
-  ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/'] : []),
+  ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/', 'https://thetoolproject.com/guides/cum-laude/'] : []),
 ];
 const expectedUrls = [
   ...englishUrls,
@@ -263,7 +282,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'high-school-gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

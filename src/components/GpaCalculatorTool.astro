@@ -1,0 +1,208 @@
+---
+import { t, langTag, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { LETTERS } from '../lib/high-school-gpa';
+import { DEFAULT_CREDITS, pointsFor } from '../lib/college-gpa';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'gpa.termTitle', 'gpa.courseLegend', 'gpa.removeLabel', 'gpa.removeTermLabel', 'gpa.termEmpty', 'gpa.termGpa',
+  'gpa.resultGpa', 'gpa.resultCumulative', 'gpa.breakdownEmpty', 'gpa.breakdownPoints', 'gpa.breakdownLetter', 'gpa.breakdownCumulative',
+  'gpa.breakdownExcluded.one', 'gpa.breakdownExcluded.other', 'gpa.honorSumma', 'gpa.honorMagna', 'gpa.honorCum', 'gpa.honorNone',
+  'gpa.errPercent', 'gpa.errCredits', 'gpa.errEarlierGpa', 'gpa.errEarlierCredits', 'gpa.errTarget', 'gpa.errRemaining',
+  'gpa.coursesFull', 'gpa.termsFull', 'gpa.planEmpty', 'gpa.planNeedGpa', 'gpa.planPossible', 'gpa.planImpossible', 'gpa.planSecured',
+  'gpa.liveSummary',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const lang = langTag(locale);
+const format = (value: number, digits = 1) => new Intl.NumberFormat(lang, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+const START_COURSES = 5;
+const courses = Array.from({ length: START_COURSES }, (_, index) => index + 1);
+const tenths = { thirds: false, aPlusAbove: false };
+const thirds = { thirds: true, aPlusAbove: false };
+---
+<div class="drop gpa-drop" id="gpa-tool" data-strings={JSON.stringify(strings)} data-locale={locale} data-start-courses={START_COURSES}>
+  <div class="tool-frame gpa-grid">
+    <div class="gpa-main">
+      <div class="gpa-options">
+        <div class="gpa-option">
+          <span class="field-label" id="gpa-grade-type-label">{t('gpa.gradeTypeLabel', locale)}</span>
+          <div class="chips" role="group" aria-labelledby="gpa-grade-type-label">
+            <button type="button" data-grade-type="letter" aria-pressed="true">{t('gpa.gradeTypeLetter', locale)}</button>
+            <button type="button" data-grade-type="percent" aria-pressed="false">{t('gpa.gradeTypePercent', locale)}</button>
+          </div>
+        </div>
+        <div class="gpa-option">
+          <span class="field-label" id="gpa-scale-label">{t('gpa.scaleLabel', locale)}</span>
+          <div class="chips" role="group" aria-labelledby="gpa-scale-label">
+            <button type="button" data-scale="tenths" aria-pressed="true">{t('gpa.scaleChoice', locale, { bPlus: format(pointsFor('B+', tenths)), aMinus: format(pointsFor('A-', tenths)) })}</button>
+            <button type="button" data-scale="thirds" aria-pressed="false">{t('gpa.scaleChoice', locale, { bPlus: format(pointsFor('B+', thirds), 2), aMinus: format(pointsFor('A-', thirds), 2) })}</button>
+          </div>
+        </div>
+        <div class="gpa-option">
+          <span class="field-label" id="gpa-a-plus-label">{t('gpa.aPlusLabel', locale)}</span>
+          <div class="chips" role="group" aria-labelledby="gpa-a-plus-label">
+            <button type="button" data-a-plus="4" aria-pressed="true">{format(4)}</button>
+            <button type="button" data-a-plus="above" aria-pressed="false" data-thirds-text={format(4.33, 2)} data-tenths-text={format(4.3)}>{format(4.3)}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gpa-terms" id="gpa-terms">
+        <fieldset class="gpa-term" data-term>
+          <legend class="visually-hidden" data-term-legend>{t('gpa.termTitle', locale, { n: 1 })}</legend>
+          <div class="gpa-term-head">
+            <span class="gpa-term-title" aria-hidden="true" data-term-title>{t('gpa.termTitle', locale, { n: 1 })}</span>
+            <span class="gpa-term-gpa" data-term-gpa>{t('gpa.termEmpty', locale)}</span>
+            <button class="text-button gpa-remove" type="button" data-remove-term hidden aria-label={t('gpa.removeTermLabel', locale, { n: 1 })}>{t('gpa.removeTerm', locale)}</button>
+          </div>
+          <div class="gpa-row gpa-head" aria-hidden="true">
+            <span>{t('gpa.colCourse', locale)}</span><span>{t('gpa.colGrade', locale)}</span><span>{t('gpa.colCredits', locale)}</span><span></span>
+          </div>
+          <div class="gpa-rows" data-rows>
+            {courses.map(n => (
+              <fieldset class="gpa-row" data-row>
+                <legend class="visually-hidden">{t('gpa.courseLegend', locale, { n })}</legend>
+                <input class="gpa-input gpa-name" type="text" autocomplete="off" data-field="name" placeholder={t('gpa.namePlaceholder', locale)} aria-label={t('gpa.colCourse', locale)} />
+                <div class="gpa-grade">
+                  <select class="gpa-input" data-field="grade" aria-label={t('gpa.colGrade', locale)}>
+                    <option value="">–</option>
+                    {LETTERS.map(letter => <option value={letter}>{letter}</option>)}
+                    <option value="P">{t('gpa.gradePass', locale)}</option>
+                    <option value="W">{t('gpa.gradeWithdrawn', locale)}</option>
+                  </select>
+                  <span class="gpa-percent" hidden>
+                    <input class="gpa-input" type="text" inputmode="decimal" autocomplete="off" data-field="percent" aria-label={t('gpa.colGradePercent', locale)} />
+                    <span class="gpa-derived" data-derived aria-hidden="true"></span>
+                  </span>
+                </div>
+                <input class="gpa-input gpa-credits" type="text" inputmode="decimal" autocomplete="off" data-field="credits" value={String(DEFAULT_CREDITS)} aria-label={t('gpa.colCredits', locale)} />
+                <button class="text-button gpa-remove" type="button" data-remove aria-label={t('gpa.removeLabel', locale, { n })}>{t('gpa.remove', locale)}</button>
+              </fieldset>
+            ))}
+          </div>
+          <button class="text-button gpa-add-course" type="button" data-add-course>{t('gpa.addCourse', locale)}</button>
+        </fieldset>
+      </div>
+      <p class="gpa-error" id="gpa-courses-error" hidden></p>
+      <div class="actions gpa-actions">
+        <button class="btn alt" type="button" id="gpa-add-term">{t('gpa.addTerm', locale)}</button>
+        <button class="text-button" type="button" id="gpa-clear">{t('gpa.clear', locale)}</button>
+      </div>
+      <p class="input-hint">{t('gpa.savedHint', locale)}</p>
+    </div>
+
+    <div class="gpa-results">
+      <dl class="gpa-readout">
+        <div><dt id="gpa-result-label">{t('gpa.resultGpa', locale)}</dt><dd data-result="gpa">–</dd></div>
+        <div><dt>{t('gpa.resultCredits', locale)}</dt><dd data-result="credits">–</dd></div>
+      </dl>
+      <p class="gpa-breakdown" id="gpa-breakdown">{t('gpa.breakdownEmpty', locale)}</p>
+      <p class="gpa-honor" id="gpa-honor" hidden><span data-honor-text></span> <a href="/guides/cum-laude/" hreflang={locale === 'en' ? undefined : 'en'}>{t('gpa.honorLink', locale)}</a>{locale !== 'en' && <> {t('guide.inEnglish', locale)}</>}</p>
+
+      <div class="gpa-panel">
+        <span class="field-label" id="gpa-earlier-label">{t('gpa.earlierLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="gpa-earlier-label">
+          <button type="button" data-earlier="off" aria-pressed="true">{t('gpa.earlierNo', locale)}</button>
+          <button type="button" data-earlier="on" aria-pressed="false">{t('gpa.earlierYes', locale)}</button>
+        </div>
+        <div class="gpa-fields" id="gpa-earlier-fields" hidden>
+          <div>
+            <label class="field-label" for="gpa-earlier-gpa">{t('gpa.earlierGpa', locale)}</label>
+            <input class="gpa-input" id="gpa-earlier-gpa" type="text" inputmode="decimal" autocomplete="off" aria-describedby="gpa-earlier-hint gpa-earlier-error" />
+          </div>
+          <div>
+            <label class="field-label" for="gpa-earlier-credits">{t('gpa.earlierCredits', locale)}</label>
+            <input class="gpa-input" id="gpa-earlier-credits" type="text" inputmode="decimal" autocomplete="off" aria-describedby="gpa-earlier-hint gpa-earlier-error" />
+          </div>
+          <p class="input-hint" id="gpa-earlier-hint">{t('gpa.earlierHint', locale)}</p>
+          <p class="gpa-error" id="gpa-earlier-error" hidden></p>
+        </div>
+      </div>
+
+      <div class="gpa-panel">
+        <p class="gpa-panel-title" id="gpa-plan-title">{t('gpa.planTitle', locale)}</p>
+        <div class="gpa-fields">
+          <div>
+            <label class="field-label" for="gpa-target">{t('gpa.planTarget', locale)}</label>
+            <input class="gpa-input" id="gpa-target" type="text" inputmode="decimal" autocomplete="off" placeholder={format(3.5)} aria-describedby="gpa-plan-hint gpa-plan-error" />
+          </div>
+          <div>
+            <label class="field-label" for="gpa-remaining">{t('gpa.planRemaining', locale)}</label>
+            <input class="gpa-input" id="gpa-remaining" type="text" inputmode="decimal" autocomplete="off" aria-describedby="gpa-plan-hint gpa-plan-error" />
+          </div>
+          <p class="input-hint" id="gpa-plan-hint">{t('gpa.planHint', locale, { cum: format(3.5), magna: format(3.7), summa: format(3.9) })}</p>
+          <p class="gpa-error" id="gpa-plan-error" hidden></p>
+        </div>
+        <p class="gpa-plan" id="gpa-plan" aria-live="polite">{t('gpa.planEmpty', locale)}</p>
+      </div>
+    </div>
+  </div>
+  <p class="visually-hidden" id="gpa-live" aria-live="polite" aria-atomic="true"></p>
+</div>
+<style>
+  .gpa-drop { min-height: 0; }
+  .gpa-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px 40px; align-items: start; max-width: 1080px; }
+  .gpa-main, .gpa-results { min-width: 0; }
+  .gpa-options { display: flex; flex-wrap: wrap; gap: 20px 28px; margin-block-end: 28px; }
+  .gpa-option .field-label, .gpa-panel > .field-label { margin-block-end: 8px; }
+  .gpa-input { font: 500 16px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 10px 12px; width: 100%; min-width: 0; min-height: 44px; transition: border-color 0.15s; }
+  .gpa-input:focus { border-color: var(--cobalt); }
+  .gpa-input[aria-invalid="true"] { border-color: var(--ink); }
+  select.gpa-input { padding-inline-end: 8px; }
+  .gpa-term { margin: 0; padding: 0; border: 0; min-width: 0; }
+  .gpa-term + .gpa-term { margin-block-start: 28px; padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  .gpa-term-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin-block-end: 12px; }
+  .gpa-term-title { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.1; }
+  .gpa-term-gpa { color: var(--slate); font-variant-numeric: tabular-nums; }
+  .gpa-term-head .gpa-remove { margin-inline-start: auto; }
+  /* Name, grade, credits, remove. */
+  .gpa-row { display: grid; grid-template-columns: minmax(0, 1fr) 8.5em 5.5em auto; gap: 8px; align-items: center; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .gpa-rows .gpa-row + .gpa-row { margin-block-start: 8px; }
+  .gpa-head { font-size: 14px; font-weight: 500; color: var(--slate); margin-block-end: 8px; }
+  .gpa-grade { min-width: 0; }
+  .gpa-percent { display: flex; align-items: center; gap: 8px; }
+  .gpa-percent[hidden] { display: none; }
+  .gpa-derived { font-weight: 600; font-stretch: 75%; color: var(--slate); min-width: 2ch; flex: none; }
+  .gpa-remove { padding: 8px 4px; font-size: 14px; min-height: 40px; }
+  .gpa-add-course { margin-block-start: 8px; min-height: 40px; }
+  .gpa-error { margin-block: 12px 0; font-weight: 600; font-size: 14px; }
+  .gpa-actions { margin-block-start: 24px; }
+  .gpa-readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; }
+  .gpa-readout div { min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .gpa-readout dt { font-size: 14px; font-weight: 500; color: var(--slate); }
+  .gpa-readout dd { margin: 6px 0 0; font-size: clamp(40px, 5vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .gpa-breakdown { color: var(--slate); margin-block: 16px 0; min-height: 3.1em; }
+  .gpa-honor { margin-block: 12px 0; }
+  .gpa-honor[hidden] { display: none; }
+  .gpa-honor a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .gpa-honor a:hover { color: var(--cobalt); }
+  .gpa-panel { margin-block-start: 28px; padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  .gpa-panel-title { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.1; margin: 0; }
+  .gpa-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-block-start: 16px; align-items: end; }
+  .gpa-fields[hidden] { display: none; }
+  .gpa-fields .field-label { margin-block-end: 6px; }
+  .gpa-fields .input-hint, .gpa-fields .gpa-error { grid-column: 1 / -1; margin: 0; }
+  .gpa-plan { margin-block: 16px 0; font-variant-numeric: tabular-nums; }
+  @media (max-width: 860px) {
+    .gpa-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .gpa-results { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    /* The name gets its own line; grade and credits share the next. */
+    .gpa-head { display: none; }
+    .gpa-row {
+      grid-template-columns: minmax(0, 1fr) 5.5em;
+      grid-template-areas: "name remove" "grade credits";
+      padding-block-end: 12px; border-block-end: 1px solid var(--line);
+    }
+    .gpa-name { grid-area: name; }
+    .gpa-grade { grid-area: grade; }
+    .gpa-credits { grid-area: credits; }
+    .gpa-row .gpa-remove { grid-area: remove; }
+    .gpa-input { padding-inline: 10px; }
+  }
+</style>
+<script src="../scripts/gpa-calculator.ts"></script>

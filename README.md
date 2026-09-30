@@ -65,6 +65,7 @@
 |---|---|
 | **[Tip Calculator](https://thetoolproject.com/tip-calculator/)** | Work out the tip and total, tip before or after tax, split the bill between up to 100 people and round up each share, in 27 currencies. The Japanese page is a bill splitter (割り勘). |
 | **[High School GPA Calculator](https://thetoolproject.com/high-school-gpa-calculator/)** | Work out your unweighted and weighted GPA from letter or percent grades, with honors and AP/IB classes, with or without credits, and combine it with an earlier GPA. Classes are saved in your browser. |
+| **[GPA Calculator](https://thetoolproject.com/gpa-calculator/)** | Work out your college GPA by credit hours for each semester and cumulatively, add your GPA so far, plan the average you need for your final GPA, and see where you stand for cum laude. |
 
 ### PDF Utilities
 

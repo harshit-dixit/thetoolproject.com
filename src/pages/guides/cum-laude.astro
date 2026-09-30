@@ -1,0 +1,78 @@
+---
+import Guide from '../../layouts/Guide.astro';
+
+const sources = {
+  utah: 'https://registrar.utah.edu/handbook/honors.php',
+  usc: 'https://sc.edu/about/offices_and_divisions/registrar/graduation/graduation_application/graduation_with_honors.php',
+  uic: 'https://registrar.uic.edu/student_records/latin_honors.html',
+  usm: 'https://www.usm.edu/registrar/faqs-graduation-information.php',
+  ccny: 'https://www.ccny.cuny.edu/registrar/graduation-honors-latin-distinctions',
+  utd: 'https://registrar.utdallas.edu/registrar/graduation/latin-honors',
+  uci: 'https://reg.uci.edu/grades/latinhonors.html',
+  viterbi: 'https://viterbigrad.usc.edu/academic-services/commencement-information/',
+};
+---
+<Guide
+  title="Cum laude, magna cum laude and summa cum laude: meaning and GPA | thetoolproject"
+  description="What cum laude, magna cum laude and summa cum laude mean, which is highest, and the GPA each takes, with real cutoffs published by US colleges."
+  path="/guides/cum-laude/"
+  heading="What is cum laude? Magna and summa cum laude explained"
+  updated="2026-09-30"
+>
+  <p slot="intro" class="guide-intro">Cum laude, magna cum laude and summa cum laude are Latin honors: distinctions a college adds to a degree for high grades. Summa cum laude is the highest. Each college sets its own rules, but many ask for a GPA of about 3.5 for cum laude, 3.7 for magna cum laude and 3.9 for summa cum laude. To see where you stand, use the <a href="/gpa-calculator/">GPA calculator</a>.</p>
+
+  <h2 id="meaning">What does cum laude mean?</h2>
+  <p>Cum laude is Latin for “with praise”, and it’s often translated as “with honor”. The other two honors add a word that raises the praise:</p>
+  <table class="guide-table"><thead><tr><th scope="col">Honor</th><th scope="col">Meaning</th><th scope="col">Rank</th></tr></thead><tbody>
+    <tr><td>Summa cum laude</td><td>With highest praise, or with highest honor</td><td>Highest</td></tr>
+    <tr><td>Magna cum laude</td><td>With great praise, or with great honor</td><td>Second</td></tr>
+    <tr><td>Cum laude</td><td>With praise, or with honor</td><td>Third</td></tr>
+  </tbody></table>
+  <p>The honor is usually noted on the diploma and the transcript, and graduates are often recognized at commencement, for example with an honor cord. Latin honors are separate from departmental honors and honors programs, which have their own requirements.</p>
+
+  <h2 id="highest">Is magna cum laude the highest honor?</h2>
+  <p>No. Summa cum laude is the highest Latin honor, magna cum laude is second, and cum laude is third. Magna cum laude is still a strong result: at the colleges below it takes a GPA of 3.5 to 3.75, well above a B+ average.</p>
+
+  <h2 id="gpa">What GPA is summa cum laude, magna cum laude and cum laude?</h2>
+  <p>There’s no national rule. Each college sets its own cutoffs on the 4.0 scale, and they differ by a few tenths. These are the cutoffs five colleges’ registrars publish:</p>
+  <table class="guide-table"><thead><tr><th scope="col">College</th><th scope="col">Cum laude</th><th scope="col">Magna cum laude</th><th scope="col">Summa cum laude</th></tr></thead><tbody>
+    <tr><td><a href={sources.utah}>University of Utah</a></td><td>3.5</td><td>3.7</td><td>3.9</td></tr>
+    <tr><td><a href={sources.usc}>University of South Carolina</a></td><td>3.5</td><td>3.75</td><td>3.95</td></tr>
+    <tr><td><a href={sources.uic}>University of Illinois Chicago</a></td><td>3.5</td><td>3.75</td><td>3.9</td></tr>
+    <tr><td><a href={sources.usm}>University of Southern Mississippi</a></td><td>3.5</td><td>3.7</td><td>3.85</td></tr>
+    <tr><td><a href={sources.ccny}>City College of New York</a></td><td>3.2</td><td>3.5</td><td>3.8</td></tr>
+  </tbody></table>
+  <p>So the answer to “what GPA is cum laude?” is usually 3.5, but it can be as low as 3.2. Summa cum laude usually takes 3.85 to 3.95. Your college’s catalog or registrar’s website has its exact numbers.</p>
+  <aside class="guide-tool" aria-labelledby="try-gpa-tool">
+    <h2 id="try-gpa-tool">Check your GPA against the cutoffs</h2>
+    <p>Enter your courses or your GPA so far, then use “Plan your final GPA” to see the average you need for cum laude over the credits you have left.</p>
+    <a href="/gpa-calculator/">Open GPA calculator</a>
+  </aside>
+
+  <h2 id="percentile">Colleges that award honors by class rank</h2>
+  <p>Some colleges don’t publish a fixed GPA. They honor a share of each graduating class instead, so the GPA needed changes from year to year and between schools within the college.</p>
+  <ul>
+    <li><a href={sources.utd}>UT Dallas</a> gives summa cum laude to the top 5% of graduates, magna cum laude to the next 10% and cum laude to the next 15%, with a 3.40 GPA minimum. For Fall 2025 to Summer 2026, summa cum laude took a 3.991 in Natural Sciences and Mathematics and a 3.935 in the Jindal School of Management.</li>
+    <li><a href={sources.uci}>UC Irvine</a> honors no more than 16% of graduates: about 2% summa cum laude, 4% magna cum laude and 10% cum laude. For 2025–26, cum laude took between 3.742 and 3.929, depending on the school.</li>
+  </ul>
+  <p>At colleges like these, a 3.7 may not be enough for any Latin honor, so check the latest published cutoffs rather than a general rule.</p>
+
+  <h2 id="requirements">What else do you need besides the GPA?</h2>
+  <p>A high GPA isn’t always enough. Colleges commonly add conditions like these:</p>
+  <ul>
+    <li><strong>Credits at the college.</strong> The University of Utah requires at least 60 semester hours there, 50 of them letter-graded. The University of South Carolina requires 60 hours in residence, and the University of Illinois Chicago awards honors on the GPA earned at UIC alone, so transfer grades don’t count there.</li>
+    <li><strong>Letter grades.</strong> Pass/fail courses aren’t part of the GPA, and some colleges set a minimum number of graded hours. UT Dallas asks for at least 45.</li>
+    <li><strong>Rounding.</strong> A 3.495 isn’t always a 3.5. The USC Viterbi School of Engineering, for example, <a href={sources.viterbi}>truncates GPAs rather than rounding them</a> for its honor cords.</li>
+  </ul>
+
+  <h2 id="resume">How do you write cum laude on a résumé?</h2>
+  <p>Put the honor after your degree, in lowercase: “Bachelor of Science in Biology, magna cum laude”. Many people italicize it, as with other Latin phrases. List it only once it has been awarded, and use the exact honor on your transcript.</p>
+
+  <h2 id="other-countries">Latin honors outside the US</h2>
+  <p>The same Latin terms are used in other countries, often differently. German doctorates, for instance, are graded summa cum laude, magna cum laude, cum laude or rite (passed), so there cum laude is the third of four grades rather than an extra honor.</p>
+
+  <div class="guide-sources">
+    <h2>Sources</h2>
+    <p>Cutoffs and requirements come from the registrars of the <a href={sources.utah}>University of Utah</a>, <a href={sources.usc}>University of South Carolina</a>, <a href={sources.uic}>University of Illinois Chicago</a>, <a href={sources.usm}>University of Southern Mississippi</a>, <a href={sources.ccny}>City College of New York</a>, <a href={sources.utd}>UT Dallas</a> and <a href={sources.uci}>UC Irvine</a>, and from the <a href={sources.viterbi}>USC Viterbi School of Engineering</a>. Checked September 2026.</p>
+  </div>
+</Guide>

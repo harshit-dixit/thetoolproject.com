@@ -19,6 +19,7 @@ import JsonBeautifierTool from '../components/JsonBeautifierTool.astro';
 import WordCounterTool from '../components/WordCounterTool.astro';
 import TipCalculatorTool from '../components/TipCalculatorTool.astro';
 import HighSchoolGpaTool from '../components/HighSchoolGpaTool.astro';
+import GpaCalculatorTool from '../components/GpaCalculatorTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
@@ -32,6 +33,7 @@ import { buildStaticPaths, type RouteProps } from '../data/routes';
 import { t, formatNumber, langTag, type TranslationKey } from '../i18n/utils';
 import { tipDefaults } from '../data/tip-defaults';
 import { gradePoints, LETTERS, percentRange } from '../lib/high-school-gpa';
+import { pointsFor } from '../lib/college-gpa';
 
 export function getStaticPaths() {
   const allowDrafts = import.meta.env.DEV && process.env.PREVIEW_DRAFTS === 'true';
@@ -96,6 +98,32 @@ const hsGpaFaqs = [1, 2, 3, 4, 5, 6] as const;
 const hsGpaSources = {
   bigfuture: 'https://bigfuture.collegeboard.org/plan-for-college/get-started/how-to-calculate-gpa-4.0-scale',
   hsts: 'https://www.nationsreportcard.gov/hstsreport/',
+};
+
+// The college 4.0 scale table: each letter's percent range and its points, in 0.3 steps and in thirds.
+const gpaPoints = (value: number, digits: number) => new Intl.NumberFormat(langTag(locale), { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+const gpaScaleRows = LETTERS.map(letter => {
+  const [min, max] = percentRange(letter);
+  const cell = (thirds: boolean) => {
+    const points = (aPlusAbove: boolean) => pointsFor(letter, { thirds, aPlusAbove });
+    // Whole and tenth values keep one decimal in both columns: an A is 4.0, not 4.00.
+    const shown = (value: number) => gpaPoints(value, Number.isInteger(Math.round(value * 1000) / 100) ? 1 : 2);
+    return letter === 'A+' ? t('gpa.scaleAPlus', locale, { low: shown(points(false)), high: shown(points(true)) }) : shown(points(false));
+  };
+  return { letter, percent: letter === 'F' ? t('gpa.scaleBelow', locale, { min: formatNumber(60, locale) }) : `${formatNumber(min, locale)}–${formatNumber(max, locale)}`, tenths: cell(false), thirds: cell(true) };
+});
+const gpaFaqs = [1, 2, 3, 4, 5, 6] as const;
+const gpaSources = {
+  stanford: 'https://studentservices.stanford.edu/my-academics/evaluations-exams-grades/grades/how-do-i-calculate-my-grade-point-average-gpa',
+  rowan: 'https://sites.rowan.edu/registrar/services-resources/grading-system-gpa.html',
+  american: 'https://www.american.edu/provost/registrar/studentservices/grading-system.cfm',
+  utah: 'https://registrar.utah.edu/handbook/honors.php',
+  usc: 'https://sc.edu/about/offices_and_divisions/registrar/graduation/graduation_application/graduation_with_honors.php',
+  ccny: 'https://www.ccny.cuny.edu/registrar/graduation-honors-latin-distinctions',
+  utd: 'https://registrar.utdallas.edu/registrar/graduation/latin-honors',
+  ilstu: 'https://registrar.illinoisstate.edu/registration/repeat/',
+  guide: '/guides/cum-laude/',
+  hs: getPublishedToolPath('highSchoolGpa', locale),
 };
 
 const excelRows: [TranslationKey, TranslationKey][] = [
@@ -417,6 +445,35 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         </section>
         <section aria-labelledby="hs-gpa-faq-title"><div class="sec-head"><h2 id="hs-gpa-faq-title">{t('hsGpa.faqTitle', locale)}</h2></div><div class="how-copy">
           {hsGpaFaqs.map(n => <p><strong>{t(`hsGpa.faqQ${n}` as TranslationKey, locale)}</strong> <RichText text={t(`hsGpa.faqA${n}` as TranslationKey, locale)} links={hsGpaSources} /></p>)}
+          <p><RichText text={t('hsGpa.collegeLink', locale)} links={{ gpa: getPublishedToolPath('gpaCalculator', locale) }} /></p>
+        </div></section>
+      </>}
+      {tool.id === 'gpa-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('gpa.leadStrong', locale)}</strong> {t('gpa.lead', locale)}</p><p class="caption">{t('gpa.caption', locale)}</p></div></div>
+        <GpaCalculatorTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('gpa.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('gpa.howStep1', locale)} /></p>
+          <p><RichText text={t('gpa.howStep2', locale)} /></p>
+          <p><RichText text={t('gpa.howStep3', locale)} /></p>
+          <p><RichText text={t('gpa.howRules', locale)} links={gpaSources} /></p>
+          <h3>{t('gpa.howSemesterTitle', locale)}</h3>
+          <p>{t('gpa.howSemesterP', locale)}</p>
+          <h3>{t('gpa.howPlanTitle', locale)}</h3>
+          <p>{t('gpa.howPlanP', locale)}</p>
+          <h3>{t('gpa.howHonorsTitle', locale)}</h3>
+          <p><RichText text={t('gpa.howHonorsP', locale)} links={gpaSources} /></p>
+        </div></section>
+        <section aria-labelledby="gpa-scale-title"><div class="sec-head"><h2 id="gpa-scale-title">{t('gpa.scaleTitle', locale)}</h2><p>{t('gpa.scaleIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table hs-gpa-scale"><thead><tr><th scope="col">{t('gpa.scaleColLetter', locale)}</th><th scope="col">{t('gpa.scaleColPercent', locale)}</th><th scope="col">{t('gpa.scaleColPoints', locale)}</th><th scope="col">{t('gpa.scaleColThirds', locale)}</th></tr></thead>
+            <tbody>
+              {gpaScaleRows.map(row => <tr><th scope="row">{row.letter}</th><td class="fmt">{row.percent}</td><td class="fmt">{row.tenths}</td><td class="fmt">{row.thirds}</td></tr>)}
+              <tr><th scope="row">P, W</th><td class="note" colspan="3">{t('gpa.scaleNotCounted', locale)}</td></tr>
+            </tbody>
+          </table></div>
+          <div class="how-copy"><p class="hs-gpa-scale-note"><RichText text={t('gpa.scaleNote', locale)} links={gpaSources} /></p></div>
+        </section>
+        <section aria-labelledby="gpa-faq-title"><div class="sec-head"><h2 id="gpa-faq-title">{t('gpa.faqTitle', locale)}</h2></div><div class="how-copy">
+          {gpaFaqs.map(n => <p><strong>{t(`gpa.faqQ${n}` as TranslationKey, locale)}</strong> <RichText text={t(`gpa.faqA${n}` as TranslationKey, locale)} links={gpaSources} /></p>)}
         </div></section>
       </>}
       {tool.id === 'csv-to-sql' && <>
