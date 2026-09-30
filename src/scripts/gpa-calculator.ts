@@ -1,5 +1,5 @@
-import { calculateGpa, honorFor, maxGpa, MAX_COURSES, MAX_CREDITS, MAX_SEMESTERS, MAX_TOTAL_CREDITS, planFinalGpa, type Course, type Earlier, type Grade, type GpaResult, type Scale } from '../lib/college-gpa';
-import { letterForGpa, letterFromPercent, parseNumber, roundGpa } from '../lib/high-school-gpa';
+import { calculateGpa, COMMON_HONORS, honorFor, letterFor, maxGpa, MAX_COURSES, MAX_CREDITS, MAX_SEMESTERS, MAX_TOTAL_CREDITS, planFinalGpa, roundsUpTo, type Course, type Earlier, type Grade, type GpaResult, type Scale } from '../lib/college-gpa';
+import { letterFromPercent, parseNumber, roundGpa } from '../lib/high-school-gpa';
 import { i18nFrom } from '../i18n/client';
 import { trackResult } from '../lib/analytics';
 
@@ -15,6 +15,7 @@ const honorLine = $('gpa-honor');
 const honorText = honorLine.querySelector<HTMLElement>('[data-honor-text]')!;
 const planLine = $('gpa-plan');
 const live = $('gpa-live');
+const sticky = $('gpa-sticky');
 const coursesError = $('gpa-courses-error');
 const earlierError = $('gpa-earlier-error');
 const planError = $('gpa-plan-error');
@@ -103,7 +104,7 @@ function applyModes(scope: ParentNode = root) {
 }
 
 function readTerms() {
-  let percentBad = false, creditsBad = false;
+  let percentBad = false, creditsBad = false, creditsMissing = false;
   const terms: Course[][] = termsList().map(term => rowsOf(term).map(row => {
     let grade: Grade | undefined;
     if (settings.percent) {
@@ -121,12 +122,14 @@ function readTerms() {
     const creditsInput = field<HTMLInputElement>(row, 'credits');
     const credits = parseNumber(creditsInput.value);
     const creditsInvalid = Number.isNaN(credits) || (credits ?? 0) > MAX_CREDITS;
+    // A graded course with its credits left empty counts for nothing rather than a guess, and says so.
+    const missing = !creditsInvalid && credits === undefined && grade !== undefined && grade !== 'P' && grade !== 'W';
     creditsBad ||= creditsInvalid;
-    markInvalid(creditsInput, creditsInvalid);
-    // A graded course with its credits left empty counts for nothing rather than guessing.
+    creditsMissing ||= missing;
+    markInvalid(creditsInput, creditsInvalid || missing);
     return { grade: creditsInvalid ? undefined : grade, credits: credits ?? 0 };
   }));
-  return { terms, percentBad, creditsBad };
+  return { terms, percentBad, creditsBad, creditsMissing };
 }
 
 /** A GPA or credit field: undefined when empty, NaN when it can't be used. */
@@ -155,10 +158,11 @@ function show(name: string, text: string) {
 }
 
 function update() {
-  const { terms, percentBad, creditsBad } = readTerms();
+  const { terms, percentBad, creditsBad, creditsMissing } = readTerms();
   const messages = [];
   if (percentBad) messages.push(t('gpa.errPercent'));
   if (creditsBad) messages.push(t('gpa.errCredits', { max: MAX_CREDITS }));
+  if (creditsMissing) messages.push(t('gpa.errMissingCredits'));
   if (termsList().some(term => rowsOf(term).length >= MAX_COURSES)) messages.push(t('gpa.coursesFull', { max: MAX_COURSES }));
   if (termsList().length >= MAX_SEMESTERS) messages.push(t('gpa.termsFull', { max: MAX_SEMESTERS }));
   coursesError.hidden = !messages.length;
@@ -170,41 +174,62 @@ function update() {
     const own = result.terms[index];
     term.querySelector('[data-term-gpa]')!.textContent = own.gpa === undefined ? t('gpa.termEmpty') : t('gpa.termGpa', { gpa: gpa(own.gpa), credits: number(own.credits) });
   });
-  const overall = result.cumulative ?? result.gpa;
-  const cumulative = result.cumulative !== undefined || result.terms.filter(term => term.gpa !== undefined).length > 1;
-  $('gpa-result-label').textContent = t(cumulative ? 'gpa.resultCumulative' : 'gpa.resultGpa');
-  show('gpa', gpa(overall));
-  show('credits', overall === undefined ? '–' : number(result.cumulativeCredits));
+  const current = currentGpa(result, earlier);
+  const cumulative = result.cumulative !== undefined || result.terms.filter(term => term.gpa !== undefined).length > 1 || (current !== undefined && result.gpa === undefined);
+  const label = t(cumulative ? 'gpa.resultCumulative' : 'gpa.resultGpa');
+  $('gpa-result-label').textContent = label;
+  show('gpa', gpa(current?.gpa));
+  show('credits', current === undefined ? '–' : number(current.credits));
+  sticky.hidden = current === undefined;
+  if (current) sticky.textContent = t('gpa.sticky', { label, gpa: gpa(current.gpa), credits: number(current.credits) });
 
-  describe(result);
-  plan(result, earlier);
+  describe(result, current);
+  plan(current);
   save();
-  if (overall !== undefined) {
-    announce(overall, result.cumulativeCredits);
+  if (current !== undefined) {
+    announce(current.gpa, current.credits);
     report(result, terms);
+  } else {
+    // Nothing to announce or report: drop anything still waiting from the last answer.
+    clearTimeout(liveTimer);
+    clearTimeout(reportTimer);
+    live.textContent = '';
   }
 }
 
-function describe(result: GpaResult) {
-  const overall = result.cumulative ?? result.gpa;
-  if (overall === undefined || result.gpa === undefined) {
+/** Everything entered: the courses with any GPA so far, or the GPA so far on its own. */
+function currentGpa(result: GpaResult, earlier: Earlier | undefined): Earlier | undefined {
+  if (result.gpa !== undefined) return { gpa: result.cumulative ?? result.gpa, credits: result.cumulativeCredits };
+  return earlier && earlier.credits > 0 ? earlier : undefined;
+}
+
+const HONOR_NAMES = { summa: 'summa cum laude', magna: 'magna cum laude', cum: 'cum laude' } as const;
+
+function describe(result: GpaResult, current: Earlier | undefined) {
+  if (current === undefined) {
     breakdown.textContent = result.excluded ? counted('gpa.breakdownExcluded', result.excluded) : t('gpa.breakdownEmpty');
     honorLine.hidden = true;
     return;
   }
-  const sentences = [t('gpa.breakdownPoints', { points: number(result.points), credits: number(result.credits), gpa: gpa(result.gpa) })];
+  const sentences = result.gpa === undefined
+    ? [t('gpa.breakdownEarlierOnly', { gpa: gpa(current.gpa), credits: number(current.credits) })]
+    : [t('gpa.breakdownPoints', { points: number(result.points), credits: number(result.credits), gpa: gpa(result.gpa) })];
   if (result.cumulative !== undefined) sentences.push(t('gpa.breakdownCumulative', { gpa: gpa(result.cumulative), credits: number(result.cumulativeCredits) }));
-  sentences.push(t('gpa.breakdownLetter', { gpa: gpa(overall), letter: letterForGpa(roundGpa(overall), settings.aPlusAbove ? 4.3 : 4) }));
+  sentences.push(t('gpa.breakdownLetter', { letter: letterFor(current.gpa, scale()) }));
   if (result.excluded) sentences.push(counted('gpa.breakdownExcluded', result.excluded));
   breakdown.textContent = sentences.join(' ');
 
-  const honor = honorFor(overall);
+  // Compared at full precision: a GPA that only rounds up to a cutoff gets its own warning.
+  const honor = honorFor(current.gpa);
+  const near = roundsUpTo(current.gpa);
   const key = honor === 'summa' ? 'gpa.honorSumma' : honor === 'magna' ? 'gpa.honorMagna' : honor === 'cum' ? 'gpa.honorCum' : 'gpa.honorNone';
-  honorText.textContent = t(key, { gpa: gpa(overall) });
+  const sentence = [t(key, { gpa: gpa(current.gpa) })];
+  if (near) sentence.push(t('gpa.honorRoundsUp', { gpa: gpa(current.gpa), cutoff: number(COMMON_HONORS[near]), honor: HONOR_NAMES[near] }));
+  honorText.textContent = sentence.join(' ');
   honorLine.hidden = false;
 }
 
-function plan(result: GpaResult, earlier: Earlier | undefined) {
+function plan(current: Earlier | undefined) {
   const top = maxGpa(scale());
   const target = readField(planInputs.target, top);
   const remaining = readField(planInputs.remaining, MAX_TOTAL_CREDITS);
@@ -214,9 +239,6 @@ function plan(result: GpaResult, earlier: Earlier | undefined) {
   planError.hidden = !messages.length;
   planError.textContent = messages.join(' ');
 
-  // Plan from everything entered: the courses above with any GPA so far, or the GPA so far on its own.
-  const current: Earlier | undefined = result.gpa !== undefined ? { gpa: result.cumulative ?? result.gpa, credits: result.cumulativeCredits }
-    : earlier && earlier.credits > 0 ? earlier : undefined;
   if (target === undefined || remaining === undefined || Number.isNaN(target) || Number.isNaN(remaining) || !(remaining > 0)) {
     planLine.textContent = t('gpa.planEmpty');
     return;
@@ -226,7 +248,8 @@ function plan(result: GpaResult, earlier: Earlier | undefined) {
   if (!outcome) { planLine.textContent = t('gpa.planEmpty'); return; }
   const params = { target: gpa(target), credits: number(remaining) };
   if (outcome.status === 'possible') planLine.textContent = t('gpa.planPossible', { ...params, required: gpa(outcome.required) });
-  else if (outcome.status === 'impossible') planLine.textContent = t('gpa.planImpossible', { ...params, best: gpa(outcome.best) });
+  // A best of 3.4993 would show as 3.50 next to a 3.50 target, so it gets a third decimal.
+  else if (outcome.status === 'impossible') planLine.textContent = t('gpa.planImpossible', { ...params, best: gpa(outcome.best) === params.target ? formatNumber(Math.floor(outcome.best * 1000) / 1000, { minimumFractionDigits: 3 }) : gpa(outcome.best) });
   else planLine.textContent = t('gpa.planSecured', { ...params, worst: gpa(outcome.worst) });
 }
 
@@ -246,7 +269,7 @@ function report(result: GpaResult, terms: Course[][]) {
     grade_type: settings.percent ? 'percent' : 'letter',
     scale: settings.thirds ? 'thirds' : 'tenths',
     a_plus: settings.aPlusAbove ? 'above' : '4',
-    earlier: String(result.cumulative !== undefined),
+    earlier: String(result.cumulative !== undefined || result.gpa === undefined),
     plan: String(Boolean(planInputs.target.value.trim() && planInputs.remaining.value.trim())),
   }), 1500);
 }
@@ -292,6 +315,7 @@ function applySettings() {
   // An A+ above 4.0 is 4.3 on the tenths scale and 4.33 in thirds.
   aPlusAbove.textContent = (settings.thirds ? aPlusAbove.dataset.thirdsText : aPlusAbove.dataset.tenthsText) ?? '';
   $('gpa-earlier-fields').hidden = !settings.earlier;
+  $('gpa-percent-hint').hidden = !settings.percent;
   applyModes();
 }
 

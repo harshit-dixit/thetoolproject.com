@@ -450,6 +450,8 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
       </>}
       {tool.id === 'gpa-calculator' && <>
         <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('gpa.leadStrong', locale)}</strong> {t('gpa.lead', locale)}</p><p class="caption">{t('gpa.caption', locale)}</p></div></div>
+        {/* Translated pages say up front that the grading model is the US one. */}
+        {locale !== 'en' && <p class="gpa-us-note">{t('gpa.usNote', locale)}</p>}
         <GpaCalculatorTool locale={locale} />
         <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('gpa.howTitle', locale)}</h2></div><div class="how-copy">
           <p><RichText text={t('gpa.howStep1', locale)} /></p>

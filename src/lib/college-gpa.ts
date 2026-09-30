@@ -2,7 +2,7 @@
 // an earlier GPA, the average still needed to reach a target GPA, and common Latin honors cutoffs.
 // The 4.0 scale, percent cutoffs and number parsing are shared with the high school calculator.
 
-import { LETTER_POINTS, roundGpa, type Letter } from './high-school-gpa';
+import { LETTERS, LETTER_POINTS, roundGpa, type Letter } from './high-school-gpa';
 
 /** P is a pass in a pass/fail course and W a withdrawal: neither is part of the GPA. */
 export type Grade = Letter | 'P' | 'W';
@@ -55,6 +55,19 @@ export function pointsFor(letter: Letter, scale: Scale = DEFAULT_SCALE): number 
 /** The highest GPA the scale allows: an A in everything, or an A+ where it's worth more. */
 export const maxGpa = (scale: Scale = DEFAULT_SCALE) => pointsFor('A+', scale);
 
+/** Slack for floating-point sums, so 3 × 3.7 / 3 still reaches 3.7. Far below any GPA a registrar reports. */
+const EPSILON = 1e-9;
+
+/**
+ * The letter a GPA corresponds to on the chosen scale: the highest letter whose points it reaches,
+ * as shown at two decimals. A 3.67 is an A- in thirds but a B+ in 0.3 steps.
+ */
+export function letterFor(gpa: number, scale: Scale = DEFAULT_SCALE): Letter {
+  const shown = roundGpa(gpa);
+  const letters = LETTERS.filter(letter => letter !== 'A+' || scale.aPlusAbove);
+  return letters.find(letter => shown + EPSILON >= pointsFor(letter, scale)) ?? 'F';
+}
+
 const round = (value: number) => Number(value.toFixed(6));
 
 export function termGpa(courses: Course[], scale: Scale = DEFAULT_SCALE): TermResult {
@@ -105,9 +118,9 @@ export function planFinalGpa(current: Earlier, target: number, remaining: number
   const total = current.credits + remaining;
   const have = current.gpa * current.credits;
   const required = (target * total - have) / remaining;
-  // Compared at two decimals, so a required 4.001 from floating-point noise is still possible.
-  if (roundGpa(required) > top) return { status: 'impossible', required, best: (have + top * remaining) / total };
-  if (required <= 0) return { status: 'secured', required, worst: have / total };
+  // Compared unrounded: needing 4.002 on a 4.0 scale is out of reach, even though it shows as 4.00.
+  if (required > top + EPSILON) return { status: 'impossible', required, best: (have + top * remaining) / total };
+  if (required <= EPSILON) return { status: 'secured', required, worst: have / total };
   return { status: 'possible', required, final: target };
 }
 
@@ -119,8 +132,16 @@ export const HONORS: readonly Honor[] = ['summa', 'magna', 'cum'];
  */
 export const COMMON_HONORS: Record<Honor, number> = { summa: 3.9, magna: 3.7, cum: 3.5 };
 
-/** The highest Latin honor a GPA reaches under `cutoffs`, compared at the two decimals shown. */
+/**
+ * The highest Latin honor cutoff a GPA meets, compared at full precision: colleges don't all round,
+ * so a 3.4996 doesn't meet 3.5 here even though it shows as 3.50.
+ */
 export function honorFor(gpa: number, cutoffs: Record<Honor, number> = COMMON_HONORS): Honor | undefined {
-  const shown = roundGpa(gpa);
-  return HONORS.find(honor => shown >= cutoffs[honor]);
+  return HONORS.find(honor => gpa + EPSILON >= cutoffs[honor]);
+}
+
+/** The next cutoff above the GPA that it reaches only when rounded to two decimals, if any. */
+export function roundsUpTo(gpa: number, cutoffs: Record<Honor, number> = COMMON_HONORS): Honor | undefined {
+  const honor = [...HONORS].reverse().find(name => gpa + EPSILON < cutoffs[name]);
+  return honor && roundGpa(gpa) >= cutoffs[honor] ? honor : undefined;
 }

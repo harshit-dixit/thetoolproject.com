@@ -877,3 +877,4 @@ footer .wrap {
   /* Long German and French headers break at syllables, not mid-letter. */
   .hs-gpa-scale thead th { white-space: normal; overflow-wrap: normal; hyphens: auto; }
 }
+.gpa-us-note { margin-block: 24px -16px; max-width: 70ch; font-size: 14px; color: var(--slate); }

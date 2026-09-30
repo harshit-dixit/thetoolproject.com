@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateGpa, honorFor, maxGpa, planFinalGpa, pointsFor, termGpa, type Course } from './college-gpa';
+import { calculateGpa, honorFor, letterFor, maxGpa, planFinalGpa, pointsFor, roundsUpTo, termGpa, type Course } from './college-gpa';
 
 const course = (grade: Course['grade'], credits = 3): Course => ({ grade, credits });
 const thirds = { thirds: true, aPlusAbove: false };
@@ -105,6 +105,13 @@ describe('planFinalGpa', () => {
     if (plan?.status === 'secured') expect(plan.worst).toBeCloseTo(3.575);
   });
 
+  it('says a target is out of reach when the average needed only rounds to 4.00', () => {
+    // (3.5 × 90 − 3.249 × 60) / 30 = 4.002; straight A's finish at 3.4993.
+    const plan = planFinalGpa({ gpa: 3.249, credits: 60 }, 3.5, 30);
+    expect(plan?.status).toBe('impossible');
+    if (plan?.status === 'impossible') expect(plan.best).toBeCloseTo(3.49933, 4);
+  });
+
   it('treats a required 4.0 as possible despite floating-point noise', () => {
     expect(planFinalGpa({ gpa: 3, credits: 30 }, 3.5, 30)?.status).toBe('possible');
   });
@@ -123,12 +130,33 @@ describe('honorFor', () => {
     expect(honorFor(3.49)).toBeUndefined();
   });
 
-  it('compares the GPA as shown, at two decimals', () => {
-    expect(honorFor(3.4996)).toBe('cum');
-    expect(honorFor(3.494)).toBeUndefined();
+  it('compares at full precision, so a GPA that only rounds up misses the cutoff', () => {
+    expect(honorFor(3.4996)).toBeUndefined();
+    expect(honorFor(3.7 * 3 / 3)).toBe('magna');
+    expect(roundsUpTo(3.4996)).toBe('cum');
+    expect(roundsUpTo(3.8996)).toBe('summa');
+    expect(roundsUpTo(3.494)).toBeUndefined();
+    expect(roundsUpTo(3.5)).toBeUndefined();
   });
 
   it('takes other cutoffs', () => {
     expect(honorFor(3.3, { summa: 3.8, magna: 3.5, cum: 3.2 })).toBe('cum');
+  });
+});
+
+describe('letterFor', () => {
+  it('uses the chosen scale', () => {
+    expect(letterFor(3.67, { thirds: true, aPlusAbove: false })).toBe('A-');
+    expect(letterFor(3.67)).toBe('B+');
+    expect(letterFor(3.7)).toBe('A-');
+    expect(letterFor(3.33, { thirds: true, aPlusAbove: false })).toBe('B+');
+    expect(letterFor(0.5)).toBe('F');
+  });
+
+  it('only names A+ when it is worth more than an A', () => {
+    expect(letterFor(4)).toBe('A');
+    expect(letterFor(4.3, { thirds: false, aPlusAbove: true })).toBe('A+');
+    expect(letterFor(4.33, { thirds: true, aPlusAbove: true })).toBe('A+');
+    expect(letterFor(4.2, { thirds: false, aPlusAbove: true })).toBe('A');
   });
 });

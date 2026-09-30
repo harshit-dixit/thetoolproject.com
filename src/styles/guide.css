@@ -28,6 +28,9 @@
 .guide-article .guide-table th,.guide-article .guide-table td{padding:12px 14px;text-align:start;vertical-align:top;border-bottom:1px solid var(--line)}
 .guide-article .guide-table th{font-weight:600}
 .guide-article .guide-table tr:last-child td{border-bottom:0}
+.guide-article .guide-toc{margin-block-end:40px;font-size:16px}
+.guide-article .guide-toc ul{margin:0}
+.guide-article .guide-toc li{margin-block-end:4px}
 .guide-article .guide-sources{font-size:15px;color:var(--slate);border-block-start:1px solid var(--line);padding-block-start:20px;margin-block-start:48px}
 .guide-article .guide-sources h2{font-size:22px;margin:0 0 12px}
 @media(max-width:560px){.guide-page{padding-block-start:24px}.guide-breadcrumb{margin-block-end:24px}.guide-article{font-size:17px}.guide-header{margin-block-end:32px}.guide-article pre{font-size:13px;padding:12px}.guide-article .guide-table{font-size:14px}}

@@ -13,7 +13,7 @@ const clientKeys: TranslationKey[] = [
   'gpa.breakdownExcluded.one', 'gpa.breakdownExcluded.other', 'gpa.honorSumma', 'gpa.honorMagna', 'gpa.honorCum', 'gpa.honorNone',
   'gpa.errPercent', 'gpa.errCredits', 'gpa.errEarlierGpa', 'gpa.errEarlierCredits', 'gpa.errTarget', 'gpa.errRemaining',
   'gpa.coursesFull', 'gpa.termsFull', 'gpa.planEmpty', 'gpa.planNeedGpa', 'gpa.planPossible', 'gpa.planImpossible', 'gpa.planSecured',
-  'gpa.liveSummary',
+  'gpa.liveSummary', 'gpa.honorRoundsUp', 'gpa.breakdownEarlierOnly', 'gpa.errMissingCredits', 'gpa.sticky',
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 const lang = langTag(locale);
@@ -49,6 +49,7 @@ const thirds = { thirds: true, aPlusAbove: false };
           </div>
         </div>
       </div>
+      <p class="input-hint gpa-percent-hint" id="gpa-percent-hint" hidden>{t('gpa.percentHint', locale)}</p>
 
       <div class="gpa-terms" id="gpa-terms">
         <fieldset class="gpa-term" data-term>
@@ -66,6 +67,8 @@ const thirds = { thirds: true, aPlusAbove: false };
               <fieldset class="gpa-row" data-row>
                 <legend class="visually-hidden">{t('gpa.courseLegend', locale, { n })}</legend>
                 <input class="gpa-input gpa-name" type="text" autocomplete="off" data-field="name" placeholder={t('gpa.namePlaceholder', locale)} aria-label={t('gpa.colCourse', locale)} />
+                <span class="gpa-mini-label gpa-mini-grade" aria-hidden="true">{t('gpa.colGrade', locale)}</span>
+                <span class="gpa-mini-label gpa-mini-credits" aria-hidden="true">{t('gpa.colCredits', locale)}</span>
                 <div class="gpa-grade">
                   <select class="gpa-input" data-field="grade" aria-label={t('gpa.colGrade', locale)}>
                     <option value="">–</option>
@@ -92,6 +95,7 @@ const thirds = { thirds: true, aPlusAbove: false };
         <button class="text-button" type="button" id="gpa-clear">{t('gpa.clear', locale)}</button>
       </div>
       <p class="input-hint">{t('gpa.savedHint', locale)}</p>
+      <p class="gpa-sticky" id="gpa-sticky" aria-hidden="true" hidden></p>
     </div>
 
     <div class="gpa-results">
@@ -147,6 +151,9 @@ const thirds = { thirds: true, aPlusAbove: false };
   .gpa-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px 40px; align-items: start; max-width: 1080px; }
   .gpa-main, .gpa-results { min-width: 0; }
   .gpa-options { display: flex; flex-wrap: wrap; gap: 20px 28px; margin-block-end: 28px; }
+  .gpa-percent-hint { margin-block: -12px 24px; max-width: 70ch; }
+  .gpa-percent-hint[hidden], .gpa-mini-label { display: none; }
+  .gpa-sticky { display: none; }
   .gpa-option .field-label, .gpa-panel > .field-label { margin-block-end: 8px; }
   .gpa-input { font: 500 16px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 10px 12px; width: 100%; min-width: 0; min-height: 44px; transition: border-color 0.15s; }
   .gpa-input:focus { border-color: var(--cobalt); }
@@ -189,15 +196,24 @@ const thirds = { thirds: true, aPlusAbove: false };
   @media (max-width: 860px) {
     .gpa-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
     .gpa-results { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+    /* The answer sits below the courses on a phone, so a one-line summary follows the user while they type. */
+    .gpa-sticky:not([hidden]) {
+      display: block; position: sticky; bottom: 0; z-index: 1; margin: 20px -24px 0; padding: 12px 24px;
+      background: var(--paper); border-block-start: 2px solid var(--ink); font-weight: 600; font-variant-numeric: tabular-nums;
+    }
   }
   @media (max-width: 560px) {
     /* The name gets its own line; grade and credits share the next. */
     .gpa-head { display: none; }
     .gpa-row {
       grid-template-columns: minmax(0, 1fr) 5.5em;
-      grid-template-areas: "name remove" "grade credits";
+      grid-template-areas: "name remove" "grade-label credits-label" "grade credits";
       padding-block-end: 12px; border-block-end: 1px solid var(--line);
     }
+    .gpa-sticky:not([hidden]) { margin-inline: -16px; padding-inline: 16px; }
+    .gpa-mini-label { display: block; font-size: 14px; font-weight: 500; color: var(--slate); margin-block-end: -4px; }
+    .gpa-mini-grade { grid-area: grade-label; }
+    .gpa-mini-credits { grid-area: credits-label; }
     .gpa-name { grid-area: name; }
     .gpa-grade { grid-area: grade; }
     .gpa-credits { grid-area: credits; }
