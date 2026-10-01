@@ -1,0 +1,326 @@
+---
+import { t, langTag, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { autoLoanDefaults, usRates, usRateTiers } from '../data/auto-loan-defaults';
+import { TERMS } from '../lib/auto-loan';
+import { currencies, currencyAffix, currencyDigits } from '../lib/tip-calculator';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'autoLoan.downShare', 'autoLoan.errAmount', 'autoLoan.errRate', 'autoLoan.errTax', 'autoLoan.errMonths', 'autoLoan.errPaymentTooLow', 'autoLoan.errPaymentTooLong',
+  'autoLoan.breakdownEmpty', 'autoLoan.breakdownFix', 'autoLoan.breakdownNoLoan', 'autoLoan.breakdownPayments.one', 'autoLoan.breakdownPayments.other',
+  'autoLoan.breakdownLast', 'autoLoan.breakdownNegative', 'autoLoan.refiEmpty', 'autoLoan.refiCurrent.one', 'autoLoan.refiCurrent.other', 'autoLoan.refiNew',
+  'autoLoan.refiLowerBy', 'autoLoan.refiHigherBy', 'autoLoan.refiSaves', 'autoLoan.refiCostsMore',
+  'autoLoan.liveBuy', 'autoLoan.liveRefiSaves', 'autoLoan.liveRefiCosts', 'autoLoan.colYear', 'autoLoan.colMonth',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const defaults = autoLoanDefaults[locale];
+const lang = langTag(locale);
+const digits = currencyDigits(defaults.currency);
+const affix = currencyAffix(lang, defaults.currency);
+const names = new Intl.DisplayNames(lang, { type: 'currency' });
+// The page's own currency first, then the rest in the usual order.
+const currencyOptions = [defaults.currency, ...currencies.filter(code => code !== defaults.currency)].map(code => ({ code, label: `${names.of(code)} (${code})` }));
+const number = (value: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(value);
+const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent', maximumFractionDigits: 2 }).format(value / 100);
+const placeholder = new Intl.NumberFormat(lang, { minimumFractionDigits: digits }).format(0);
+
+type Field = { id: string; label: TranslationKey; hint?: TranslationKey; kind: 'money' | 'percent' | 'months'; value?: string };
+const moneyField = (id: string, label: TranslationKey, hint?: TranslationKey): Field => ({ id, label, hint, kind: 'money' });
+const buyTrade: Field[] = [moneyField('loan-trade-in', 'autoLoan.tradeInLabel'), moneyField('loan-trade-owed', 'autoLoan.tradeOwedLabel')];
+const refiFields: Field[] = [
+  moneyField('refi-balance', 'autoLoan.refiBalanceLabel', 'autoLoan.refiBalanceHint'),
+  moneyField('refi-payment', 'autoLoan.refiPaymentLabel'),
+  { id: 'refi-apr', label: 'autoLoan.refiAprLabel', kind: 'percent' },
+  { id: 'refi-new-apr', label: 'autoLoan.refiNewAprLabel', kind: 'percent' },
+];
+const describedBy = (field: Field) => [field.hint && `${field.id}-hint`, `${field.id}-error`].filter(Boolean).join(' ');
+---
+<div class="drop loan-drop" id="auto-loan-tool" data-strings={JSON.stringify(strings)} data-locale={locale} data-defaults={JSON.stringify(defaults)}>
+  <div class="tool-frame loan-grid">
+    <div class="loan-top">
+      <div class="chips" role="group" aria-label={t('autoLoan.modeLabel', locale)}>
+        <button type="button" data-mode="buy" aria-pressed="true">{t('autoLoan.modeBuy', locale)}</button>
+        <button type="button" data-mode="refi" aria-pressed="false">{t('autoLoan.modeRefi', locale)}</button>
+      </div>
+      <label class="visually-hidden" for="loan-currency">{t('autoLoan.currencyLabel', locale)}</label>
+      <select class="tool-select loan-currency" id="loan-currency">
+        {currencyOptions.map(option => <option value={option.code} selected={option.code === defaults.currency}>{option.label}</option>)}
+      </select>
+    </div>
+
+    <div class="loan-main" data-panel="buy">
+      <div class="loan-field">
+        <label class="field-label" for="loan-price">{t('autoLoan.priceLabel', locale)}</label>
+        <div class:list={['loan-box', { 'is-suffix': affix.suffix }]}>
+          <span class="loan-affix" data-currency-symbol aria-hidden="true">{affix.symbol}</span>
+          <input class="loan-input" id="loan-price" type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby="loan-price-error" />
+        </div>
+        <p class="loan-error" id="loan-price-error" hidden></p>
+      </div>
+
+      <div class="loan-field">
+        <label class="field-label" for="loan-down">{t('autoLoan.downLabel', locale)}</label>
+        <div class="loan-row">
+          <div class:list={['loan-box', 'loan-grow', { 'is-suffix': affix.suffix }]}>
+            <span class="loan-affix" data-currency-symbol aria-hidden="true">{affix.symbol}</span>
+            <input class="loan-input" id="loan-down" type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby="loan-down-share loan-down-error" />
+          </div>
+          <div class="chips" role="group" aria-label={t('autoLoan.downPresets', locale)}>
+            {[10, 20].map(value => <button type="button" data-down={value} aria-pressed="false">{percent(value)}</button>)}
+          </div>
+        </div>
+        <p class="input-hint" id="loan-down-share" aria-live="off"></p>
+        <p class="loan-error" id="loan-down-error" hidden></p>
+      </div>
+
+      <div class="loan-field">
+        <label class="field-label" for="loan-months">{t('autoLoan.termLabel', locale)}</label>
+        <div class="loan-row">
+          <div class="chips" role="group" aria-label={t('autoLoan.termPresets', locale)}>
+            {TERMS.map(months => <button type="button" data-term={months} aria-pressed={months === defaults.months ? 'true' : 'false'}>{t('autoLoan.termChip', locale, { months })}</button>)}
+          </div>
+          <div class="loan-box is-suffix loan-short">
+            <span class="loan-affix loan-unit" aria-hidden="true">{t('autoLoan.monthsUnit', locale)}</span>
+            <input class="loan-input" id="loan-months" type="text" inputmode="numeric" autocomplete="off" value={String(defaults.months)} aria-describedby="loan-months-error" />
+          </div>
+        </div>
+        <p class="loan-error" id="loan-months-error" hidden></p>
+      </div>
+
+      <div class="loan-field">
+        <label class="field-label" for="loan-apr">{t('autoLoan.aprLabel', locale)}</label>
+        <div class="loan-row">
+          <div class="loan-box is-suffix loan-short">
+            <span class="loan-affix" aria-hidden="true">%</span>
+            <input class="loan-input" id="loan-apr" type="text" inputmode="decimal" autocomplete="off" value={defaults.apr === undefined ? undefined : number(defaults.apr)} placeholder={defaults.apr === undefined ? number(6.5) : undefined} aria-describedby="loan-apr-hint loan-apr-error" />
+          </div>
+          {defaults.usRates && (
+            // No id, so the page-wide option tracking never records a visitor's credit score.
+            <label class="loan-preset">
+              <span class="visually-hidden">{t('autoLoan.ratePresetLabel', locale)}</span>
+              <select class="tool-select" data-rate-preset>
+                <option value="">{t('autoLoan.ratePresetNone', locale)}</option>
+                {(['new', 'used'] as const).map(condition => (
+                  <optgroup label={t(condition === 'new' ? 'autoLoan.rateNew' : 'autoLoan.rateUsed', locale)}>
+                    {usRateTiers.map(tier => <option value={usRates[condition][tier]}>{t('autoLoan.rateOption', locale, { tier: t(`autoLoan.tier.${tier}` as TranslationKey, locale), rate: percent(usRates[condition][tier]) })}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+        <p class="input-hint" id="loan-apr-hint">
+          {defaults.usRates && `${t('autoLoan.aprHint', locale, { newRate: percent(usRates.new.all), usedRate: percent(usRates.used.all) })} `}{t('autoLoan.rateHint', locale)}
+        </p>
+        <p class="loan-error" id="loan-apr-error" hidden></p>
+      </div>
+    </div>
+
+    <div class="loan-main" data-panel="refi" hidden>
+      {refiFields.map(field => (
+        <div class="loan-field">
+          <label class="field-label" for={field.id}>{t(field.label, locale)}</label>
+          <div class:list={['loan-box', { 'is-suffix': field.kind === 'percent' || affix.suffix, 'loan-short': field.kind === 'percent' }]}>
+            <span class="loan-affix" data-currency-symbol={field.kind === 'money' ? '' : undefined} aria-hidden="true">{field.kind === 'money' ? affix.symbol : '%'}</span>
+            <input class="loan-input" id={field.id} type="text" inputmode="decimal" autocomplete="off" placeholder={field.kind === 'money' ? placeholder : undefined} aria-describedby={describedBy(field)} />
+          </div>
+          {field.hint && <p class="input-hint" id={`${field.id}-hint`}>{t(field.hint, locale)}</p>}
+          <p class="loan-error" id={`${field.id}-error`} hidden></p>
+        </div>
+      ))}
+      <div class="loan-field">
+        <label class="field-label" for="refi-months">{t('autoLoan.refiTermLabel', locale)}</label>
+        <div class="loan-row">
+          <div class="chips" role="group" aria-label={t('autoLoan.termPresets', locale)}>
+            {TERMS.map(months => <button type="button" data-refi-term={months} aria-pressed="false">{t('autoLoan.termChip', locale, { months })}</button>)}
+          </div>
+          <div class="loan-box is-suffix loan-short">
+            <span class="loan-affix loan-unit" aria-hidden="true">{t('autoLoan.monthsUnit', locale)}</span>
+            <input class="loan-input" id="refi-months" type="text" inputmode="numeric" autocomplete="off" aria-describedby="refi-months-error" />
+          </div>
+        </div>
+        <p class="loan-error" id="refi-months-error" hidden></p>
+      </div>
+      <div class="loan-field">
+        <label class="field-label" for="refi-fees">{t('autoLoan.refiFeesLabel', locale)}</label>
+        <div class:list={['loan-box', { 'is-suffix': affix.suffix }]}>
+          <span class="loan-affix" data-currency-symbol aria-hidden="true">{affix.symbol}</span>
+          <input class="loan-input" id="refi-fees" type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby="refi-fees-hint refi-fees-error" />
+        </div>
+        <p class="input-hint" id="refi-fees-hint">{t('autoLoan.refiFeesHint', locale)}</p>
+        <p class="loan-error" id="refi-fees-error" hidden></p>
+        <span class="field-label loan-sub" id="refi-fees-in-label">{t('autoLoan.refiFeesInLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="refi-fees-in-label">
+          <button type="button" data-refi-fees="upfront" aria-pressed="true">{t('autoLoan.payUpfront', locale)}</button>
+          <button type="button" data-refi-fees="loan" aria-pressed="false">{t('autoLoan.payInLoan', locale)}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="loan-results">
+      <div data-panel="buy">
+        <p class="loan-big-label">{t('autoLoan.resultPayment', locale)}</p>
+        <p class="loan-big" data-result="payment">–</p>
+        <dl class="loan-list">
+          <div><dt>{t('autoLoan.resultLoanAmount', locale)}</dt><dd data-result="loanAmount">–</dd></div>
+          <div><dt>{t('autoLoan.resultSalesTax', locale)}</dt><dd data-result="salesTax">–</dd></div>
+          <div><dt>{t('autoLoan.resultUpfront', locale)}</dt><dd data-result="upfront">–</dd></div>
+          <div><dt>{t('autoLoan.resultInterest', locale)}</dt><dd data-result="interest">–</dd></div>
+          <div><dt>{t('autoLoan.resultTotalCost', locale)}</dt><dd data-result="totalCost">–</dd></div>
+        </dl>
+      </div>
+      <div data-panel="refi" hidden>
+        <p class="loan-big-label">{t('autoLoan.refiResultPayment', locale)}</p>
+        <p class="loan-big" data-result="refiPayment">–</p>
+        <dl class="loan-list">
+          <div><dt data-label="refiMonthly">{t('autoLoan.refiLowerBy', locale)}</dt><dd data-result="refiMonthly">–</dd></div>
+          <div><dt data-label="refiTotal">{t('autoLoan.refiSaves', locale)}</dt><dd data-result="refiTotal">–</dd></div>
+          <div><dt>{t('autoLoan.refiResultInterest', locale)}</dt><dd data-result="refiInterest">–</dd></div>
+        </dl>
+      </div>
+      <p class="loan-breakdown" id="loan-breakdown">{t('autoLoan.breakdownEmpty', locale)}</p>
+    </div>
+
+    <div class="loan-options" data-panel="buy">
+      <h2 class="loan-title">{t('autoLoan.optionsTitle', locale)}</h2>
+      <div class="loan-pair">
+        {buyTrade.map(field => (
+          <div class="loan-field">
+            <label class="field-label" for={field.id}>{t(field.label, locale)}</label>
+            <div class:list={['loan-box', { 'is-suffix': affix.suffix }]}>
+              <span class="loan-affix" data-currency-symbol aria-hidden="true">{affix.symbol}</span>
+              <input class="loan-input" id={field.id} type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby={describedBy(field)} />
+            </div>
+            <p class="loan-error" id={`${field.id}-error`} hidden></p>
+          </div>
+        ))}
+      </div>
+      <div class="loan-field">
+        <label class="field-label" for="loan-tax">{t('autoLoan.taxLabel', locale)}</label>
+        <div class="loan-box is-suffix loan-short">
+          <span class="loan-affix" aria-hidden="true">%</span>
+          <input class="loan-input" id="loan-tax" type="text" inputmode="decimal" autocomplete="off" placeholder={number(0)} aria-describedby="loan-tax-hint loan-tax-error" />
+        </div>
+        <p class="input-hint" id="loan-tax-hint">{t('autoLoan.taxHint', locale)}</p>
+        <p class="loan-error" id="loan-tax-error" hidden></p>
+        <span class="field-label loan-sub" id="loan-tax-base-label">{t('autoLoan.taxBaseLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="loan-tax-base-label">
+          <button type="button" data-tax-base="after" aria-pressed="true">{t('autoLoan.taxBaseAfter', locale)}</button>
+          <button type="button" data-tax-base="full" aria-pressed="false">{t('autoLoan.taxBaseFull', locale)}</button>
+        </div>
+      </div>
+      <div class="loan-field">
+        <label class="field-label" for="loan-fees">{t('autoLoan.feesLabel', locale)}</label>
+        <div class:list={['loan-box', { 'is-suffix': affix.suffix }]}>
+          <span class="loan-affix" data-currency-symbol aria-hidden="true">{affix.symbol}</span>
+          <input class="loan-input" id="loan-fees" type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby="loan-fees-hint loan-fees-error" />
+        </div>
+        <p class="input-hint" id="loan-fees-hint">{t('autoLoan.feesHint', locale)}</p>
+        <p class="loan-error" id="loan-fees-error" hidden></p>
+        <span class="field-label loan-sub" id="loan-taxes-in-label">{t('autoLoan.taxesInLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="loan-taxes-in-label">
+          <button type="button" data-taxes-in="loan" aria-pressed="true">{t('autoLoan.payInLoan', locale)}</button>
+          <button type="button" data-taxes-in="upfront" aria-pressed="false">{t('autoLoan.payUpfront', locale)}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="loan-terms">
+      <h2 class="loan-title" id="loan-terms-title">{t('autoLoan.termsTitle', locale)}</h2>
+      <div class="table-scroll">
+        <table class="spec-table mapping-table loan-table" aria-labelledby="loan-terms-title">
+          <thead><tr><th scope="col">{t('autoLoan.colTerm', locale)}</th><th scope="col">{t('autoLoan.colPayment', locale)}</th><th scope="col">{t('autoLoan.colInterest', locale)}</th></tr></thead>
+          <tbody>
+            {TERMS.map(months => <tr data-term-row={months}><th scope="row">{t('autoLoan.termRow', locale, { months, years: number(months / 12) })}</th><td>–</td><td>–</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="loan-schedule" id="loan-schedule" hidden>
+      <div class="loan-schedule-head">
+        <h2 class="loan-title" id="loan-schedule-title">{t('autoLoan.scheduleTitle', locale)}</h2>
+        <div class="chips" role="group" aria-label={t('autoLoan.scheduleView', locale)}>
+          <button type="button" data-schedule-view="year" aria-pressed="true">{t('autoLoan.viewYear', locale)}</button>
+          <button type="button" data-schedule-view="month" aria-pressed="false">{t('autoLoan.viewMonth', locale)}</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="spec-table mapping-table loan-table" aria-labelledby="loan-schedule-title">
+          <thead><tr><th scope="col" id="loan-schedule-first">{t('autoLoan.colYear', locale)}</th><th scope="col">{t('autoLoan.colPaid', locale)}</th><th scope="col">{t('autoLoan.colPrincipal', locale)}</th><th scope="col">{t('autoLoan.colInterestShort', locale)}</th><th scope="col">{t('autoLoan.colBalance', locale)}</th></tr></thead>
+          <tbody id="loan-schedule-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="visually-hidden" id="loan-live" aria-live="polite" aria-atomic="true"></p>
+</div>
+<style>
+  .loan-drop { min-height: 0; }
+  /* Beside the fields on wide screens. On phones the answer comes straight after the loan fields, before the trade-in, taxes and fees. */
+  .loan-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "top top" "main results" "options terms" "schedule schedule"; gap: 28px 40px; align-items: start; max-width: 1000px; }
+  .loan-top { grid-area: top; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .loan-currency { font-size: 14px; min-width: 0; max-width: 100%; }
+  .loan-main { grid-area: main; min-width: 0; }
+  .loan-results { grid-area: results; min-width: 0; }
+  .loan-options { grid-area: options; min-width: 0; }
+  .loan-terms { grid-area: terms; min-width: 0; }
+  .loan-schedule { grid-area: schedule; min-width: 0; }
+  .loan-field + .loan-field, .loan-pair + .loan-field, .loan-field + .loan-pair { margin-block-start: 24px; }
+  .loan-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: end; }
+  .loan-pair .loan-field + .loan-field { margin: 0; }
+  .loan-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .loan-grow { flex: 1 1 10em; }
+  .loan-sub { margin-block-start: 16px; }
+  .loan-box { display: flex; align-items: center; background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; transition: border-color 0.15s; min-width: 0; }
+  .loan-box:focus-within { border-color: var(--cobalt); outline: 2px solid var(--cobalt); outline-offset: 3px; }
+  .loan-box .loan-input:focus-visible { outline: none; }
+  .loan-box.is-suffix { flex-direction: row-reverse; }
+  .loan-short { width: 9em; }
+  .loan-affix { padding-inline: 14px 0; color: var(--slate); font-weight: 600; font-size: 20px; flex: none; }
+  .loan-box.is-suffix .loan-affix { padding-inline: 0 14px; }
+  .loan-unit { font-size: 15px; font-weight: 500; }
+  .loan-input { font: 600 20px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: transparent; border: 0; border-radius: 4px; padding: 12px 14px; width: 100%; min-width: 0; min-height: 50px; }
+  .loan-preset { flex: 1 1 14em; min-width: 0; }
+  .loan-preset .tool-select { width: 100%; min-height: 50px; }
+  .loan-error { margin-block: 8px 0; font-weight: 600; font-size: 14px; }
+  .loan-big-label { font-size: 14px; font-weight: 500; color: var(--slate); margin: 0; }
+  .loan-big { margin: 6px 0 0; font-size: clamp(40px, 5.2vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .loan-list { margin: 20px 0 0; border-block-start: 1px solid var(--line); }
+  .loan-list div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-block: 10px; border-block-end: 1px solid var(--line); }
+  .loan-list dt { color: var(--slate); min-width: 0; }
+  .loan-list dd { margin: 0; font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .loan-breakdown { color: var(--slate); margin-block: 16px 0; min-height: 3.1em; }
+  .loan-title { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin-block: 0 12px; }
+  .loan-options .loan-title { margin-block-end: 16px; }
+  .loan-schedule-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-block-end: 12px; }
+  .loan-schedule-head .loan-title { margin: 0; }
+  .loan-schedule .table-scroll { max-height: 520px; overflow-y: auto; border: 1.5px solid var(--line); border-radius: 4px; }
+  .loan-schedule .loan-table { border: 0; }
+  .loan-schedule thead th { position: sticky; top: 0; background: var(--paper); }
+  .loan-table { border: 1.5px solid var(--line); font-variant-numeric: tabular-nums; }
+  .loan-table th, .loan-table td { padding: 10px 14px; }
+  .loan-table tbody th { font-weight: 600; font-size: 16px; color: var(--ink); }
+  .loan-table td { text-align: end; white-space: nowrap; }
+  .loan-table thead th:not(:first-child) { text-align: end; }
+  .loan-table tr.is-current { background: var(--cobalt-wash); }
+  /* The schedule's rows are added by the script, so scoped styles don't reach them. */
+  .loan-schedule tbody :global(th), .loan-schedule tbody :global(td) { padding: 10px 14px; }
+  .loan-schedule tbody :global(th) { font-weight: 600; font-size: 16px; color: var(--ink); }
+  .loan-schedule tbody :global(td) { text-align: end; white-space: nowrap; }
+  @media (max-width: 860px) {
+    .loan-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main" "results" "options" "terms" "schedule"; gap: 28px; }
+    .loan-results, .loan-options, .loan-terms, .loan-schedule { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    .loan-pair { grid-template-columns: minmax(0, 1fr); }
+    .loan-table th, .loan-table td { padding: 10px 8px; font-size: 15px; }
+    /* Five columns don't fit a phone; the payment is the same every month, so it's the one left out. */
+    .loan-schedule th, .loan-schedule tbody :global(th), .loan-schedule tbody :global(td) { padding: 10px 6px; font-size: 14px; }
+    .loan-schedule thead th:nth-child(2), .loan-schedule tbody :global(td:nth-child(2)) { display: none; }
+  }
+</style>
+<script src="../scripts/auto-loan.ts"></script>

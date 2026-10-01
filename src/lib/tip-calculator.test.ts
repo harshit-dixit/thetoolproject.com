@@ -38,6 +38,10 @@ describe('parseAmount', () => {
     expect(parseAmount('1 234,50 €', 'fr')).toBe(1234.5);
     expect(parseAmount("1'234.50", 'de')).toBe(1234.5);
     expect(parseAmount('１２００', 'ja')).toBe(1200);
+    expect(parseAmount('R$ 1.500', 'pt')).toBe(1500);
+    expect(parseAmount('USD 20')).toBe(20);
+    expect(parseAmount('3000円', 'ja')).toBe(3000);
+    expect(parseAmount('18%')).toBe(18);
   });
 
   it('returns undefined for an empty field and NaN for text that is not an amount', () => {
@@ -46,6 +50,10 @@ describe('parseAmount', () => {
     expect(parseAmount('-5')).toBeNaN();
     expect(parseAmount('1,23,4')).toBeNaN();
     expect(parseAmount('1..5')).toBeNaN();
+    expect(parseAmount('abc30000')).toBeNaN();
+    expect(parseAmount('30000abc')).toBeNaN();
+    expect(parseAmount('30k')).toBeNaN();
+    expect(parseAmount('3O000')).toBeNaN();
   });
 });
 

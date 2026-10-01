@@ -20,6 +20,8 @@ import WordCounterTool from '../components/WordCounterTool.astro';
 import TipCalculatorTool from '../components/TipCalculatorTool.astro';
 import HighSchoolGpaTool from '../components/HighSchoolGpaTool.astro';
 import GpaCalculatorTool from '../components/GpaCalculatorTool.astro';
+import AutoLoanTool from '../components/AutoLoanTool.astro';
+import AgeCalculatorTool from '../components/AgeCalculatorTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
@@ -34,6 +36,7 @@ import { t, formatNumber, langTag, type TranslationKey } from '../i18n/utils';
 import { tipDefaults } from '../data/tip-defaults';
 import { gradePoints, LETTERS, percentRange } from '../lib/high-school-gpa';
 import { pointsFor } from '../lib/college-gpa';
+import { usAverages, usRates, usRateTiers } from '../data/auto-loan-defaults';
 
 export function getStaticPaths() {
   const allowDrafts = import.meta.env.DEV && process.env.PREVIEW_DRAFTS === 'true';
@@ -124,6 +127,35 @@ const gpaSources = {
   ilstu: 'https://registrar.illinoisstate.edu/registration/repeat/',
   guide: '/guides/cum-laude/',
   hs: getPublishedToolPath('highSchoolGpa', locale),
+};
+
+// Auto loan tables: US averages from Experian, formatted in the page language but always in US dollars.
+const usd = (value: number) => new Intl.NumberFormat(langTag(locale), { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+const aprText = (value: number) => new Intl.NumberFormat(langTag(locale), { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value / 100);
+const loanMonths = (value: number) => t('autoLoan.averageMonths', locale, { months: new Intl.NumberFormat(langTag(locale), { maximumFractionDigits: 1 }).format(value) });
+const autoLoanAverageRows: [TranslationKey, string, string][] = [
+  ['autoLoan.averagePayment', usd(usAverages.payment.new), usd(usAverages.payment.used)],
+  ['autoLoan.averageFinanced', usd(usAverages.financed.new), usd(usAverages.financed.used)],
+  ['autoLoan.averageTerm', loanMonths(usAverages.months.new), loanMonths(usAverages.months.used)],
+  ['autoLoan.averageRate', aprText(usRates.new.all), aprText(usRates.used.all)],
+];
+const autoLoanFaqs = [1, 2, 3, 4, 5, 6] as const;
+const ageFaqs = [1, 2, 3, 4, 5] as const;
+const autoLoanSources = {
+  cfpbSimple: 'https://www.consumerfinance.gov/ask-cfpb/whats-the-difference-between-a-simple-interest-rate-and-precomputed-interest-on-an-auto-loan-en-841/',
+  cfpbTerms: 'https://www.consumerfinance.gov/consumer-tools/auto-loans/answers/key-terms/',
+  cfpbRefi: 'https://www.consumerfinance.gov/ask-cfpb/what-should-i-do-if-i-cant-make-my-car-payments-en-849/',
+  cfpbPrepay: 'https://www.consumerfinance.gov/ask-cfpb/can-i-prepay-my-loan-at-any-time-without-penalty-en-843/',
+  cdtfa: 'https://cdtfa.ca.gov/industry/motor-vehicle-dealers/industry-topics.htm',
+  vadmv: 'https://www.dmv.virginia.gov/vehicles/taxes-fees/sut',
+  oregon: 'https://www.oregon.gov/dor/programs/businesses/pages/vehicle-privilege-and-use-taxes.aspx',
+  experianPayment: 'https://www.experian.com/blogs/ask-experian/average-car-payment/',
+  experianRates: 'https://www.experian.com/blogs/ask-experian/average-car-loan-interest-rates-by-credit-score/',
+  experianDown: 'https://www.experian.com/blogs/ask-experian/how-much-of-a-down-payment-should-you-make-on-a-car/',
+  experianIncome: 'https://www.experian.com/blogs/ask-experian/how-much-income-do-you-need-to-buy-car/',
+  experianCard: 'https://www.experian.com/blogs/ask-experian/can-i-buy-a-car-with-a-credit-card/',
+  kbb: 'https://www.kbb.com/car-advice/what-is-the-best-down-payment/',
+  edmunds: 'https://www.edmunds.com/industry/press/nearly-1-in-4-new-vehicle-buyers-in-q2-stretched-loans-to-84-months-or-longer-a-record-according-to-edmunds.html',
 };
 
 const excelRows: [TranslationKey, TranslationKey][] = [
@@ -476,6 +508,61 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         </section>
         <section aria-labelledby="gpa-faq-title"><div class="sec-head"><h2 id="gpa-faq-title">{t('gpa.faqTitle', locale)}</h2></div><div class="how-copy">
           {gpaFaqs.map(n => <p><strong>{t(`gpa.faqQ${n}` as TranslationKey, locale)}</strong> <RichText text={t(`gpa.faqA${n}` as TranslationKey, locale)} links={gpaSources} /></p>)}
+        </div></section>
+      </>}
+      {tool.id === 'auto-loan-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('autoLoan.leadStrong', locale)}</strong> {t('autoLoan.lead', locale)}</p><p class="caption">{t('autoLoan.caption', locale)}</p></div></div>
+        <AutoLoanTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('autoLoan.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('autoLoan.howFormula', locale)} /></p>
+          <p>{t('autoLoan.howAmount', locale)}</p>
+          <p><RichText text={t('autoLoan.howSimple', locale)} links={autoLoanSources} /></p>
+          <h3>{t('autoLoan.howTaxTitle', locale)}</h3>
+          <p><RichText text={t('autoLoan.howTaxP', locale)} links={autoLoanSources} /></p>
+          <h3>{t('autoLoan.howNegativeTitle', locale)}</h3>
+          <p>{t('autoLoan.howNegativeP', locale)}</p>
+          <h3>{t('autoLoan.howTermTitle', locale)}</h3>
+          <p><RichText text={t('autoLoan.howTermP', locale)} links={autoLoanSources} /></p>
+          <h3>{t('autoLoan.howRefiTitle', locale)}</h3>
+          <p>{t('autoLoan.howRefiP', locale)}</p>
+        </div></section>
+        <section aria-labelledby="auto-loan-average-title"><div class="sec-head"><h2 id="auto-loan-average-title">{t('autoLoan.averageTitle', locale)}</h2><p>{t('autoLoan.averageIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table hs-gpa-scale"><thead><tr><th scope="col">{t('autoLoan.averageColItem', locale)}</th><th scope="col">{t('autoLoan.averageColNew', locale)}</th><th scope="col">{t('autoLoan.averageColUsed', locale)}</th></tr></thead>
+            <tbody>{autoLoanAverageRows.map(([label, newValue, usedValue]) => <tr><th scope="row">{t(label, locale)}</th><td class="fmt">{newValue}</td><td class="fmt">{usedValue}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy"><p class="hs-gpa-scale-note"><RichText text={t('autoLoan.averageNote', locale)} links={autoLoanSources} /></p></div>
+        </section>
+        <section aria-labelledby="auto-loan-rates-title"><div class="sec-head"><h2 id="auto-loan-rates-title">{t('autoLoan.ratesTitle', locale)}</h2><p>{t('autoLoan.ratesIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table hs-gpa-scale"><thead><tr><th scope="col">{t('autoLoan.ratesColScore', locale)}</th><th scope="col">{t('autoLoan.rateNew', locale)}</th><th scope="col">{t('autoLoan.rateUsed', locale)}</th></tr></thead>
+            <tbody>{usRateTiers.map(tier => <tr><th scope="row">{t(`autoLoan.tier.${tier}` as TranslationKey, locale)}</th><td class="fmt">{aprText(usRates.new[tier])}</td><td class="fmt">{aprText(usRates.used[tier])}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy"><p class="hs-gpa-scale-note"><RichText text={t('autoLoan.ratesNote', locale)} links={autoLoanSources} /></p></div>
+        </section>
+        <section aria-labelledby="auto-loan-down-title"><div class="sec-head"><h2 id="auto-loan-down-title">{t('autoLoan.downTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('autoLoan.downP1', locale)} links={autoLoanSources} /></p>
+          <p>{t('autoLoan.downP2', locale)}</p>
+          <p><RichText text={t('autoLoan.downP3', locale)} links={autoLoanSources} /></p>
+        </div></section>
+        <section aria-labelledby="auto-loan-faq-title"><div class="sec-head"><h2 id="auto-loan-faq-title">{t('autoLoan.faqTitle', locale)}</h2></div><div class="how-copy">
+          {autoLoanFaqs.map(n => <><h3>{t(`autoLoan.faqQ${n}` as TranslationKey, locale)}</h3><p><RichText text={t(`autoLoan.faqA${n}` as TranslationKey, locale)} links={autoLoanSources} /></p></>)}
+        </div></section>
+      </>}
+      {tool.id === 'age-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('age.leadStrong', locale)}</strong> {t('age.lead', locale)}</p><p class="caption">{t('age.caption', locale)}</p></div></div>
+        <AgeCalculatorTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('age.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('age.howStep1', locale)} /></p>
+          <p>{t('age.howStep2', locale)}</p>
+          <p>{t('age.howStep3', locale)}</p>
+          <h3>{t('age.howDatesTitle', locale)}</h3>
+          <p>{t('age.howDatesP', locale)}</p>
+          <h3>{t('age.howChronoTitle', locale)}</h3>
+          <p>{t('age.howChronoP', locale)}</p>
+          <h3>{t('age.howBabyTitle', locale)}</h3>
+          <p>{t('age.howBabyP', locale)}</p>
+        </div></section>
+        <section aria-labelledby="age-faq-title"><div class="sec-head"><h2 id="age-faq-title">{t('age.faqTitle', locale)}</h2></div><div class="how-copy">
+          {ageFaqs.map(n => <><h3>{t(`age.faqQ${n}` as TranslationKey, locale)}</h3><p>{t(`age.faqA${n}` as TranslationKey, locale)}</p></>)}
         </div></section>
       </>}
       {tool.id === 'csv-to-sql' && <>

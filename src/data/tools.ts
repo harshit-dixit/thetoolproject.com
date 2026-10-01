@@ -137,6 +137,16 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('gpa-calculator', 'gpa'),
   },
+  autoLoan: {
+    id: 'auto-loan-calculator',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('auto-loan-calculator', 'autoLoan'),
+  },
+  ageCalculator: {
+    id: 'age-calculator',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('age-calculator', 'age'),
+  },
   csvToSql: {
     id: 'csv-to-sql',
     category: 'DeveloperApplication',

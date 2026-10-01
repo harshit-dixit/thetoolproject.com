@@ -473,6 +473,10 @@ section {
 .cards[style*="--cards"] {
   grid-template-columns: repeat(var(--cards), minmax(0, 1fr));
 }
+/* An odd last card in a two-column grid fills the row instead of leaving a grey gap. */
+.cards[style*="--cards: 2"] > a:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
 .card-title {
   font-size: 24px;
   font-weight: 700;

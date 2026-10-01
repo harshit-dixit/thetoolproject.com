@@ -60,9 +60,11 @@ function separators(locale: string) {
  * page language's thousands separator, so "1,500" is 1500 in English and "1.500" is 1500 in German.
  */
 export function parseAmount(text: string, locale = 'en'): number | undefined {
-  // Currency signs, spaces (including the narrow no-break space French uses) and Swiss apostrophes.
-  const cleaned = text.normalize('NFKC').replace(/[\s  '’]/g, '').replace(/[^\d.,-]/g, '');
+  // A currency sign or code before or after the number, spaces (including the narrow no-break space French uses) and Swiss apostrophes.
+  const cleaned = text.normalize('NFKC').replace(/[\s  '’]/g, '').replace(CURRENCY_BEFORE, '').replace(CURRENCY_AFTER, '');
   if (!text.trim()) return undefined;
+  // Anything else, like "abc30000", isn't an amount.
+  if (/[^\d.,-]/.test(cleaned)) return Number.NaN;
   if (!/\d/.test(cleaned) || /-/.test(cleaned) || /[.,]{2}/.test(cleaned)) return Number.NaN;
   const marks = cleaned.match(/[.,]/g) ?? [];
   const mark = marks[0] ?? '';
@@ -138,6 +140,12 @@ export const currencies = [
   'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'NZD', 'INR', 'JPY', 'MXN', 'BRL', 'ARS', 'CLP', 'COP', 'PEN', 'CHF',
   'SGD', 'PHP', 'ZAR', 'NGN', 'AED', 'KRW', 'CNY', 'HKD', 'SEK', 'NOK', 'DKK', 'PLN',
 ] as const;
+
+// What parseAmount skips before or after the number: a currency sign, maybe after a few letters (R$, US$, HK$),
+// one of the codes above, the kr, zł and R written for some of them, 円 or 元, or a percent sign.
+const CURRENCY_MARK = String.raw`(?:[A-Za-z]{0,3}\p{Sc}|${currencies.join('|')}|kr|zł|R|[円元%])`;
+const CURRENCY_BEFORE = new RegExp(`^${CURRENCY_MARK}`, 'iu');
+const CURRENCY_AFTER = new RegExp(`${CURRENCY_MARK}$`, 'iu');
 
 /** The currency for a browser language tag such as "en-GB", if its region is known. */
 export function currencyForLanguage(tag: string): string | undefined {

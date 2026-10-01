@@ -1,0 +1,98 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { MAX_YEAR, MIN_YEAR } from '../lib/age-calculator';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'age.breakdown', 'age.breakdownEmpty', 'age.errBirthAfter', 'age.liveSummary',
+  'age.nextToday.one', 'age.nextToday.other', 'age.nextIn.one', 'age.nextIn.other',
+  'age.unit.years.one', 'age.unit.years.other', 'age.unit.months.one', 'age.unit.months.other',
+  'age.unit.weeks.one', 'age.unit.weeks.other', 'age.unit.days.one', 'age.unit.days.other',
+  'age.unit.hours.one', 'age.unit.hours.other', 'age.unit.minutes.one', 'age.unit.minutes.other',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const min = `${MIN_YEAR}-01-01`;
+const max = `${MAX_YEAR}-12-31`;
+---
+<div class="drop age-drop" id="age-calculator-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame age-grid">
+    <div class="age-inputs">
+      <div class="age-field">
+        <label class="field-label" for="age-birth">{t('age.birthLabel', locale)}</label>
+        <input class="age-input" id="age-birth" type="date" min={min} max={max} autocomplete="bday" aria-describedby="age-birth-error" />
+        <p class="age-error" id="age-birth-error" hidden></p>
+      </div>
+      <div class="age-field">
+        <div class="age-label-row">
+          <label class="field-label" for="age-on">{t('age.onLabel', locale)}</label>
+          <button class="btn alt age-today" type="button" id="age-on-today" hidden>{t('age.useToday', locale)}</button>
+        </div>
+        <input class="age-input" id="age-on" type="date" min={min} max={max} aria-describedby="age-on-hint" />
+        <p class="input-hint" id="age-on-hint">{t('age.onHint', locale)}</p>
+      </div>
+    </div>
+
+    <div class="age-results">
+      <dl class="age-readout">
+        <div><dt>{t('age.resultYears', locale)}</dt><dd data-result="years">–</dd></div>
+        <div><dt>{t('age.resultMonths', locale)}</dt><dd data-result="months">–</dd></div>
+        <div><dt>{t('age.resultDays', locale)}</dt><dd data-result="days">–</dd></div>
+      </dl>
+      <p class="age-breakdown" id="age-breakdown">{t('age.breakdownEmpty', locale)}</p>
+    </div>
+
+    <div class="age-next">
+      <h2 class="age-subtitle">{t('age.nextTitle', locale)}</h2>
+      <p class="age-next-date" data-result="nextDate">–</p>
+      <p class="age-next-when" data-result="nextWhen"></p>
+    </div>
+
+    <div class="age-units">
+      <h2 class="age-subtitle">{t('age.unitsTitle', locale)}</h2>
+      <ul class="age-unit-list">
+        {['totalMonths', 'weeks', 'totalDays', 'hours', 'minutes'].map(name => <li data-result={name}>–</li>)}
+      </ul>
+    </div>
+  </div>
+  <p class="visually-hidden" id="age-live" aria-live="polite" aria-atomic="true"></p>
+</div>
+<style>
+  .age-drop { min-height: 0; }
+  /* Beside the fields on wide screens. On phones the answer comes straight after the two dates. */
+  .age-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "inputs results" "next units"; gap: 32px 40px; align-items: start; max-width: 1000px; }
+  .age-inputs { grid-area: inputs; }
+  .age-results { grid-area: results; min-width: 0; }
+  .age-next { grid-area: next; min-width: 0; }
+  .age-units { grid-area: units; min-width: 0; }
+  .age-field + .age-field { margin-block-start: 24px; }
+  .age-label-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-block-end: 8px; }
+  .age-label-row .field-label { margin: 0; }
+  .age-today { font-size: 14px; padding: 8px 12px; min-height: 36px; }
+  .age-input { display: block; font: 600 20px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 12px 14px; width: 100%; min-width: 0; min-height: 52px; }
+  .age-input:focus { border-color: var(--cobalt); }
+  /* iOS centres the date and collapses an empty field. */
+  .age-input::-webkit-date-and-time-value { text-align: start; min-height: 1.2em; }
+  .age-error { margin-block: 8px 0; font-weight: 600; font-size: 14px; }
+  .age-readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; }
+  .age-readout div { min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .age-readout dt { font-size: 14px; font-weight: 500; color: var(--slate); }
+  .age-readout dd { margin: 6px 0 0; font-size: clamp(40px, 5vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .age-breakdown { color: var(--slate); margin-block: 16px 0; min-height: 3.1em; }
+  .age-subtitle { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin-block: 0 12px; }
+  .age-next-date { margin: 0; font-size: 28px; font-weight: 700; font-stretch: 88%; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .age-next-when { margin-block: 8px 0; color: var(--slate); min-height: 1.55em; }
+  .age-unit-list { list-style: none; margin: 0; padding: 0; border: 1.5px solid var(--line); border-radius: 4px; font-variant-numeric: tabular-nums; }
+  .age-unit-list li { padding: 10px 14px; font-weight: 600; }
+  .age-unit-list li + li { border-block-start: 1px solid var(--line); }
+  @media (max-width: 860px) {
+    .age-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "inputs" "results" "next" "units"; gap: 28px; }
+    .age-results, .age-next, .age-units { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    .age-readout { gap: 8px; }
+  }
+</style>
+<script src="../scripts/age-calculator.ts"></script>
