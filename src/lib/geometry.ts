@@ -78,11 +78,12 @@ export function volumeFields(shape: VolumeShape, tank: TankType = 'vertical'): F
   switch (shape) {
     case 'cube': return [{ key: 'a', label: 'side' }];
     case 'box': return [{ key: 'l', label: 'length' }, { key: 'w', label: 'width' }, { key: 'h', label: 'height' }];
-    case 'cylinder':
-    case 'cone': return [{ key: 'r', label: 'radius' }, { key: 'h', label: 'height' }];
+    case 'cylinder': return [{ key: 'r', label: 'radius' }, { key: 'h', label: 'height' }];
+    // A cone's or pyramid's height is to its tip, which the hint says is not along the slope.
+    case 'cone': return [{ key: 'r', label: 'radius' }, { key: 'h', label: 'apexHeight' }];
     case 'sphere':
     case 'hemisphere': return [{ key: 'r', label: 'radius' }];
-    case 'pyramid': return [{ key: 'l', label: 'baseLength' }, { key: 'w', label: 'baseWidth' }, { key: 'h', label: 'height' }];
+    case 'pyramid': return [{ key: 'l', label: 'baseLength' }, { key: 'w', label: 'baseWidth' }, { key: 'h', label: 'apexHeight' }];
     case 'prism': return [{ key: 'b', label: 'triangleBase' }, { key: 't', label: 'triangleHeight' }, { key: 'l', label: 'prismLength' }];
     case 'pipe': return [{ key: 'd', label: 'innerDiameter' }, { key: 'l', label: 'pipeLength' }, { key: 'D', label: 'outerDiameter', optional: true }];
     case 'tank':
@@ -108,12 +109,32 @@ const need = (values: Values, ...keys: FieldKey[]) => keys.map(key => {
   return value;
 });
 
-/** The liquid in a horizontal cylinder of radius r and length l filled to depth f: a circular segment times the length. */
+/**
+ * The liquid in a horizontal cylinder of radius r and length l filled to depth f: a circular segment times the length.
+ * The textbook r² × acos((r − f) ÷ r) − (r − f) × √(2rf − f²) subtracts two nearly equal numbers when f is tiny next
+ * to r, and can come out negative. So the segment is worked out from its angle θ as r² × (θ − sin θ) ÷ 2, with θ − sin θ
+ * from its series when θ is small, and a tank more than half full is the full tank minus the empty segment above.
+ */
 export function horizontalTankFill(r: number, l: number, f: number): number {
   if (f <= 0) return 0;
   if (f >= 2 * r) return Math.PI * r * r * l;
-  const segment = r * r * Math.acos((r - f) / r) - (r - f) * Math.sqrt(2 * r * f - f * f);
-  return segment * l;
+  const segment = (depth: number) => {
+    // acos(1 − depth ÷ r) without the cancellation, so θ stays accurate for a thin segment.
+    const theta = 4 * Math.asin(Math.sqrt(depth / (2 * r)));
+    let thetaMinusSin = theta - Math.sin(theta);
+    if (theta < 1) {
+      // θ − sin θ = θ³/3! − θ⁵/5! + θ⁷/7! − …; for θ < 1, ten terms reach full double precision.
+      thetaMinusSin = 0;
+      let term = theta ** 3 / 6;
+      for (let n = 3; n < 23; n += 2) {
+        thetaMinusSin += term;
+        term *= -(theta * theta) / ((n + 1) * (n + 2));
+      }
+    }
+    return (r * r * thetaMinusSin) / 2;
+  };
+  const area = f <= r ? segment(f) : Math.PI * r * r - segment(2 * r - f);
+  return area * l;
 }
 
 export function calculateVolume(shape: VolumeShape, values: Values, tank: TankType = 'vertical'): { result: VolumeResult } | { error: VolumeError } {
@@ -178,10 +199,10 @@ export function areaFields(shape: AreaShape, triangle: TriangleMethod = 'base'):
     case 'ellipse': return [{ key: 'e1', label: 'semiMajor' }, { key: 'e2', label: 'semiMinor' }];
     case 'solid-cube': return [{ key: 'a', label: 'side' }];
     case 'solid-box': return [{ key: 'l', label: 'length' }, { key: 'w', label: 'width' }, { key: 'h', label: 'height' }];
-    case 'solid-cylinder':
-    case 'solid-cone': return [{ key: 'r', label: 'radius' }, { key: 'h', label: 'height' }];
+    case 'solid-cylinder': return [{ key: 'r', label: 'radius' }, { key: 'h', label: 'height' }];
+    case 'solid-cone': return [{ key: 'r', label: 'radius' }, { key: 'h', label: 'apexHeight' }];
     case 'solid-sphere': return [{ key: 'r', label: 'radius' }];
-    case 'solid-pyramid': return [{ key: 'a', label: 'baseSide' }, { key: 'h', label: 'height' }];
+    case 'solid-pyramid': return [{ key: 'a', label: 'baseSide' }, { key: 'h', label: 'apexHeight' }];
   }
 }
 

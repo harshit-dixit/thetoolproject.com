@@ -27,6 +27,10 @@ const sharedKeys: TranslationKey[] = [
 ];
 const strings = Object.fromEntries([...sharedKeys, ...clientKeys].map(key => [key, t(key, locale)]));
 const defaultUnit = t('geo.defaultUnit', locale);
+// The default shape's fields come first, in its order, so tabbing and screen readers follow what's on screen.
+// The script moves the fields into each shape's order the same way.
+const shownKeys = initial.map(field => field.key);
+const orderedKeys = [...shownKeys, ...fieldKeys.filter(key => !shownKeys.includes(key))];
 ---
 <div class="drop geo-drop" id={id} data-strings={JSON.stringify(strings)} data-locale={locale} data-default-unit={defaultUnit}>
   <div class="tool-frame geo-grid">
@@ -40,10 +44,10 @@ const defaultUnit = t('geo.defaultUnit', locale);
         <p class="input-hint" id={`${prefix}-unit-hint`}>{t('geo.unitHint', locale)}</p>
       </div>
       <div class="geo-fields">
-        {fieldKeys.map(key => {
+        {orderedKeys.map(key => {
           const shown = initial.find(field => field.key === key);
           return (
-          <div class="geo-field geo-measure" data-field={key} hidden={!shown} style={shown ? `order: ${initial.indexOf(shown)}` : undefined}>
+          <div class="geo-field geo-measure" data-field={key} hidden={!shown}>
             <label class="field-label" for={`${prefix}-${key}`}>{shown?.label}</label>
             <div class="geo-input-row">
               <input class="geo-input" id={`${prefix}-${key}`} type="text" inputmode="decimal" autocomplete="off" aria-describedby={`${prefix}-${key}-unit ${prefix}-${key}-hint ${prefix}-${key}-error`} />

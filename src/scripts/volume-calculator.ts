@@ -15,7 +15,8 @@ let shape: VolumeShape = 'cylinder';
 let tank: TankType = 'vertical';
 let diameter = false;
 
-const formulaId = () => (shape === 'tank' ? `tank-${tank}` : shape);
+/** A tank filled to a depth has its own formula: the liquid, not the full tank. */
+const formulaId = (filled = false) => (shape === 'tank' ? `tank-${tank}${filled ? '-fill' : ''}` : shape);
 const isRound = () => ROUND_VOLUME_SHAPES.includes(shape);
 const NAMED: Partial<Record<VolumeUnit, string>> = { ml: 'geo.vol.ml', l: 'geo.vol.l', usgal: 'geo.vol.usgal', impgal: 'geo.vol.impgal' };
 
@@ -43,20 +44,26 @@ function update() {
   if (outcome && 'error' in outcome) ui.showError(outcome.error === 'fillTooHigh' ? 'f' : 'D', t(outcome.error === 'fillTooHigh' ? 'vol.errFillTooHigh' : 'vol.errOuterTooSmall'));
   const result = outcome && 'result' in outcome ? outcome.result : undefined;
 
-  const label = t(shape === 'pipe' ? 'vol.resultPipe' : shape !== 'tank' ? 'vol.resultVolume' : result?.filled !== undefined ? 'vol.resultFilled' : 'vol.resultTank');
-  const formula = t(`vol.formula.${formulaId()}`);
+  const filled = result?.filled !== undefined;
+  const label = t(shape === 'pipe' ? 'vol.resultPipe' : shape !== 'tank' ? 'vol.resultVolume' : filled ? 'vol.resultFilled' : 'vol.resultTank');
+  const formula = t(`vol.formula.${formulaId(filled)}`);
   if (!result || !values) {
     ui.render({ label, value: 0, unit: '', formula, prompt: t('vol.empty') });
     return;
   }
 
   const shown = result.filled ?? result.volume;
-  const work = t(`vol.work.${formulaId()}`, Object.fromEntries(Object.entries(values).map(([key, value]) => [key, ui.num(value)])));
+  // The partly full horizontal tank's circular segment is worked out from the radius.
+  const segment = filled && tank === 'horizontal';
+  const params = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, ui.num(value)]));
+  if (segment) params.r = ui.num(values.d! / 2);
+  const work = t(`vol.work.${formulaId(filled)}`, params);
   const extras: string[] = [];
   if (isRound() && diameter) extras.push(t('geo.radiusFromDiameter', { d: ui.num(typed!.r!), r: ui.num(values.r!) }));
-  if (result.filled !== undefined) {
+  if (segment) extras.push(t('geo.radiusFromDiameter', { d: params.d, r: params.r }));
+  if (filled) {
     extras.push(t('vol.fullTank', { volume: ui.cubic(result.volume, unit), gallons: inUnit(result.volume, unit === 'in' || unit === 'ft' || unit === 'yd' ? 'usgal' : 'l') }));
-    extras.push(t('vol.filledShare', { percent: ui.percent(result.filled / result.volume) }));
+    extras.push(t('vol.filledShare', { percent: ui.percent(result.filled! / result.volume) }));
   }
   if (result.material !== undefined) extras.push(t('vol.material', { volume: ui.cubic(result.material, unit) }));
   ui.render({

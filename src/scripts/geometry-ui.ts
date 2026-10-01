@@ -15,6 +15,7 @@ export function geometryUi(root: HTMLElement, prefix: 'vol' | 'area') {
   const valueOut = root.querySelector<HTMLElement>('[data-result="value"]')!;
   const unitOut = root.querySelector<HTMLElement>('[data-result="unit"]')!;
   const wrappers = new Map([...root.querySelectorAll<HTMLElement>('[data-field]')].map(el => [el.dataset.field as FieldKey, el]));
+  const fieldList = root.querySelector<HTMLElement>('.geo-fields')!;
   let liveTimer: ReturnType<typeof setTimeout> | undefined;
   let reportTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -49,14 +50,19 @@ export function geometryUi(root: HTMLElement, prefix: 'vol' | 'area') {
     else input.removeAttribute('aria-invalid');
   }
 
-  /** Shows the shape's fields in order with their labels, hints and unit, and hides the rest. */
+  /**
+   * Shows the shape's fields with their labels, hints and unit, and hides the rest. The fields are moved into the
+   * shape's order in the page itself, not just on screen, so Tab and screen readers meet them in the order they're shown.
+   */
   function showFields(fields: Field[], unit: LengthUnit, labelFor: (field: Field) => string) {
+    const shown = fields.map(field => wrappers.get(field.key)!);
+    const order = [...shown, ...[...wrappers.values()].filter(el => !shown.includes(el))];
+    // Only move them when the order changes: moving a field while it's being typed in would take the focus away.
+    if (order.some((el, i) => fieldList.children[i] !== el)) fieldList.append(...order);
     for (const [key, wrapper] of wrappers) {
-      const index = fields.findIndex(field => field.key === key);
-      wrapper.hidden = index < 0;
-      if (index < 0) { showError(key); continue; }
-      const field = fields[index];
-      wrapper.style.order = String(index);
+      const field = fields.find(field => field.key === key);
+      wrapper.hidden = !field;
+      if (!field) { showError(key); continue; }
       wrapper.querySelector('label')!.textContent = labelFor(field);
       const hint = $(`${key}-hint`);
       const hintKey = `geo.hint.${field.label}`;

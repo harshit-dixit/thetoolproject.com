@@ -164,7 +164,8 @@ assert.match(areaCalculator, /<th scope="row">Triangle \(Three sides\)<\/th>/);
 assert.match(areaCalculator, /href="\/volume-calculator\/"/);
 // The guides are English only, so the other languages link to the English guide and say so.
 assert.match(read('fr/area-calculator/index.html'), /href="\/guides\/how-to-find-volume-and-area\/"/);
-assert.match(geometryGuide, /<h1>How to find the volume and area of any shape<\/h1>/);
+assert.match(geometryGuide, /<h1>How to find the volume and area of common shapes<\/h1>/);
+assert.doesNotMatch(geometryGuide, /every shape|any shape/);
 assert.match(geometryGuide, /rel="canonical" href="https:\/\/thetoolproject\.com\/guides\/how-to-find-volume-and-area\/"/);
 assert.match(geometryGuide, /href="\/volume-calculator\/\?shape=tank-horizontal"/);
 assert.match(geometryGuide, /href="\/area-calculator\/\?shape=triangle-sides"/);

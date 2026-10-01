@@ -8,8 +8,8 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const formulaIds = [...FLAT_SHAPES.filter(shape => shape !== 'triangle'), 'triangle-base', 'triangle-sides', ...SOLID_SHAPES.map(shape => `solid-${shape}`)];
-const labels = ['side', 'length', 'width', 'base', 'height', 'side1', 'side2', 'side3', 'radius', 'diameter', 'base1', 'base2', 'semiMajor', 'semiMinor', 'baseSide'];
-const hints = ['base1', 'semiMajor', 'semiMinor'];
+const labels = ['side', 'length', 'width', 'base', 'height', 'apexHeight', 'side1', 'side2', 'side3', 'radius', 'diameter', 'base1', 'base2', 'semiMajor', 'semiMinor', 'baseSide'];
+const hints = ['base1', 'semiMajor', 'semiMinor', 'apexHeight'];
 const clientKeys = [
   ...formulaIds.flatMap(id => [`area.formula.${id}`, `area.work.${id}`]),
   ...labels.map(label => `geo.label.${label}`), ...hints.map(hint => `geo.hint.${hint}`),

@@ -7,9 +7,9 @@ import { TANK_TYPES, VOLUME_SHAPES, volumeFields, type FieldKey } from '../lib/g
 interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
-const formulaIds = [...VOLUME_SHAPES.filter(shape => shape !== 'tank'), ...TANK_TYPES.map(tank => `tank-${tank}`)];
-const labels = ['side', 'length', 'width', 'height', 'radius', 'diameter', 'baseLength', 'baseWidth', 'triangleBase', 'triangleHeight', 'prismLength', 'innerDiameter', 'outerDiameter', 'pipeLength', 'fill'];
-const hints = ['innerDiameter', 'outerDiameter', 'fill'];
+const formulaIds = [...VOLUME_SHAPES.filter(shape => shape !== 'tank'), ...TANK_TYPES.flatMap(tank => [`tank-${tank}`, `tank-${tank}-fill`])];
+const labels = ['side', 'length', 'width', 'height', 'apexHeight', 'radius', 'diameter', 'baseLength', 'baseWidth', 'triangleBase', 'triangleHeight', 'prismLength', 'innerDiameter', 'outerDiameter', 'pipeLength', 'fill'];
+const hints = ['innerDiameter', 'outerDiameter', 'fill', 'apexHeight'];
 const clientKeys = [
   ...formulaIds.flatMap(id => [`vol.formula.${id}`, `vol.work.${id}`]),
   ...labels.map(label => `geo.label.${label}`), ...hints.map(hint => `geo.hint.${hint}`),
@@ -30,9 +30,10 @@ const initial = volumeFields('cylinder').map(field => ({ key: field.key, label: 
   </div>
   <div class="geo-field" id="vol-tank-field" hidden>
     <span class="field-label" id="vol-tank-label">{t('vol.tankLabel', locale)}</span>
-    <div class="chips" role="group" aria-labelledby="vol-tank-label">
+    <div class="chips" role="group" aria-labelledby="vol-tank-label" aria-describedby="vol-tank-hint">
       {TANK_TYPES.map(tank => <button type="button" data-tank={tank} aria-pressed={tank === 'vertical' ? 'true' : 'false'}>{t(`vol.tank.${tank}` as TranslationKey, locale)}</button>)}
     </div>
+    <p class="input-hint" id="vol-tank-hint">{t('vol.tankHint', locale)}</p>
   </div>
   <div class="geo-field" id="vol-measure-field">
     <span class="field-label" id="vol-measure-label">{t('geo.measureLabel', locale)}</span>

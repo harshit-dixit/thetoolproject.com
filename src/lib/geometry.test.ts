@@ -77,6 +77,30 @@ describe('horizontalTankFill', () => {
     expect(horizontalTankFill(1, 1, 1)).toBeCloseTo(Math.PI / 2, 12);
     expect(horizontalTankFill(1, 3, 2)).toBeCloseTo(3 * Math.PI, 12);
     expect(horizontalTankFill(1, 1, 0.5)).toBeCloseTo(Math.acos(0.5) - 0.5 * Math.sqrt(0.75), 12);
+    expect(horizontalTankFill(1, 1, 1.5)).toBeCloseTo(Math.PI - (Math.acos(0.5) - 0.5 * Math.sqrt(0.75)), 12);
+  });
+
+  it('stays positive and accurate for a very shallow fill', () => {
+    // A thin segment of depth f is (4 ÷ 3) × √(2r) × f^1.5 to first order; the next term is smaller by about f ÷ r.
+    for (const [r, f] of [[100, 1e-7], [1e9, 1e-3], [1, 1e-12], [5e8, 1]]) {
+      const filled = horizontalTankFill(r, 1, f);
+      expect(filled).toBeGreaterThan(0);
+      expect(filled / ((4 / 3) * Math.sqrt(2 * r) * f ** 1.5)).toBeCloseTo(1, 6);
+    }
+    expect(calculateVolume('tank', { d: 200, l: 100, f: 1e-7 }, 'horizontal')).toEqual({ result: { volume: expect.any(Number), filled: expect.closeTo(5.963e-8, 10) } });
+  });
+
+  it('is symmetric: the liquid below a depth and the air above it make the full tank', () => {
+    for (const f of [1e-9, 0.01, 0.3, 0.999, 1, 1.7, 2 - 1e-9]) {
+      expect(horizontalTankFill(1, 1, f) + horizontalTankFill(1, 1, 2 - f)).toBeCloseTo(Math.PI, 12);
+    }
+  });
+
+  it('agrees with the textbook formula wherever that formula is accurate', () => {
+    for (let f = 0.05; f < 2; f += 0.05) {
+      const textbook = Math.acos(1 - f) - (1 - f) * Math.sqrt(2 * f - f * f);
+      expect(horizontalTankFill(1, 1, f)).toBeCloseTo(textbook, 12);
+    }
   });
 });
 
