@@ -23,6 +23,9 @@ const autoLoan = read('auto-loan-calculator/index.html');
 const ageCalculator = read('age-calculator/index.html');
 const diceRoller = read('dice-roller/index.html');
 const cumLaudeGuide = read('guides/cum-laude/index.html');
+const volumeCalculator = read('volume-calculator/index.html');
+const areaCalculator = read('area-calculator/index.html');
+const geometryGuide = read('guides/how-to-find-volume-and-area/index.html');
 const qrScanner = read('qr-code-scanner/index.html');
 const imageResizer = read('image-resizer/index.html');
 const jpg100 = read('compress-jpg-to-100kb/index.html');
@@ -138,6 +141,33 @@ assert.match(diceRoller, /href="https:\/\/dnd\.wizards\.com\/resources\/systems-
 // German pages write dice as W6 and Japanese pages as D6.
 assert.match(read('de/dice-roller/index.html'), /id="dice-roll"[^>]*>1W6 würfeln<\/button>/);
 assert.match(read('ja/dice-roller/index.html'), /data-sides="20" aria-pressed="false"[^>]*>D20<\/button>/);
+assert.match(home, /href="\/volume-calculator\/"/);
+assert.match(home, /href="\/area-calculator\/"/);
+assert.match(home, /href="\/guides\/how-to-find-volume-and-area\/"/);
+assert.match(volumeCalculator, /<title>Volume calculator: cylinder, cone, tank and pipe volume \| thetoolproject<\/title>/);
+assert.match(volumeCalculator, /<h1 class="page-title">Volume calculator<\/h1>/);
+assert.match(volumeCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/volume-calculator\/"/);
+assert.match(volumeCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/volume-calculator\/"/);
+// The default shape's fields are on the page before the script runs, and the English page starts in inches.
+assert.match(volumeCalculator, /data-shape="cylinder" aria-pressed="true"/);
+assert.match(volumeCalculator, /data-unit="in" aria-pressed="true"/);
+assert.match(volumeCalculator, /<label class="field-label" for="vol-r">Radius \(r\)<\/label>/);
+assert.match(volumeCalculator, /<th scope="row">Cylinder<\/th><td class="fmt">V = π × r² × h<\/td>/);
+assert.match(volumeCalculator, /href="\/guides\/how-to-find-volume-and-area\/"/);
+assert.match(volumeCalculator, /href="https:\/\/www\.engineeringtoolbox\.com\/steel-pipes-dimensions-d_43\.html" target="_blank"/);
+assert.match(read('de/volume-calculator/index.html'), /data-unit="cm" aria-pressed="true"/);
+assert.match(areaCalculator, /<title>Area calculator: circle, triangle, trapezoid and surface area \| thetoolproject<\/title>/);
+assert.match(areaCalculator, /<h1 class="page-title">Area calculator<\/h1>/);
+assert.match(areaCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/area-calculator\/"/);
+assert.match(areaCalculator, /data-shape="solid-cylinder" aria-pressed="false"/);
+assert.match(areaCalculator, /<th scope="row">Triangle \(Three sides\)<\/th>/);
+assert.match(areaCalculator, /href="\/volume-calculator\/"/);
+// The guides are English only, so the other languages link to the English guide and say so.
+assert.match(read('fr/area-calculator/index.html'), /href="\/guides\/how-to-find-volume-and-area\/"/);
+assert.match(geometryGuide, /<h1>How to find the volume and area of any shape<\/h1>/);
+assert.match(geometryGuide, /rel="canonical" href="https:\/\/thetoolproject\.com\/guides\/how-to-find-volume-and-area\/"/);
+assert.match(geometryGuide, /href="\/volume-calculator\/\?shape=tank-horizontal"/);
+assert.match(geometryGuide, /href="\/area-calculator\/\?shape=triangle-sides"/);
 assert.match(home, /href="\/auto-loan-calculator\/"/);
 assert.match(autoLoan, /<title>Auto loan calculator: car payment calculator with tax and trade-in \| thetoolproject<\/title>/);
 assert.match(autoLoan, /<h1 class="page-title">Auto loan calculator<\/h1>/);
@@ -267,6 +297,8 @@ const englishUrls = [
   'https://thetoolproject.com/auto-loan-calculator/',
   'https://thetoolproject.com/age-calculator/',
   'https://thetoolproject.com/dice-roller/',
+  'https://thetoolproject.com/volume-calculator/',
+  'https://thetoolproject.com/area-calculator/',
   'https://thetoolproject.com/high-school-gpa-calculator/',
   'https://thetoolproject.com/gpa-calculator/',
   'https://thetoolproject.com/xml-to-csv/',
@@ -292,7 +324,7 @@ const englishUrls = [
   'https://thetoolproject.com/compress-pdf-to-500kb/',
   'https://thetoolproject.com/privacy/',
   'https://thetoolproject.com/terms/',
-  ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/', 'https://thetoolproject.com/guides/cum-laude/'] : []),
+  ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/', 'https://thetoolproject.com/guides/cum-laude/', 'https://thetoolproject.com/guides/how-to-find-volume-and-area/'] : []),
 ];
 const expectedUrls = [
   ...englishUrls,
@@ -318,7 +350,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

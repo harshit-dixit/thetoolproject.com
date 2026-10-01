@@ -1,0 +1,45 @@
+---
+import GeometryFrame from './GeometryFrame.astro';
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { TANK_TYPES, VOLUME_SHAPES, volumeFields, type FieldKey } from '../lib/geometry';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const formulaIds = [...VOLUME_SHAPES.filter(shape => shape !== 'tank'), ...TANK_TYPES.map(tank => `tank-${tank}`)];
+const labels = ['side', 'length', 'width', 'height', 'radius', 'diameter', 'baseLength', 'baseWidth', 'triangleBase', 'triangleHeight', 'prismLength', 'innerDiameter', 'outerDiameter', 'pipeLength', 'fill'];
+const hints = ['innerDiameter', 'outerDiameter', 'fill'];
+const clientKeys = [
+  ...formulaIds.flatMap(id => [`vol.formula.${id}`, `vol.work.${id}`]),
+  ...labels.map(label => `geo.label.${label}`), ...hints.map(hint => `geo.hint.${hint}`),
+  ...['ml', 'l', 'usgal', 'impgal'].flatMap(unit => [`geo.vol.${unit}.one`, `geo.vol.${unit}.other`]),
+  'vol.resultVolume', 'vol.resultPipe', 'vol.resultTank', 'vol.resultFilled', 'vol.empty', 'vol.fullTank', 'vol.filledShare',
+  'vol.material', 'vol.errFillTooHigh', 'vol.errOuterTooSmall',
+] as TranslationKey[];
+const fieldKeys: FieldKey[] = ['a', 'l', 'w', 'h', 'r', 'b', 't', 'd', 'D', 'f'];
+const initial = volumeFields('cylinder').map(field => ({ key: field.key, label: t(`geo.label.${field.label}` as TranslationKey, locale) }));
+---
+<GeometryFrame id="volume-calculator-tool" prefix="vol" {locale} {fieldKeys} {initial} {clientKeys}
+  resultLabel={t('vol.resultVolume', locale)} formula={t('vol.formula.cylinder', locale)} empty={t('vol.empty', locale)}>
+  <div class="geo-field">
+    <span class="field-label" id="vol-shape-label">{t('geo.shapeLabel', locale)}</span>
+    <div class="chips" role="group" aria-labelledby="vol-shape-label">
+      {VOLUME_SHAPES.map(shape => <button type="button" data-shape={shape} aria-pressed={shape === 'cylinder' ? 'true' : 'false'}>{t(`vol.shape.${shape}` as TranslationKey, locale)}</button>)}
+    </div>
+  </div>
+  <div class="geo-field" id="vol-tank-field" hidden>
+    <span class="field-label" id="vol-tank-label">{t('vol.tankLabel', locale)}</span>
+    <div class="chips" role="group" aria-labelledby="vol-tank-label">
+      {TANK_TYPES.map(tank => <button type="button" data-tank={tank} aria-pressed={tank === 'vertical' ? 'true' : 'false'}>{t(`vol.tank.${tank}` as TranslationKey, locale)}</button>)}
+    </div>
+  </div>
+  <div class="geo-field" id="vol-measure-field">
+    <span class="field-label" id="vol-measure-label">{t('geo.measureLabel', locale)}</span>
+    <div class="chips" role="group" aria-labelledby="vol-measure-label">
+      <button type="button" data-measure="radius" aria-pressed="true">{t('geo.measureRadius', locale)}</button>
+      <button type="button" data-measure="diameter" aria-pressed="false">{t('geo.measureDiameter', locale)}</button>
+    </div>
+  </div>
+</GeometryFrame>
+<script src="../scripts/volume-calculator.ts"></script>

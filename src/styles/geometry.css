@@ -1,0 +1,49 @@
+/* Volume and area calculators (components/GeometryFrame.astro). */
+.geo-drop { min-height: 0; }
+/* The answer sits beside the fields on wide screens. On phones it comes straight after the fields. */
+.geo-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "inputs results" "inputs conversions"; grid-template-rows: auto 1fr; gap: 32px 40px; align-items: start; max-width: 1000px; }
+.geo-inputs { grid-area: inputs; min-width: 0; }
+.geo-results { grid-area: results; min-width: 0; }
+.geo-conversions { grid-area: conversions; min-width: 0; }
+.geo-field + .geo-field, .geo-inputs > .geo-field + .geo-fields { margin-block-start: 24px; }
+.geo-fields { display: flex; flex-direction: column; gap: 20px; }
+.geo-fields .geo-field + .geo-field { margin: 0; }
+.geo-input-row { display: flex; align-items: center; gap: 10px; }
+.geo-input { display: block; font: 600 20px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 12px 14px; width: 10em; max-width: 100%; min-width: 0; min-height: 50px; }
+.geo-input:focus { border-color: var(--cobalt); }
+.geo-suffix { color: var(--slate); font-weight: 600; font-stretch: 75%; }
+.geo-error { margin-block: 8px 0; font-weight: 600; font-size: 14px; }
+.geo-inputs > .geo-error { margin-block-start: 20px; }
+.geo-readout { margin: 0; }
+.geo-readout dt { font-size: 14px; font-weight: 500; color: var(--slate); }
+.geo-readout dd { margin: 6px 0 0; font-size: clamp(40px, 5vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.geo-readout-unit { font-size: 0.42em; font-weight: 500; font-stretch: 62%; letter-spacing: 0; }
+.geo-formula { margin-block: 16px 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.geo-prompt { margin-block: 8px 0; color: var(--slate); }
+.geo-prompt:empty { display: none; }
+.geo-extra { list-style: none; margin: 12px 0 0; padding: 0; color: var(--slate); font-variant-numeric: tabular-nums; }
+.geo-extra li { overflow-wrap: anywhere; }
+.geo-extra li + li { margin-block-start: 4px; }
+.geo-subtitle { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin-block: 0 12px; }
+.geo-unit-list { list-style: none; margin: 0; padding: 0; border: 1.5px solid var(--line); border-radius: 4px; font-variant-numeric: tabular-nums; }
+.geo-unit-list li { padding: 10px 14px; font-weight: 600; overflow-wrap: anywhere; }
+.geo-unit-list li + li { border-block-start: 1px solid var(--line); }
+@media (max-width: 860px) {
+  .geo-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "inputs" "results" "conversions"; grid-template-rows: none; gap: 28px; }
+  .geo-results, .geo-conversions { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+}
+/* Formula tables on the tool pages: the shape is the row header, the formula reads as data. */
+.geo-formulas tbody th { font-size: 16px; font-weight: 600; color: var(--ink); padding: 14px 20px; vertical-align: top; min-width: 12ch; }
+.geo-formulas td { padding-block: 14px; }
+.geo-formulas td.fmt { font-stretch: 100%; white-space: nowrap; }
+.geo-formulas { margin-block-end: 28px; }
+@media (max-width: 560px) {
+  .geo-formulas tr { display: grid; grid-template-columns: minmax(0, 1fr); border-block-end: 1px solid var(--line); }
+  .geo-formulas tbody tr:last-child { border-block-end: 0; }
+  .geo-formulas th, .geo-formulas td { border-block-end: 0; min-width: 0; }
+  .geo-formulas thead { display: none; }
+  .geo-formulas tbody th { padding: 14px 14px 2px; }
+  .geo-formulas td.fmt { padding: 0 14px 4px; white-space: normal; }
+  .geo-formulas td.note { padding: 0 14px 14px; }
+}
+.geo-sources { margin-block-start: 16px; font-size: 14px; color: var(--slate); }

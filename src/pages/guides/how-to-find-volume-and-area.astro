@@ -1,0 +1,178 @@
+---
+import Guide from '../../layouts/Guide.astro';
+
+const volume = '/volume-calculator/';
+const area = '/area-calculator/';
+const sources = {
+  nist: 'https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8',
+  heron: 'https://mathworld.wolfram.com/HeronsFormula.html',
+  segment: 'https://mathworld.wolfram.com/CircularSegment.html',
+  ellipse: 'https://mathworld.wolfram.com/Ellipse.html',
+  pipes: 'https://www.engineeringtoolbox.com/steel-pipes-dimensions-d_43.html',
+};
+---
+<Guide
+  title="How to find volume and area: formulas for every shape | thetoolproject"
+  description="How to find the volume of a rectangular box, cube, cylinder, cone, sphere, pyramid, prism, pipe or tank, and the area and surface area of common shapes, with worked examples."
+  path="/guides/how-to-find-volume-and-area/"
+  heading="How to find the volume and area of any shape"
+  updated="2026-10-01"
+>
+  <p slot="intro" class="guide-intro">Volume is the space inside a solid, in cubic units. Area is the space inside a flat shape, in square units. Both come from a few measurements and one formula per shape. This guide gives each formula with a worked example. To skip the arithmetic, use the <a href={volume}>volume calculator</a> or the <a href={area}>area calculator</a>.</p>
+
+  <nav class="guide-toc" aria-labelledby="toc-title">
+    <p id="toc-title" class="example-label">On this page</p>
+    <ul>
+      <li><a href="#find-volume">How to find volume</a></li>
+      <li><a href="#rectangle">Volume of a rectangle (rectangular box) and a cube</a></li>
+      <li><a href="#cylinder">Volume of a cylinder</a></li>
+      <li><a href="#cone">Volume of a cone and a pyramid</a></li>
+      <li><a href="#sphere">Volume of a sphere and a hemisphere</a></li>
+      <li><a href="#prism">Volume of a triangular prism</a></li>
+      <li><a href="#pipe">Pipe volume</a></li>
+      <li><a href="#tank">Tank volume, full and partly full</a></li>
+      <li><a href="#find-area">How to find area</a></li>
+      <li><a href="#area-shapes">Area of a rectangle, triangle, circle, trapezoid and more</a></li>
+      <li><a href="#surface-area">Surface area</a></li>
+      <li><a href="#units">Converting cubic and square units</a></li>
+      <li><a href="#mistakes">Common mistakes</a></li>
+    </ul>
+  </nav>
+
+  <h2 id="find-volume">How to find volume</h2>
+  <ol>
+    <li><strong>Measure in one unit.</strong> If the length is in feet and the width in inches, convert one first.</li>
+    <li><strong>Pick the formula for the shape.</strong> Any solid with the same cross-section all the way through, such as a box, a cylinder or a prism, is the area of the end times the length. A cone or pyramid is a third of that.</li>
+    <li><strong>Work it out, and cube the unit.</strong> Lengths in centimeters give a volume in cubic centimeters (cm³).</li>
+    <li><strong>Convert if you need to.</strong> 1 cm³ is 1 milliliter, 1 cubic foot is 7.48 US gallons, and 1 cubic meter is 1,000 liters.</li>
+  </ol>
+  <table class="guide-table"><thead><tr><th scope="col">Shape</th><th scope="col">Volume</th></tr></thead><tbody>
+    <tr><td>Rectangular box</td><td>V = l × w × h</td></tr>
+    <tr><td>Cube</td><td>V = a³</td></tr>
+    <tr><td>Cylinder</td><td>V = π × r² × h</td></tr>
+    <tr><td>Cone</td><td>V = π × r² × h ÷ 3</td></tr>
+    <tr><td>Sphere</td><td>V = 4 ÷ 3 × π × r³</td></tr>
+    <tr><td>Hemisphere</td><td>V = 2 ÷ 3 × π × r³</td></tr>
+    <tr><td>Rectangular pyramid</td><td>V = l × w × h ÷ 3</td></tr>
+    <tr><td>Triangular prism</td><td>V = b × h ÷ 2 × l</td></tr>
+  </tbody></table>
+  <p>In every formula, r is the radius (half the diameter), h is the height measured straight up, and π is about 3.14159.</p>
+
+  <h2 id="rectangle">Volume of a rectangle (rectangular box) and a cube</h2>
+  <p>A rectangle is flat, so strictly it has an area, not a volume. When people ask for the volume of a rectangle, they mean a rectangular box, also called a rectangular prism or a cuboid. Multiply its three sides:</p>
+  <p><strong>V = length × width × height</strong></p>
+  <p>A room 12 ft long, 10 ft wide and 8 ft high holds 12 × 10 × 8 = 960 cubic feet. A cube has three equal sides, so its volume is the side cubed: a box 5 in on each side holds 5³ = 125 cubic inches.</p>
+
+  <h2 id="cylinder">Volume of a cylinder</h2>
+  <p>A cylinder is a circle stretched to a height, so multiply the circle’s area by the height:</p>
+  <p><strong>V = π × r² × h</strong></p>
+  <p>A can 6 cm across and 10 cm tall has a radius of 3 cm: π × 3² × 10 = 282.74 cm³, or about 283 milliliters. Measure the diameter across the widest part of the circle and halve it; using the diameter as the radius gives an answer four times too big.</p>
+  <aside class="guide-tool" aria-labelledby="try-volume-tool">
+    <h2 id="try-volume-tool">Work out a volume</h2>
+    <p>Pick the shape, choose your unit and enter the measurements. The calculator shows the formula with your numbers and the answer in cubic units, liters and gallons.</p>
+    <a href={`${volume}?shape=cylinder`}>Open volume calculator</a>
+  </aside>
+
+  <h2 id="cone">Volume of a cone and a pyramid</h2>
+  <p>A cone holds exactly a third of a cylinder with the same base and height, and a pyramid a third of the box it fits in:</p>
+  <p><strong>Cone: V = π × r² × h ÷ 3</strong><br /><strong>Pyramid: V = base area × h ÷ 3</strong></p>
+  <p>A cone 6 cm across and 10 cm tall holds π × 3² × 10 ÷ 3 = 94.25 cm³, a third of the 282.74 cm³ can above. A pyramid with a 6 by 4 base and a height of 9 holds 6 × 4 × 9 ÷ 3 = 72 cubic units. The height is the vertical distance from the base to the tip, not the length along the sloping side.</p>
+
+  <h2 id="sphere">Volume of a sphere and a hemisphere</h2>
+  <p><strong>V = 4 ÷ 3 × π × r³</strong></p>
+  <p>A ball 9 in across has a radius of 4.5 in: 4 ÷ 3 × π × 4.5³ = 381.7 cubic inches. A hemisphere, half a sphere, is 2 ÷ 3 × π × r³. A sphere fills two thirds of the smallest cylinder it fits in.</p>
+
+  <h2 id="prism">Volume of a triangular prism</h2>
+  <p>A triangular prism, such as a tent or a wedge, is a triangle stretched to a length. Find the triangle’s area, then multiply by the length:</p>
+  <p><strong>V = b × h ÷ 2 × l</strong></p>
+  <p>A prism whose triangle has a base of 4 and a height of 3, and that is 10 long, holds 4 × 3 ÷ 2 × 10 = 60 cubic units.</p>
+
+  <h2 id="pipe">Pipe volume</h2>
+  <p>The water a pipe holds is the volume of a cylinder with the pipe’s inside diameter d:</p>
+  <p><strong>V = π × (d ÷ 2)² × length</strong></p>
+  <p>A pipe’s nominal size isn’t its inside diameter. A 2-inch Schedule 40 steel pipe is 2.375 in outside and 2.067 in inside, according to the <a href={sources.pipes}>ASME B36.10 dimension table</a>. Ten feet (120 in) of it holds π × 1.0335² × 120 = 402.7 cubic inches, which is 402.7 ÷ 231 = 1.74 US gallons. The volume of the pipe wall is π × ((D ÷ 2)² − (d ÷ 2)²) × length, where D is the outside diameter.</p>
+
+  <h2 id="tank">Tank volume, full and partly full</h2>
+  <table class="guide-table"><thead><tr><th scope="col">Tank</th><th scope="col">Full</th><th scope="col">Filled to depth f</th></tr></thead><tbody>
+    <tr><td>Vertical cylinder</td><td>π × (d ÷ 2)² × h</td><td>π × (d ÷ 2)² × f</td></tr>
+    <tr><td>Rectangular</td><td>l × w × h</td><td>l × w × f</td></tr>
+    <tr><td>Horizontal cylinder</td><td>π × r² × l</td><td>l × (r² × acos((r − f) ÷ r) − (r − f) × √(2 × r × f − f²))</td></tr>
+  </tbody></table>
+  <p>A vertical tank 4 ft across and 6 ft tall holds π × 2² × 6 = 75.4 cubic feet, about 564 US gallons. In a vertical or rectangular tank the liquid grows evenly with the depth, so half the depth is half the volume.</p>
+  <p>A horizontal tank is narrow at the bottom and top and widest in the middle, so the liquid is the area of a <a href={sources.segment}>circular segment</a> times the length. A horizontal tank 4 ft across and 10 ft long holds 940 US gallons when full. Filled to 1 ft, a quarter of its depth, it holds 24.57 cubic feet, about 184 gallons, which is only 19.6% of the tank. At half the depth it’s exactly half full. These formulas assume flat ends; tanks with rounded ends hold a little more.</p>
+  <aside class="guide-tool" aria-labelledby="try-tank-tool">
+    <h2 id="try-tank-tool">Work out what’s in a tank</h2>
+    <p>Choose the tank’s shape, enter its size and the depth of the liquid, and see the liquid in gallons and liters, the full tank and how full it is.</p>
+    <a href={`${volume}?shape=tank-horizontal`}>Open tank volume calculator</a>
+  </aside>
+
+  <h2 id="find-area">How to find area</h2>
+  <p>Area works the same way as volume, with two measurements instead of three: measure in one unit, use the shape’s formula, and the answer is in that unit squared. A rectangle in feet gives square feet (ft²).</p>
+
+  <h2 id="area-shapes">Area of a rectangle, triangle, circle, trapezoid and more</h2>
+  <table class="guide-table"><thead><tr><th scope="col">Shape</th><th scope="col">Area</th><th scope="col">Example</th></tr></thead><tbody>
+    <tr><td>Rectangle</td><td>A = l × w</td><td>12 × 15 = 180</td></tr>
+    <tr><td>Square</td><td>A = a²</td><td>5² = 25</td></tr>
+    <tr><td>Triangle</td><td>A = b × h ÷ 2</td><td>10 × 4 ÷ 2 = 20</td></tr>
+    <tr><td>Circle</td><td>A = π × r²</td><td>π × 5² = 78.54</td></tr>
+    <tr><td>Trapezoid</td><td>A = (a + b) ÷ 2 × h</td><td>(6 + 10) ÷ 2 × 4 = 32</td></tr>
+    <tr><td>Parallelogram</td><td>A = b × h</td><td>7 × 3 = 21</td></tr>
+    <tr><td>Ellipse</td><td>A = π × a × b</td><td>π × 5 × 3 = 47.12</td></tr>
+  </tbody></table>
+  <h3>Rectangle and square</h3>
+  <p>Multiply the length by the width. A room 12 ft by 15 ft is 180 square feet. For an L-shaped room, split it into two rectangles and add their areas.</p>
+  <h3>Triangle</h3>
+  <p>A triangle is half of a rectangle with the same base and height: A = b × h ÷ 2. The height is measured at a right angle to the base, not along a side. When you only know the three sides a, b and c, use <a href={sources.heron}>Heron’s formula</a>: find s = (a + b + c) ÷ 2, then A = √(s × (s − a) × (s − b) × (s − c)). A triangle with sides 5, 5 and 6 has s = 8 and an area of √(8 × 3 × 3 × 2) = 12.</p>
+  <h3>Circle</h3>
+  <p>A = π × r². A circle 10 in across has a radius of 5 in and an area of 78.54 square inches. From the diameter, A = π × d² ÷ 4 gives the same answer. The distance around the circle, its circumference, is 2 × π × r, here 31.42 in.</p>
+  <h3>Trapezoid</h3>
+  <p>Average the two parallel sides and multiply by the distance between them. Outside North America this shape is usually called a trapezium.</p>
+  <h3>Parallelogram and ellipse</h3>
+  <p>A parallelogram is base × height, with the height at a right angle to the base. An ellipse is π × a × b, where a and b are half its longest and shortest widths. An ellipse’s perimeter has no exact simple formula; Ramanujan’s <a href={sources.ellipse}>approximation</a> gives 25.53 for a = 5 and b = 3.</p>
+  <aside class="guide-tool" aria-labelledby="try-area-tool">
+    <h2 id="try-area-tool">Work out an area</h2>
+    <p>Pick a shape, enter its measurements, and get the area with the formula worked out, the perimeter where there is one, and the answer in acres and hectares.</p>
+    <a href={`${area}?shape=triangle-sides`}>Open area calculator</a>
+  </aside>
+
+  <h2 id="surface-area">Surface area</h2>
+  <p>Surface area is the area of every face of a solid added together, as if you unfolded it flat. It’s what you need for paint, wrapping or sheet material.</p>
+  <table class="guide-table"><thead><tr><th scope="col">Solid</th><th scope="col">Surface area</th><th scope="col">Example</th></tr></thead><tbody>
+    <tr><td>Cube</td><td>6 × a²</td><td>a = 2: 24</td></tr>
+    <tr><td>Rectangular box</td><td>2 × (l × w + l × h + w × h)</td><td>4 × 3 × 2: 52</td></tr>
+    <tr><td>Cylinder</td><td>2 × π × r² + 2 × π × r × h</td><td>r = 3, h = 10: 245.04</td></tr>
+    <tr><td>Cone</td><td>π × r² + π × r × s</td><td>r = 3, h = 4, s = 5: 75.4</td></tr>
+    <tr><td>Sphere</td><td>4 × π × r²</td><td>r = 3: 113.1</td></tr>
+    <tr><td>Square pyramid</td><td>a² + 2 × a × s</td><td>a = 6, h = 4, s = 5: 96</td></tr>
+  </tbody></table>
+  <p>For a cone and a pyramid, s is the slant height, measured along the sloping side. Work it out from the vertical height with Pythagoras: s = √(r² + h²) for a cone, and s = √((a ÷ 2)² + h²) for a square pyramid. Leave out the top and bottom circles of a cylinder for an open tube, or the base of a cone for a party hat.</p>
+
+  <h2 id="units">Converting cubic and square units</h2>
+  <p>A conversion factor is squared for area and cubed for volume. A foot is 12 inches, so a square foot is 12 × 12 = 144 square inches and a cubic foot is 12 × 12 × 12 = 1,728 cubic inches.</p>
+  <table class="guide-table"><thead><tr><th scope="col">From</th><th scope="col">Equals</th></tr></thead><tbody>
+    <tr><td>1 cubic foot</td><td>1,728 cubic inches, 7.48 US gallons, 28.32 liters</td></tr>
+    <tr><td>1 cubic yard</td><td>27 cubic feet</td></tr>
+    <tr><td>1 US gallon</td><td>231 cubic inches, 3.785 liters</td></tr>
+    <tr><td>1 imperial gallon</td><td>4.546 liters</td></tr>
+    <tr><td>1 liter</td><td>1,000 cubic centimeters (1 cm³ is 1 milliliter)</td></tr>
+    <tr><td>1 cubic meter</td><td>1,000 liters</td></tr>
+    <tr><td>1 square foot</td><td>144 square inches</td></tr>
+    <tr><td>1 square yard</td><td>9 square feet</td></tr>
+    <tr><td>1 acre</td><td>43,560 square feet, about 4,047 square meters</td></tr>
+    <tr><td>1 hectare</td><td>10,000 square meters, about 2.47 acres</td></tr>
+  </tbody></table>
+
+  <h2 id="mistakes">Common mistakes</h2>
+  <ul>
+    <li><strong>Using the diameter as the radius.</strong> The radius is half the diameter. Squaring the diameter makes a circle’s area four times too big, and cubing it makes a sphere eight times too big.</li>
+    <li><strong>Mixing units.</strong> A tank measured as 4 ft by 30 in has to be in one unit before you multiply.</li>
+    <li><strong>Slant height instead of height.</strong> Volume formulas for cones and pyramids use the vertical height. Surface area uses the slant height.</li>
+    <li><strong>Converting with the length factor.</strong> 1 square meter is 10,000 square centimeters, not 100.</li>
+    <li><strong>Scaling a horizontal tank by depth.</strong> A horizontal tank a quarter deep is less than a fifth full.</li>
+  </ul>
+
+  <div class="guide-sources">
+    <h2>Sources</h2>
+    <p>Conversion factors from <a href={sources.nist}>NIST’s Guide to the SI, Appendix B.8</a>, which defines the inch as exactly 2.54 cm and the imperial gallon as exactly 4.54609 liters; the US gallon is 231 cubic inches. Heron’s formula, the circular segment and the ellipse from Wolfram MathWorld (<a href={sources.heron}>Heron’s formula</a>, <a href={sources.segment}>circular segment</a>, <a href={sources.ellipse}>ellipse</a>). Steel pipe sizes from the <a href={sources.pipes}>ASME B36.10 table at The Engineering ToolBox</a>. Checked October 2026.</p>
+  </div>
+</Guide>

@@ -1,0 +1,52 @@
+---
+import GeometryFrame from './GeometryFrame.astro';
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { areaFields, FLAT_SHAPES, SOLID_SHAPES, type FieldKey } from '../lib/geometry';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const formulaIds = [...FLAT_SHAPES.filter(shape => shape !== 'triangle'), 'triangle-base', 'triangle-sides', ...SOLID_SHAPES.map(shape => `solid-${shape}`)];
+const labels = ['side', 'length', 'width', 'base', 'height', 'side1', 'side2', 'side3', 'radius', 'diameter', 'base1', 'base2', 'semiMajor', 'semiMinor', 'baseSide'];
+const hints = ['base1', 'semiMajor', 'semiMinor'];
+const clientKeys = [
+  ...formulaIds.flatMap(id => [`area.formula.${id}`, `area.work.${id}`]),
+  ...labels.map(label => `geo.label.${label}`), ...hints.map(hint => `geo.hint.${hint}`),
+  ...['acre', 'ha'].flatMap(unit => [`geo.area.${unit}.one`, `geo.area.${unit}.other`]),
+  'area.resultArea', 'area.resultSurface', 'area.empty', 'area.perimeter', 'area.circumference', 'area.ellipsePerimeter',
+  'area.lateral', 'area.slant', 'area.heronS', 'area.errNotTriangle',
+] as TranslationKey[];
+const fieldKeys: FieldKey[] = ['a', 'l', 'w', 'b', 'b1', 'b2', 'h', 's1', 's2', 's3', 'r', 'e1', 'e2'];
+const initial = areaFields('rectangle').map(field => ({ key: field.key, label: t(`geo.label.${field.label}` as TranslationKey, locale) }));
+---
+<GeometryFrame id="area-calculator-tool" prefix="area" {locale} {fieldKeys} {initial} {clientKeys}
+  resultLabel={t('area.resultArea', locale)} formula={t('area.formula.rectangle', locale)} empty={t('area.empty', locale)}>
+  <div class="geo-field">
+    <span class="field-label" id="area-flat-label">{t('area.flatLabel', locale)}</span>
+    <div class="chips" role="group" aria-labelledby="area-flat-label">
+      {FLAT_SHAPES.map(shape => <button type="button" data-shape={shape} aria-pressed={shape === 'rectangle' ? 'true' : 'false'}>{t(`area.shape.${shape}` as TranslationKey, locale)}</button>)}
+    </div>
+  </div>
+  <div class="geo-field">
+    <span class="field-label" id="area-solid-label">{t('area.solidLabel', locale)}</span>
+    <div class="chips" role="group" aria-labelledby="area-solid-label">
+      {SOLID_SHAPES.map(shape => <button type="button" data-shape={`solid-${shape}`} aria-pressed="false">{t(`area.shape.solid-${shape}` as TranslationKey, locale)}</button>)}
+    </div>
+  </div>
+  <div class="geo-field" id="area-method-field" hidden>
+    <span class="field-label" id="area-method-label">{t('area.methodLabel', locale)}</span>
+    <div class="chips" role="group" aria-labelledby="area-method-label">
+      <button type="button" data-method="base" aria-pressed="true">{t('area.methodBase', locale)}</button>
+      <button type="button" data-method="sides" aria-pressed="false">{t('area.methodSides', locale)}</button>
+    </div>
+  </div>
+  <div class="geo-field" id="area-measure-field" hidden>
+    <span class="field-label" id="area-measure-label">{t('geo.measureLabel', locale)}</span>
+    <div class="chips" role="group" aria-labelledby="area-measure-label">
+      <button type="button" data-measure="radius" aria-pressed="true">{t('geo.measureRadius', locale)}</button>
+      <button type="button" data-measure="diameter" aria-pressed="false">{t('geo.measureDiameter', locale)}</button>
+    </div>
+  </div>
+</GeometryFrame>
+<script src="../scripts/area-calculator.ts"></script>

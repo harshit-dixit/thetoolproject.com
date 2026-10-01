@@ -152,6 +152,16 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('dice-roller', 'dice'),
   },
+  volumeCalculator: {
+    id: 'volume-calculator',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('volume-calculator', 'vol'),
+  },
+  areaCalculator: {
+    id: 'area-calculator',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('area-calculator', 'area'),
+  },
   csvToSql: {
     id: 'csv-to-sql',
     category: 'DeveloperApplication',

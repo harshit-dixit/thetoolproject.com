@@ -23,6 +23,8 @@ import GpaCalculatorTool from '../components/GpaCalculatorTool.astro';
 import AutoLoanTool from '../components/AutoLoanTool.astro';
 import AgeCalculatorTool from '../components/AgeCalculatorTool.astro';
 import DiceRollerTool from '../components/DiceRollerTool.astro';
+import VolumeCalculatorTool from '../components/VolumeCalculatorTool.astro';
+import AreaCalculatorTool from '../components/AreaCalculatorTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
@@ -152,6 +154,23 @@ const twoDiceRows = twoDiceWays.map((ways, index) => ({ total: formatNumber(inde
 const dndRows = ['check', 'advantage', 'disadvantage', 'ability', 'damage', 'crit', 'death', 'fireball', 'percentile'] as const;
 const dndKey = (row: (typeof dndRows)[number], part: 'roll' | 'dice' | 'note') => `dice.dnd.${row}.${part}` as TranslationKey;
 const diceFaqs = [1, 2, 3, 4, 5, 6] as const;
+
+// Volume and area calculators: formula tables, with links to each other and to the English guide.
+const volumeRows = ['cylinder', 'box', 'cone', 'sphere', 'pyramid', 'prism', 'pipe'] as const;
+const areaRows = ['rectangle', 'triangle-base', 'triangle-sides', 'circle', 'trapezoid', 'parallelogram', 'ellipse'] as const;
+const surfaceRows = ['solid-cube', 'solid-box', 'solid-cylinder', 'solid-cone', 'solid-sphere', 'solid-pyramid'] as const;
+const areaRowName = (row: string) => row === 'triangle-base' ? `${t('area.shape.triangle', locale)} (${t('area.methodBase', locale)})` : row === 'triangle-sides' ? `${t('area.shape.triangle', locale)} (${t('area.methodSides', locale)})` : t(`area.shape.${row}` as TranslationKey, locale);
+const geoFaqs = [1, 2, 3, 4, 5, 6] as const;
+const geoLinks = {
+  guide: '/guides/how-to-find-volume-and-area/',
+  nist: 'https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8',
+  segment: 'https://mathworld.wolfram.com/CircularSegment.html',
+  heron: 'https://mathworld.wolfram.com/HeronsFormula.html',
+  pipes: 'https://www.engineeringtoolbox.com/steel-pipes-dimensions-d_43.html',
+  volume: getPublishedToolPath('volumeCalculator', locale),
+  area: getPublishedToolPath('areaCalculator', locale),
+};
+const geoGuideNote = locale === 'en' ? '' : ` ${t('guide.inEnglish', locale)}`;
 const autoLoanSources = {
   cfpbSimple: 'https://www.consumerfinance.gov/ask-cfpb/whats-the-difference-between-a-simple-interest-rate-and-precomputed-interest-on-an-auto-loan-en-841/',
   cfpbTerms: 'https://www.consumerfinance.gov/consumer-tools/auto-loans/answers/key-terms/',
@@ -605,6 +624,72 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         </section>
         <section aria-labelledby="dice-faq-title"><div class="sec-head"><h2 id="dice-faq-title">{t('dice.faqTitle', locale)}</h2></div><div class="how-copy">
           {diceFaqs.map(n => <><h3>{t(`dice.faqQ${n}` as TranslationKey, locale)}</h3><p>{t(`dice.faqA${n}` as TranslationKey, locale)}</p></>)}
+        </div></section>
+      </>}
+      {tool.id === 'volume-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('vol.leadStrong', locale)}</strong> {t('vol.lead', locale)}</p><p class="caption">{t('vol.caption', locale)}</p></div></div>
+        <VolumeCalculatorTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('vol.howTitle', locale)}</h2></div><div class="how-copy">
+          <p>{t('vol.howP1', locale)}</p>
+          <p>{t('vol.howP2', locale)}</p>
+          <p><RichText text={t('geo.guideLink', locale)} links={geoLinks} params={{ note: geoGuideNote }} /></p>
+        </div></section>
+        <section aria-labelledby="vol-formulas-title"><div class="sec-head"><h2 id="vol-formulas-title">{t('vol.formulasTitle', locale)}</h2><p>{t('vol.formulasIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table geo-formulas"><thead><tr><th scope="col">{t('vol.colShape', locale)}</th><th scope="col">{t('vol.colFormula', locale)}</th><th scope="col">{t('vol.colNotes', locale)}</th></tr></thead>
+            <tbody>{volumeRows.map(row => <tr><th scope="row">{t(`vol.shape.${row}` as TranslationKey, locale)}</th><td class="fmt">{t(`vol.formula.${row}` as TranslationKey, locale)}</td><td class="note">{t(`vol.note.${row}` as TranslationKey, locale)}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy">
+            <h3>{t('vol.howBoxTitle', locale)}</h3>
+            <p>{t('vol.howBoxP', locale)}</p>
+            <h3>{t('vol.howCylinderTitle', locale)}</h3>
+            <p>{t('vol.howCylinderP', locale)}</p>
+            <h3>{t('vol.howTankTitle', locale)}</h3>
+            <p>{t('vol.howTankP1', locale)}</p>
+            <p><RichText text={t('vol.howTankP2', locale)} links={geoLinks} /></p>
+            <h3>{t('vol.howPipeTitle', locale)}</h3>
+            <p><RichText text={t('vol.howPipeP', locale)} links={geoLinks} /></p>
+            <p><RichText text={t('vol.areaLink', locale)} links={geoLinks} /></p>
+            <p class="geo-sources"><RichText text={t('vol.sources', locale)} links={geoLinks} /></p>
+          </div>
+        </section>
+        <section aria-labelledby="vol-faq-title"><div class="sec-head"><h2 id="vol-faq-title">{t('vol.faqTitle', locale)}</h2></div><div class="how-copy">
+          {geoFaqs.map(n => <><h3>{t(`vol.faqQ${n}` as TranslationKey, locale)}</h3><p>{t(`vol.faqA${n}` as TranslationKey, locale)}</p></>)}
+        </div></section>
+      </>}
+      {tool.id === 'area-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('area.leadStrong', locale)}</strong> {t('area.lead', locale)}</p><p class="caption">{t('area.caption', locale)}</p></div></div>
+        <AreaCalculatorTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('area.howTitle', locale)}</h2></div><div class="how-copy">
+          <p>{t('area.howP1', locale)}</p>
+          <p>{t('area.howP2', locale)}</p>
+          <p><RichText text={t('geo.guideLink', locale)} links={geoLinks} params={{ note: geoGuideNote }} /></p>
+        </div></section>
+        <section aria-labelledby="area-formulas-title"><div class="sec-head"><h2 id="area-formulas-title">{t('area.formulasTitle', locale)}</h2><p>{t('area.formulasIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table geo-formulas"><thead><tr><th scope="col">{t('area.colShape', locale)}</th><th scope="col">{t('area.colFormula', locale)}</th><th scope="col">{t('area.colNotes', locale)}</th></tr></thead>
+            <tbody>{areaRows.map(row => <tr><th scope="row">{areaRowName(row)}</th><td class="fmt">{t(`area.formula.${row}` as TranslationKey, locale)}</td><td class="note">{t(`area.note.${row}` as TranslationKey, locale)}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy">
+            <h3>{t('area.howCircleTitle', locale)}</h3>
+            <p>{t('area.howCircleP', locale)}</p>
+            <h3>{t('area.howTriangleTitle', locale)}</h3>
+            <p>{t('area.howTriangleP', locale)}</p>
+            <h3>{t('area.howTrapezoidTitle', locale)}</h3>
+            <p>{t('area.howTrapezoidP', locale)}</p>
+          </div>
+        </section>
+        <section aria-labelledby="area-surface-title"><div class="sec-head"><h2 id="area-surface-title">{t('area.surfaceTitle', locale)}</h2><p>{t('area.surfaceIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table geo-formulas"><thead><tr><th scope="col">{t('area.colShape', locale)}</th><th scope="col">{t('area.colFormula', locale)}</th><th scope="col">{t('area.colNotes', locale)}</th></tr></thead>
+            <tbody>{surfaceRows.map(row => <tr><th scope="row">{areaRowName(row)}</th><td class="fmt">{t(`area.formula.${row}` as TranslationKey, locale)}</td><td class="note">{t(`area.note.${row}` as TranslationKey, locale)}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy">
+            <h3>{t('area.howSurfaceTitle', locale)}</h3>
+            <p>{t('area.howSurfaceP', locale)}</p>
+            <p><RichText text={t('area.volumeLink', locale)} links={geoLinks} /></p>
+            <p class="geo-sources"><RichText text={t('area.sources', locale)} links={geoLinks} /></p>
+          </div>
+        </section>
+        <section aria-labelledby="area-faq-title"><div class="sec-head"><h2 id="area-faq-title">{t('area.faqTitle', locale)}</h2></div><div class="how-copy">
+          {geoFaqs.map(n => <><h3>{t(`area.faqQ${n}` as TranslationKey, locale)}</h3><p>{t(`area.faqA${n}` as TranslationKey, locale)}</p></>)}
         </div></section>
       </>}
       {tool.id === 'csv-to-sql' && <>

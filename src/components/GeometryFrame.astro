@@ -1,0 +1,76 @@
+---
+// The frame shared by the volume and area calculators: the shape chips (the slot), the unit chips,
+// one field per measurement, the readout with its formula, and the result in other units.
+import '../styles/geometry.css';
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { LENGTH_UNITS, type FieldKey } from '../lib/geometry';
+
+interface Props {
+  id: string;
+  prefix: 'vol' | 'area';
+  locale: Locale;
+  fieldKeys: FieldKey[];
+  /** The default shape's fields, rendered visible with their labels before the script runs. */
+  initial: { key: FieldKey; label: string; hint?: string }[];
+  clientKeys: TranslationKey[];
+  resultLabel: string;
+  formula: string;
+  empty: string;
+}
+const { id, prefix, locale, fieldKeys, initial, clientKeys, resultLabel, formula, empty } = Astro.props;
+
+// Every label, unit and message the shared script may show, plus the tool's own keys.
+const sharedKeys: TranslationKey[] = [
+  ...LENGTH_UNITS.map(unit => `geo.sym.${unit}` as TranslationKey),
+  'geo.errInvalid', 'geo.errInvalidZero', 'geo.errTooLarge', 'geo.radiusFromDiameter', 'geo.math', 'geo.liveSummary',
+];
+const strings = Object.fromEntries([...sharedKeys, ...clientKeys].map(key => [key, t(key, locale)]));
+const defaultUnit = t('geo.defaultUnit', locale);
+---
+<div class="drop geo-drop" id={id} data-strings={JSON.stringify(strings)} data-locale={locale} data-default-unit={defaultUnit}>
+  <div class="tool-frame geo-grid">
+    <div class="geo-inputs">
+      <slot />
+      <div class="geo-field">
+        <span class="field-label" id={`${prefix}-unit-label`}>{t('geo.unitLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby={`${prefix}-unit-label`} aria-describedby={`${prefix}-unit-hint`}>
+          {LENGTH_UNITS.map(unit => <button type="button" data-unit={unit} aria-pressed={unit === defaultUnit ? 'true' : 'false'}>{t(`geo.sym.${unit}` as TranslationKey, locale)}</button>)}
+        </div>
+        <p class="input-hint" id={`${prefix}-unit-hint`}>{t('geo.unitHint', locale)}</p>
+      </div>
+      <div class="geo-fields">
+        {fieldKeys.map(key => {
+          const shown = initial.find(field => field.key === key);
+          return (
+          <div class="geo-field geo-measure" data-field={key} hidden={!shown} style={shown ? `order: ${initial.indexOf(shown)}` : undefined}>
+            <label class="field-label" for={`${prefix}-${key}`}>{shown?.label}</label>
+            <div class="geo-input-row">
+              <input class="geo-input" id={`${prefix}-${key}`} type="text" inputmode="decimal" autocomplete="off" aria-describedby={`${prefix}-${key}-unit ${prefix}-${key}-hint ${prefix}-${key}-error`} />
+              <span class="geo-suffix" id={`${prefix}-${key}-unit`}>{t(`geo.sym.${defaultUnit}` as TranslationKey, locale)}</span>
+            </div>
+            <p class="input-hint" id={`${prefix}-${key}-hint`} hidden={!shown?.hint}>{shown?.hint}</p>
+            <p class="geo-error" id={`${prefix}-${key}-error`} hidden></p>
+          </div>
+          );
+        })}
+      </div>
+      <p class="geo-error" id={`${prefix}-shape-error`} hidden></p>
+    </div>
+
+    <div class="geo-results">
+      <dl class="geo-readout">
+        <div><dt id={`${prefix}-result-label`}>{resultLabel}</dt><dd><span data-result="value">–</span> <span class="geo-readout-unit" data-result="unit"></span></dd></div>
+      </dl>
+      <p class="geo-formula" id={`${prefix}-formula`}>{formula}</p>
+      <p class="geo-prompt" id={`${prefix}-prompt`}>{empty}</p>
+      <ul class="geo-extra" id={`${prefix}-extra`} hidden></ul>
+    </div>
+
+    <div class="geo-conversions">
+      <h2 class="geo-subtitle" id={`${prefix}-conversions-title`}>{t('geo.conversionsTitle', locale)}</h2>
+      <ul class="geo-unit-list" id={`${prefix}-conversions`} aria-labelledby={`${prefix}-conversions-title`}><li>–</li></ul>
+    </div>
+  </div>
+  <p class="visually-hidden" id={`${prefix}-live`} aria-live="polite" aria-atomic="true"></p>
+</div>
