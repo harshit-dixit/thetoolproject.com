@@ -126,6 +126,9 @@ function sync() {
   if (!spec) {
     rollButton.textContent = t('dice.rollPlain');
     range.textContent = '';
+    // A roll still tumbling is cancelled too, so it can't land after the fields went bad.
+    shownKey = '';
+    clearResult();
     return;
   }
   const dropNow = effectiveDrop(spec);
@@ -135,11 +138,18 @@ function sync() {
   const key = specKey(spec);
   if (key !== shownKey) {
     shownKey = key;
-    stopTumble();
-    drawFaces(spec);
-    total.textContent = '–';
-    breakdown.textContent = t('dice.empty');
+    clearResult(spec);
   }
+}
+
+/** Empty dice for the roll in the fields, or none while a field is wrong. */
+function clearResult(spec?: RollSpec) {
+  stopTumble();
+  if (spec) drawFaces(spec);
+  else faces.replaceChildren();
+  total.textContent = '–';
+  breakdown.textContent = t('dice.empty');
+  live.textContent = '';
 }
 
 function stopTumble() {
@@ -155,6 +165,7 @@ function roll() {
   }
   // The result is decided now; the tumble only shows other faces on the way to it.
   const result = rollDice(spec);
+  const sides = chosenSides === 'custom' ? 'custom' : String(spec.sides);
   stopTumble();
   live.textContent = '';
   const finish = () => {
@@ -165,6 +176,7 @@ function roll() {
     breakdown.textContent = text;
     live.textContent = text;
     addHistory(text);
+    report(spec, sides);
   };
   if (reducedMotion.matches) { finish(); }
   else {
@@ -175,7 +187,6 @@ function roll() {
       drawFaces(spec, { values: result.values.map(() => secureRandomInt(spec.sides)), dropped: -1 });
     }, TUMBLE_MS);
   }
-  report(spec);
 }
 
 function addHistory(text: string) {
@@ -188,11 +199,11 @@ function addHistory(text: string) {
   historyClear.hidden = false;
 }
 
-// Only the kind of roll is reported, once rolling stops. The results never leave the page.
-function report(spec: RollSpec) {
+// Only the kind of roll is reported, once a roll has landed and rolling stops. The results never leave the page.
+function report(spec: RollSpec, sides: string) {
   clearTimeout(reportTimer);
   reportTimer = setTimeout(() => trackResult('success', {
-    sides: chosenSides === 'custom' ? 'custom' : String(spec.sides),
+    sides,
     dice: diceBand(spec.count),
     modifier: spec.modifier !== 0,
     drop: effectiveDrop(spec),
@@ -225,6 +236,8 @@ presetChips.forEach(chip => chip.addEventListener('click', () => {
   chooseSides(preset.sides);
   drop = preset.drop;
   press(dropChips, dropChips.find(item => item.dataset.drop === drop));
+  // An attack bonus doesn't belong on ability scores, which run from 3 to 18.
+  if (chip.dataset.preset === 'ability') { modifierInput.value = ''; showError(modifierInput); }
   setCount(preset.count);
 }));
 // A number out of range steps from the nearest limit, so 51 then − gives 50.

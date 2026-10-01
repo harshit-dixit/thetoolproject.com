@@ -131,8 +131,9 @@ const presets = [
   :global(.dice-history-list li) { padding: 10px 14px; overflow-wrap: anywhere; }
   :global(.dice-history-list li + li) { border-block-start: 1px solid var(--line); color: var(--slate); }
   /* Full screen is for a classroom board or a game table: just the dice, the total and the Roll button. */
-  .dice-drop:fullscreen { overflow: auto; padding: 48px 32px; border: 0; display: flex; align-items: center; }
-  .dice-drop:fullscreen .dice-grid { width: 100%; grid-template-columns: minmax(0, 1fr); grid-template-areas: "results" "main"; }
+  /* Auto margins centre the dice when they fit and start at the top when they don't, so the total can't scroll out of reach. */
+  .dice-drop:fullscreen { overflow: auto; padding: 48px 32px; border: 0; display: flex; }
+  .dice-drop:fullscreen .dice-grid { width: 100%; margin-block: auto; grid-template-columns: minmax(0, 1fr); grid-template-areas: "results" "main"; }
   .dice-drop:fullscreen .dice-options, .dice-drop:fullscreen .dice-history, .dice-drop:fullscreen .dice-main .dice-field { display: none; }
   .dice-drop:fullscreen .dice-readout dd { font-size: clamp(72px, 14vh, 160px); }
   .dice-drop:fullscreen .dice-faces { gap: 16px; }
