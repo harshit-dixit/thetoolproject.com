@@ -147,6 +147,11 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('age-calculator', 'age'),
   },
+  diceRoller: {
+    id: 'dice-roller',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('dice-roller', 'dice'),
+  },
   csvToSql: {
     id: 'csv-to-sql',
     category: 'DeveloperApplication',

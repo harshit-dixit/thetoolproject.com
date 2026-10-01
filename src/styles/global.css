@@ -870,6 +870,23 @@ footer .wrap {
   .tip-guide td.fmt { padding: 14px 14px 4px; text-align: end; }
   .tip-guide td.note { grid-column: 1 / -1; padding: 0 14px 14px; }
 }
+/* Dice roller tables. The D&D rolls are row headers; on phones each row stacks the roll, its dice and the notes. */
+.dice-dnd tbody th { font-size: 16px; font-weight: 600; color: var(--ink); padding: 20px; vertical-align: top; min-width: 12ch; }
+.dice-dnd td.fmt { min-width: 12ch; }
+.dice-source { margin-block-start: 16px; font-size: 14px; color: var(--slate); }
+.dice-odds { font-variant-numeric: tabular-nums; }
+.dice-odds, .dice-dnd { margin-block-end: 28px; }
+.dice-odds tbody th { font-size: 16px; font-weight: 600; color: var(--ink); padding: 14px 20px; }
+.dice-odds td { padding-block: 14px; white-space: nowrap; }
+@media (max-width: 560px) {
+  .dice-dnd tr { display: grid; grid-template-columns: minmax(0, 1fr); border-block-end: 1px solid var(--line); }
+  .dice-dnd tbody tr:last-child { border-block-end: 0; }
+  .dice-dnd th, .dice-dnd td { border-block-end: 0; min-width: 0; }
+  .dice-dnd thead { display: none; }
+  .dice-dnd tbody th { padding: 14px 14px 2px; }
+  .dice-dnd td.fmt { padding: 0 14px 4px; }
+  .dice-dnd td.note { padding: 0 14px 14px; }
+}
 /* High school GPA scale: five short columns that fit a phone without scrolling. */
 .hs-gpa-scale { font-variant-numeric: tabular-nums; }
 .hs-gpa-scale tbody th { font-size: 16px; font-weight: 600; color: var(--ink); padding: 14px 20px; }

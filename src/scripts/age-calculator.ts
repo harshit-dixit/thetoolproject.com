@@ -10,6 +10,7 @@ const birthInput = $<HTMLInputElement>('age-birth');
 const onInput = $<HTMLInputElement>('age-on');
 const todayButton = $<HTMLButtonElement>('age-on-today');
 const birthError = $('age-birth-error');
+const onError = $('age-on-error');
 const breakdown = $('age-breakdown');
 const live = $('age-live');
 const units = new Intl.ListFormat(locale, { type: 'unit', style: 'long' });
@@ -61,33 +62,39 @@ function render(result: AgeResult | undefined, birth?: CivilDate) {
     : t('age.breakdownEmpty');
 }
 
+function showError(input: HTMLInputElement, error: HTMLElement, message: string | undefined) {
+  error.hidden = !message;
+  error.textContent = message ?? '';
+  if (message) input.setAttribute('aria-invalid', 'true');
+  else input.removeAttribute('aria-invalid');
+}
+
 function update() {
+  // A pending announcement or report belongs to the dates before this edit.
+  clearTimeout(liveTimer);
+  clearTimeout(reportTimer);
   const birth = parseIsoDate(birthInput.value);
-  const on = parseIsoDate(onInput.value) ?? today();
+  // An unfinished or impossible "age on" date shows no answer rather than quietly using today.
+  const on = parseIsoDate(onInput.value);
   todayButton.hidden = onInput.value === toIsoDate(today());
-  const outcome = birth ? calculateAge(birth, on) : undefined;
-  const after = outcome && 'error' in outcome;
-  birthError.hidden = !after;
-  birthError.textContent = after ? t('age.errBirthAfter') : '';
-  if (after) birthInput.setAttribute('aria-invalid', 'true');
-  else birthInput.removeAttribute('aria-invalid');
+  showError(onInput, onError, on ? undefined : t('age.errOnInvalid'));
+  const outcome = birth && on ? calculateAge(birth, on) : undefined;
+  showError(birthInput, birthError, outcome && 'error' in outcome ? t('age.errBirthAfter') : undefined);
   const result = outcome && 'result' in outcome ? outcome.result : undefined;
   render(result, birth);
   if (result) {
     announce(result);
     report(result, onInput.value === toIsoDate(today()));
-  }
+  } else live.textContent = '';
 }
 
 // Screen readers hear the age once typing pauses, not on every keystroke.
 function announce(result: AgeResult) {
-  clearTimeout(liveTimer);
   liveTimer = setTimeout(() => { live.textContent = t('age.liveSummary', { age: spanText(result) }); }, 1000);
 }
 
 // Only a coarse age band is reported, once the dates settle. The dates themselves never leave the page.
 function report(result: AgeResult, onToday: boolean) {
-  clearTimeout(reportTimer);
   reportTimer = setTimeout(() => trackResult('success', { age_band: ageBand(result.years), as_of: onToday ? 'today' : 'other' }), 1500);
 }
 

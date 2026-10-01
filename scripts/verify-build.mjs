@@ -21,6 +21,7 @@ const highSchoolGpa = read('high-school-gpa-calculator/index.html');
 const gpaCalculator = read('gpa-calculator/index.html');
 const autoLoan = read('auto-loan-calculator/index.html');
 const ageCalculator = read('age-calculator/index.html');
+const diceRoller = read('dice-roller/index.html');
 const cumLaudeGuide = read('guides/cum-laude/index.html');
 const qrScanner = read('qr-code-scanner/index.html');
 const imageResizer = read('image-resizer/index.html');
@@ -125,6 +126,18 @@ assert.match(ageCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com
 assert.match(ageCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/age-calculator\/"/);
 assert.match(ageCalculator, /id="age-birth" type="date"/);
 assert.match(read('ja/age-calculator/index.html'), /<h1 class="page-title">年齢計算<\/h1>/);
+assert.match(home, /href="\/dice-roller\/"/);
+assert.match(diceRoller, /<title>Dice roller: roll dice online, from d6 to d20 for D&amp;D \| thetoolproject<\/title>/);
+assert.match(diceRoller, /<h1 class="page-title">Dice roller<\/h1>/);
+assert.match(diceRoller, /rel="canonical" href="https:\/\/thetoolproject\.com\/dice-roller\/"/);
+assert.match(diceRoller, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/dice-roller\/"/);
+assert.match(diceRoller, /id="dice-roll"[^>]*>Roll 1d6<\/button>/);
+// Two dice: 6 ways out of 36 to roll a 7. The SRD credit renders as a link.
+assert.match(diceRoller, /<th scope="row">7<\/th><td class="fmt">6<\/td><td class="fmt">16\.67%<\/td>/);
+assert.match(diceRoller, /href="https:\/\/dnd\.wizards\.com\/resources\/systems-reference-document"/);
+// German pages write dice as W6 and Japanese pages as D6.
+assert.match(read('de/dice-roller/index.html'), /id="dice-roll"[^>]*>1W6 würfeln<\/button>/);
+assert.match(read('ja/dice-roller/index.html'), /data-sides="20" aria-pressed="false"[^>]*>D20<\/button>/);
 assert.match(home, /href="\/auto-loan-calculator\/"/);
 assert.match(autoLoan, /<title>Auto loan calculator: car payment calculator with tax and trade-in \| thetoolproject<\/title>/);
 assert.match(autoLoan, /<h1 class="page-title">Auto loan calculator<\/h1>/);
@@ -253,6 +266,7 @@ const englishUrls = [
   'https://thetoolproject.com/tip-calculator/',
   'https://thetoolproject.com/auto-loan-calculator/',
   'https://thetoolproject.com/age-calculator/',
+  'https://thetoolproject.com/dice-roller/',
   'https://thetoolproject.com/high-school-gpa-calculator/',
   'https://thetoolproject.com/gpa-calculator/',
   'https://thetoolproject.com/xml-to-csv/',
@@ -304,7 +318,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

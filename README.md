@@ -68,6 +68,7 @@
 | **[High School GPA Calculator](https://thetoolproject.com/high-school-gpa-calculator/)** | Work out your unweighted and weighted GPA from letter or percent grades, with honors and AP/IB classes, with or without credits, and combine it with an earlier GPA. Classes are saved in your browser. |
 | **[GPA Calculator](https://thetoolproject.com/gpa-calculator/)** | Work out your college GPA by credit hours for each semester and cumulatively, add your GPA so far, plan the average you need for your final GPA, and see where you stand for cum laude. |
 | **[Auto Loan Calculator](https://thetoolproject.com/auto-loan-calculator/)** | Work out your monthly car payment for a new or used car with the down payment, trade-in (including negative equity), sales tax and fees, compare 36 to 84 month terms, see the amortization schedule by year or month, and check whether refinancing saves money. Shows average US car payments and auto loan rates by credit score. |
+| **[Dice Roller](https://thetoolproject.com/dice-roller/)** | Roll one die or up to 50: d4, d6, d8, d10, d12, d20, d100 or 2 to 1,000 sides, with a modifier, advantage and disadvantage, 4d6 drop lowest for D&D ability scores, the last 10 rolls and a full screen mode. Uses the browser's secure random numbers, so every face is equally likely. |
 
 ### PDF Utilities
 

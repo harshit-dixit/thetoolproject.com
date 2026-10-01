@@ -1,0 +1,156 @@
+---
+import { t, formatNumber, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { DIE_SIDES, MAX_DICE, MAX_SIDES, MIN_DICE, MIN_SIDES, rollRange } from '../lib/dice-roller';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'dice.notation', 'dice.rollButton', 'dice.rollButtonLowest', 'dice.rollButtonHighest', 'dice.rollPlain',
+  'dice.breakdown', 'dice.droppedLowest', 'dice.droppedHighest', 'dice.natural20', 'dice.natural1',
+  'dice.range', 'dice.empty', 'dice.errCount', 'dice.errSides', 'dice.errModifier', 'dice.fullscreen', 'dice.exitFullscreen',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const notation = (count: number, sides: number) => t('dice.notation', locale, { count, sides });
+const start = rollRange({ count: 1, sides: 6, modifier: 0, drop: 'none' });
+const presets = [
+  { id: 'advantage', label: t('dice.presetAdvantage', locale) },
+  { id: 'disadvantage', label: t('dice.presetDisadvantage', locale) },
+  { id: 'ability', label: t('dice.presetAbility', locale, { notation: notation(4, 6) }) },
+  { id: 'pair', label: notation(2, 6) },
+];
+---
+<div class="drop dice-drop" id="dice-roller-tool" data-strings={JSON.stringify(strings)} data-locale={locale} data-limits={JSON.stringify({ MIN_DICE, MAX_DICE, MIN_SIDES, MAX_SIDES })}>
+  <div class="tool-frame dice-grid">
+    <div class="dice-main">
+      <div class="dice-field">
+        <span class="field-label" id="dice-type-label">{t('dice.typeLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="dice-type-label">
+          {DIE_SIDES.map(sides => <button type="button" data-sides={sides} aria-pressed={sides === 6 ? 'true' : 'false'}>{t('dice.dieName', locale, { sides })}</button>)}
+          <button type="button" data-sides="custom" aria-pressed="false">{t('dice.custom', locale)}</button>
+        </div>
+        <div class="dice-sides" id="dice-sides-field" hidden>
+          <label class="field-label" for="dice-sides">{t('dice.sidesLabel', locale)}</label>
+          <input class="dice-input dice-number" id="dice-sides" type="text" inputmode="numeric" autocomplete="off" value="3" aria-describedby="dice-sides-error" />
+          <p class="dice-error" id="dice-sides-error" hidden></p>
+        </div>
+      </div>
+
+      <div class="dice-field">
+        <label class="field-label" for="dice-count">{t('dice.countLabel', locale)}</label>
+        <div class="dice-stepper">
+          <button class="btn alt" type="button" id="dice-count-down" aria-label={t('dice.countFewer', locale)} aria-controls="dice-count">−</button>
+          <input class="dice-input dice-number" id="dice-count" type="text" inputmode="numeric" autocomplete="off" value="1" aria-describedby="dice-count-error" />
+          <button class="btn alt" type="button" id="dice-count-up" aria-label={t('dice.countMore', locale)} aria-controls="dice-count">+</button>
+        </div>
+        <p class="dice-error" id="dice-count-error" hidden></p>
+      </div>
+
+      <div class="actions dice-actions">
+        <button class="btn dice-roll" type="button" id="dice-roll">{t('dice.rollButton', locale, { notation: notation(1, 6) })}</button>
+        <button class="btn alt" type="button" id="dice-fullscreen" hidden>{t('dice.fullscreen', locale)}</button>
+      </div>
+    </div>
+
+    <div class="dice-results">
+      <dl class="dice-readout">
+        <div><dt>{t('dice.resultTotal', locale)}</dt><dd data-result="total">–</dd></div>
+      </dl>
+      <ul class="dice-faces" id="dice-faces" aria-hidden="true"><li class="dice-face is-empty"></li></ul>
+      <p class="dice-breakdown" id="dice-breakdown">{t('dice.empty', locale)}</p>
+      <p class="input-hint" id="dice-range">{t('dice.range', locale, { min: formatNumber(start.min, locale), max: formatNumber(start.max, locale), average: formatNumber(start.average, locale, 2) })}</p>
+    </div>
+
+    <div class="dice-options">
+      <div class="dice-field">
+        <label class="field-label" for="dice-modifier">{t('dice.modifierLabel', locale)}</label>
+        <input class="dice-input dice-number dice-modifier" id="dice-modifier" type="text" inputmode="text" autocomplete="off" placeholder="0" aria-describedby="dice-modifier-hint dice-modifier-error" />
+        <p class="input-hint" id="dice-modifier-hint">{t('dice.modifierHint', locale)}</p>
+        <p class="dice-error" id="dice-modifier-error" hidden></p>
+      </div>
+
+      <div class="dice-field" id="dice-drop-field" hidden>
+        <span class="field-label" id="dice-drop-label">{t('dice.dropLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="dice-drop-label">
+          <button type="button" data-drop="none" aria-pressed="true">{t('dice.dropNone', locale)}</button>
+          <button type="button" data-drop="lowest" aria-pressed="false">{t('dice.dropLowest', locale)}</button>
+          <button type="button" data-drop="highest" aria-pressed="false">{t('dice.dropHighest', locale)}</button>
+        </div>
+      </div>
+
+      <div class="dice-field">
+        <span class="field-label" id="dice-presets-label">{t('dice.presetsLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="dice-presets-label">
+          {presets.map(preset => <button type="button" data-preset={preset.id} aria-pressed="false">{preset.label}</button>)}
+        </div>
+        <p class="input-hint">{t('dice.presetsHint', locale)}</p>
+      </div>
+    </div>
+
+    <div class="dice-history">
+      <div class="dice-history-head">
+        <h2 class="dice-subtitle" id="dice-history-title">{t('dice.historyTitle', locale)}</h2>
+        <button class="btn alt dice-clear" type="button" id="dice-history-clear" hidden>{t('dice.historyClear', locale)}</button>
+      </div>
+      <p class="dice-history-empty" id="dice-history-empty">{t('dice.historyEmpty', locale)}</p>
+      <ol class="dice-history-list" id="dice-history-list" aria-labelledby="dice-history-title" hidden></ol>
+    </div>
+  </div>
+  <p class="visually-hidden" id="dice-live" aria-live="polite" aria-atomic="true"></p>
+</div>
+<style>
+  .dice-drop { min-height: 0; }
+  /* Beside the controls on wide screens. On phones the dice come straight after the Roll button, before the options. */
+  .dice-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "main results" "options history"; gap: 32px 40px; align-items: start; max-width: 1000px; }
+  .dice-main { grid-area: main; min-width: 0; }
+  .dice-results { grid-area: results; min-width: 0; }
+  .dice-options { grid-area: options; min-width: 0; }
+  .dice-history { grid-area: history; min-width: 0; }
+  .dice-field + .dice-field { margin-block-start: 24px; }
+  .dice-sides { margin-block-start: 16px; }
+  .dice-input { display: block; font: 600 20px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 12px 14px; min-width: 0; min-height: 50px; }
+  .dice-input:focus { border-color: var(--cobalt); }
+  .dice-number { width: 6em; }
+  .dice-stepper { display: flex; gap: 8px; align-items: stretch; }
+  .dice-stepper .btn { min-width: 50px; padding: 0 14px; font-size: 22px; }
+  .dice-stepper .dice-input { width: 5em; text-align: center; }
+  .dice-error { margin-block: 8px 0; font-weight: 600; font-size: 14px; }
+  .dice-actions { margin-block-start: 28px; }
+  .dice-roll { font-size: 18px; padding-inline: 28px; min-height: 52px; }
+  .dice-readout { margin: 0; }
+  .dice-readout dt { font-size: 14px; font-weight: 500; color: var(--slate); }
+  .dice-readout dd { margin: 6px 0 0; font-size: clamp(48px, 6vw, 72px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .dice-faces { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; min-height: 64px; }
+  .dice-breakdown { margin-block: 16px 0; min-height: 3.1em; overflow-wrap: anywhere; }
+  .dice-subtitle { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin: 0; }
+  .dice-history-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-block-end: 12px; min-height: 40px; }
+  .dice-clear { font-size: 14px; padding: 8px 12px; min-height: 36px; }
+  .dice-history-empty { color: var(--slate); margin: 0; }
+  .dice-history-list { list-style: none; margin: 0; padding: 0; border: 1.5px solid var(--line); border-radius: 4px; font-variant-numeric: tabular-nums; }
+  :global(.dice-history-list li) { padding: 10px 14px; overflow-wrap: anywhere; }
+  :global(.dice-history-list li + li) { border-block-start: 1px solid var(--line); color: var(--slate); }
+  /* Full screen is for a classroom board or a game table: just the dice, the total and the Roll button. */
+  .dice-drop:fullscreen { overflow: auto; padding: 48px 32px; border: 0; display: flex; align-items: center; }
+  .dice-drop:fullscreen .dice-grid { width: 100%; grid-template-columns: minmax(0, 1fr); grid-template-areas: "results" "main"; }
+  .dice-drop:fullscreen .dice-options, .dice-drop:fullscreen .dice-history, .dice-drop:fullscreen .dice-main .dice-field { display: none; }
+  .dice-drop:fullscreen .dice-readout dd { font-size: clamp(72px, 14vh, 160px); }
+  .dice-drop:fullscreen .dice-faces { gap: 16px; }
+  .dice-drop:fullscreen .dice-actions { margin-block-start: 0; }
+  @media (max-width: 860px) {
+    .dice-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "results" "options" "history"; gap: 28px; }
+    .dice-results, .dice-options, .dice-history { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  }
+  /* The faces are drawn by the script, so their styles can't be scoped to this component's markup. */
+  :global(.dice-face) { box-sizing: border-box; min-width: 64px; height: 64px; padding-inline: 8px; display: grid; place-items: center; background: var(--paper); border: 2px solid var(--ink); border-radius: 4px; font-size: 28px; font-weight: 800; font-stretch: 88%; line-height: 1; font-variant-numeric: tabular-nums; }
+  :global(.dice-face.is-empty) { border-color: var(--line); }
+  :global(.dice-face.is-dropped) { border-color: var(--line); color: var(--slate); }
+  :global(.dice-face.is-long) { font-size: 22px; }
+  :global(.dice-pips) { width: 64px; padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; }
+  :global(.dice-pips span) { width: 10px; height: 10px; place-self: center; }
+  :global(.dice-pips span.on) { background: currentColor; }
+  :global(.dice-drop:fullscreen .dice-face) { min-width: 120px; height: 120px; font-size: 52px; }
+  :global(.dice-drop:fullscreen .dice-pips) { width: 120px; padding: 18px; gap: 8px; }
+  :global(.dice-drop:fullscreen .dice-pips span) { width: 20px; height: 20px; }
+</style>
+<script src="../scripts/dice-roller.ts"></script>

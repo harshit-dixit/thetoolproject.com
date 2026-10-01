@@ -22,6 +22,7 @@ import HighSchoolGpaTool from '../components/HighSchoolGpaTool.astro';
 import GpaCalculatorTool from '../components/GpaCalculatorTool.astro';
 import AutoLoanTool from '../components/AutoLoanTool.astro';
 import AgeCalculatorTool from '../components/AgeCalculatorTool.astro';
+import DiceRollerTool from '../components/DiceRollerTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
@@ -37,6 +38,7 @@ import { tipDefaults } from '../data/tip-defaults';
 import { gradePoints, LETTERS, percentRange } from '../lib/high-school-gpa';
 import { pointsFor } from '../lib/college-gpa';
 import { usAverages, usRates, usRateTiers } from '../data/auto-loan-defaults';
+import { DIE_SIDES, sumDistribution } from '../lib/dice-roller';
 
 export function getStaticPaths() {
   const allowDrafts = import.meta.env.DEV && process.env.PREVIEW_DRAFTS === 'true';
@@ -141,6 +143,15 @@ const autoLoanAverageRows: [TranslationKey, string, string][] = [
 ];
 const autoLoanFaqs = [1, 2, 3, 4, 5, 6] as const;
 const ageFaqs = [1, 2, 3, 4, 5] as const;
+
+// Dice roller tables: the chance and average of each die, and the odds of each total with two d6.
+const dicePercent = (ratio: number) => new Intl.NumberFormat(langTag(locale), { style: 'percent', maximumFractionDigits: 2 }).format(ratio);
+const diceOddsRows = DIE_SIDES.map(sides => ({ die: t('dice.dieName', locale, { sides }), chance: dicePercent(1 / sides), average: formatNumber((sides + 1) / 2, locale, 1) }));
+const twoDiceWays = sumDistribution(2, 6);
+const twoDiceRows = twoDiceWays.map((ways, index) => ({ total: formatNumber(index + 2, locale), ways: formatNumber(ways, locale), chance: dicePercent(ways / 36) }));
+const dndRows = ['check', 'advantage', 'disadvantage', 'ability', 'damage', 'crit', 'death', 'fireball', 'percentile'] as const;
+const dndKey = (row: (typeof dndRows)[number], part: 'roll' | 'dice' | 'note') => `dice.dnd.${row}.${part}` as TranslationKey;
+const diceFaqs = [1, 2, 3, 4, 5, 6] as const;
 const autoLoanSources = {
   cfpbSimple: 'https://www.consumerfinance.gov/ask-cfpb/whats-the-difference-between-a-simple-interest-rate-and-precomputed-interest-on-an-auto-loan-en-841/',
   cfpbTerms: 'https://www.consumerfinance.gov/consumer-tools/auto-loans/answers/key-terms/',
@@ -563,6 +574,37 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         </div></section>
         <section aria-labelledby="age-faq-title"><div class="sec-head"><h2 id="age-faq-title">{t('age.faqTitle', locale)}</h2></div><div class="how-copy">
           {ageFaqs.map(n => <><h3>{t(`age.faqQ${n}` as TranslationKey, locale)}</h3><p>{t(`age.faqA${n}` as TranslationKey, locale)}</p></>)}
+        </div></section>
+      </>}
+      {tool.id === 'dice-roller' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('dice.leadStrong', locale)}</strong> {t('dice.lead', locale)}</p><p class="caption">{t('dice.caption', locale)}</p></div></div>
+        <DiceRollerTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('dice.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('dice.howP1', locale)} /></p>
+          <p><RichText text={t('dice.howP2', locale)} /></p>
+          <h3>{t('dice.howNotationTitle', locale)}</h3>
+          <p><RichText text={t('dice.howNotationP', locale)} /></p>
+          <h3>{t('dice.howDndTitle', locale)}</h3>
+          <p>{t('dice.howDndP', locale)}</p>
+        </div>
+          <div class="table-scroll"><table class="spec-table mapping-table dice-dnd"><thead><tr><th scope="col">{t('dice.dndColRoll', locale)}</th><th scope="col">{t('dice.dndColDice', locale)}</th><th scope="col">{t('dice.dndColNotes', locale)}</th></tr></thead>
+            <tbody>{dndRows.map(row => <tr><th scope="row">{t(dndKey(row, 'roll'), locale)}</th><td class="fmt">{t(dndKey(row, 'dice'), locale)}</td><td class="note">{t(dndKey(row, 'note'), locale)}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy"><p class="dice-source"><RichText text={t('dice.howDndSource', locale)} links={{ srd: 'https://dnd.wizards.com/resources/systems-reference-document' }} /></p></div>
+        </section>
+        <section aria-labelledby="dice-odds-title"><div class="sec-head"><h2 id="dice-odds-title">{t('dice.oddsTitle', locale)}</h2><p>{t('dice.oddsIntro', locale)}</p></div>
+          <div class="how-copy"><p>{t('dice.oddsP1', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table dice-odds"><thead><tr><th scope="col">{t('dice.oddsColDie', locale)}</th><th scope="col">{t('dice.oddsColChance', locale)}</th><th scope="col">{t('dice.oddsColAverage', locale)}</th></tr></thead>
+            <tbody>{diceOddsRows.map(row => <tr><th scope="row">{row.die}</th><td class="fmt">{row.chance}</td><td class="fmt">{row.average}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy"><h3>{t('dice.odds2d6Title', locale)}</h3><p>{t('dice.odds2d6P', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table dice-odds"><thead><tr><th scope="col">{t('dice.oddsColTotal', locale)}</th><th scope="col">{t('dice.oddsColWays', locale, { n: formatNumber(36, locale) })}</th><th scope="col">{t('dice.oddsColPercent', locale)}</th></tr></thead>
+            <tbody>{twoDiceRows.map(row => <tr><th scope="row">{row.total}</th><td class="fmt">{row.ways}</td><td class="fmt">{row.chance}</td></tr>)}</tbody>
+          </table></div>
+          <div class="how-copy"><p>{t('dice.oddsAdvantageP', locale)}</p></div>
+        </section>
+        <section aria-labelledby="dice-faq-title"><div class="sec-head"><h2 id="dice-faq-title">{t('dice.faqTitle', locale)}</h2></div><div class="how-copy">
+          {diceFaqs.map(n => <><h3>{t(`dice.faqQ${n}` as TranslationKey, locale)}</h3><p>{t(`dice.faqA${n}` as TranslationKey, locale)}</p></>)}
         </div></section>
       </>}
       {tool.id === 'csv-to-sql' && <>

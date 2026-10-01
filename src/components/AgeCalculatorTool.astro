@@ -7,7 +7,7 @@ interface Props { locale?: Locale }
 const { locale = 'en' } = Astro.props;
 
 const clientKeys: TranslationKey[] = [
-  'age.breakdown', 'age.breakdownEmpty', 'age.errBirthAfter', 'age.liveSummary',
+  'age.breakdown', 'age.breakdownEmpty', 'age.errBirthAfter', 'age.errOnInvalid', 'age.liveSummary',
   'age.nextToday.one', 'age.nextToday.other', 'age.nextIn.one', 'age.nextIn.other',
   'age.unit.years.one', 'age.unit.years.other', 'age.unit.months.one', 'age.unit.months.other',
   'age.unit.weeks.one', 'age.unit.weeks.other', 'age.unit.days.one', 'age.unit.days.other',
@@ -30,8 +30,9 @@ const max = `${MAX_YEAR}-12-31`;
           <label class="field-label" for="age-on">{t('age.onLabel', locale)}</label>
           <button class="btn alt age-today" type="button" id="age-on-today" hidden>{t('age.useToday', locale)}</button>
         </div>
-        <input class="age-input" id="age-on" type="date" min={min} max={max} aria-describedby="age-on-hint" />
+        <input class="age-input" id="age-on" type="date" min={min} max={max} aria-describedby="age-on-hint age-on-error" />
         <p class="input-hint" id="age-on-hint">{t('age.onHint', locale)}</p>
+        <p class="age-error" id="age-on-error" hidden></p>
       </div>
     </div>
 
