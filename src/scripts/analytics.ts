@@ -36,8 +36,8 @@ document.addEventListener('change', event => {
   if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement) || input.closest('footer')) return;
   const name = input.id || input.name;
   if (!name) return;
-  // Free text (table names, search terms) stays private: only the fact that it changed is sent.
-  const value = input instanceof HTMLInputElement && input.type === 'checkbox' ? String(input.checked) : VALUE_INPUTS.has(input.type) ? input.value : undefined;
+  // Free text (table names, search terms) and choices built from a user's file (data-private) stay private: only the fact that it changed is sent.
+  const value = input instanceof HTMLInputElement && input.type === 'checkbox' ? String(input.checked) : VALUE_INPUTS.has(input.type) && !('private' in input.dataset) ? input.value : undefined;
   track('option_select', { option_name: name, option_value: value });
 }, { capture: true });
 

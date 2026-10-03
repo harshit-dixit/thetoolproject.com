@@ -1,0 +1,147 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import { RESOURCE_TYPES } from '../lib/har';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'har.reading', 'har.errWrongType', 'har.errTooLarge', 'har.errEmpty', 'har.errInvalidJson', 'har.errNotHar', 'har.errWorker', 'har.errGeneral',
+  'har.metaCreator', 'har.metaStarted', 'har.metaPages.one', 'har.metaPages.other', 'har.showing.one', 'har.showing.other', 'har.sortHeader',
+  'har.failed', 'har.cacheMemory', 'har.cacheDisk', 'har.cacheRevalidated', 'har.ms', 'har.seconds', 'har.allPages', 'har.untitledPage',
+  'har.col.name', 'har.col.status', 'har.col.method', 'har.col.type', 'har.col.size', 'har.col.time', 'har.col.waterfall',
+  'har.tab.headers', 'har.tab.payload', 'har.tab.response', 'har.tab.cookies', 'har.tab.timing',
+  'har.general', 'har.fieldUrl', 'har.fieldMethod', 'har.fieldStatus', 'har.fieldHttp', 'har.fieldIp', 'har.fieldStarted', 'har.fieldInitiator',
+  'har.fieldCache', 'har.fieldError', 'har.fieldSize', 'har.sizeValue', 'har.reqHeaders', 'har.resHeaders', 'har.noHeaders', 'har.query', 'har.body', 'har.noPayload',
+  'har.resNone', 'har.resBinary', 'har.resTruncated', 'har.resJson', 'har.downloadBody', 'har.cookiesReq', 'har.cookiesRes', 'har.noCookies',
+  'har.pairName', 'har.pairValue', 'har.cookieDetails', 'har.timing.blocked', 'har.timing.dns', 'har.timing.connect', 'har.timing.ssl',
+  'har.timing.send', 'har.timing.wait', 'har.timing.receive', 'har.timingTotal', 'har.noTiming', 'har.timingNote',
+  'har.sanitizeDone.one', 'har.sanitizeDone.other', 'har.bodyDownloaded', 'unit.bytes', 'unit.kb', 'unit.mb',
+  ...RESOURCE_TYPES.map(type => `har.type.${type}` as TranslationKey),
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const statuses: [string, string][] = [
+  ['all', t('har.status.all', locale)], ['errors', t('har.status.errors', locale)], ['2xx', '2xx'], ['3xx', '3xx'], ['4xx', '4xx'], ['5xx', '5xx'],
+  ['failed', t('har.failed', locale)],
+];
+---
+<div class="drop har-tool" id="har-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <input class="visually-hidden" type="file" id="har-file" accept=".har,.json,application/json" tabindex="-1" aria-label={t('har.fileAria', locale)} />
+  <div class="drop-empty" id="har-empty">
+    <h2 class="drop-title">{t('har.dropTitle', locale)}</h2>
+    <p class="drop-hint">{t('har.dropHint', locale)}</p>
+    <div class="actions har-start">
+      <button class="btn" type="button" id="har-choose">{t('har.chooseButton', locale)}</button>
+      <button class="text-button" type="button" id="har-example">{t('har.example', locale)}</button>
+    </div>
+    <p id="har-import-status" class="status" role="status" aria-live="polite" hidden></p>
+  </div>
+
+  <div class="har-workspace" id="har-workspace" hidden>
+    <div class="har-file-head">
+      <div><h2 id="har-filename" class="panel-title"></h2><p id="har-meta" class="har-muted"></p></div>
+      <button class="btn alt" type="button" id="har-change">{t('har.changeButton', locale)}</button>
+    </div>
+    <div class="har-stats" aria-label={t('har.overview', locale)}>
+      <div><strong id="har-stat-requests">0</strong><span>{t('har.statRequests', locale)}</span></div>
+      <div><strong id="har-stat-errors">0</strong><span>{t('har.statErrors', locale)}</span></div>
+      <div><strong id="har-stat-transferred">0</strong><span>{t('har.statTransferred', locale)}</span></div>
+      <div><strong id="har-stat-time">0</strong><span>{t('har.statTime', locale)}</span></div>
+    </div>
+    <div class="har-toolbar">
+      <label class="har-search"><span class="field-label">{t('har.searchLabel', locale)}</span><input id="har-search" class="tool-select" type="search" placeholder={t('har.searchPlaceholder', locale)} autocomplete="off" spellcheck="false" /></label>
+      <label id="har-page-wrap" hidden><span class="field-label">{t('har.pageLabel', locale)}</span><select id="har-page" class="tool-select" data-private></select></label>
+    </div>
+    <div class="option-row har-filters">
+      <fieldset><legend>{t('har.typeLabel', locale)}</legend><div class="chips" role="group" aria-label={t('har.typeLabel', locale)} id="har-types">
+        <button type="button" data-har-type="all" aria-pressed="true">{t('har.type.all', locale)}</button>
+        {RESOURCE_TYPES.map(type => <button type="button" data-har-type={type} aria-pressed="false">{t(`har.type.${type}` as TranslationKey, locale)}</button>)}
+      </div></fieldset>
+      <fieldset><legend>{t('har.statusLabel', locale)}</legend><div class="chips" role="group" aria-label={t('har.statusLabel', locale)} id="har-statuses">
+        {statuses.map(([value, label]) => <button type="button" data-har-status={value} aria-pressed={value === 'all' ? 'true' : 'false'}>{label}</button>)}
+      </div></fieldset>
+    </div>
+    <div class="har-grid-head"><p id="har-showing" aria-live="polite"></p><p>{t('har.gridTip', locale)}</p></div>
+    <div class="har-scroll" id="har-scroll" role="region" aria-label={t('har.tableAria', locale)} tabindex="0">
+      <table id="har-table"><thead id="har-thead"></thead><tbody id="har-tbody"></tbody></table>
+    </div>
+    <p id="har-none" class="har-none" hidden>{t('har.emptyFiltered', locale)}</p>
+
+    <section class="har-detail" id="har-detail" aria-labelledby="har-detail-title">
+      <h3 id="har-detail-title" class="har-detail-title">{t('har.detailTitle', locale)}</h3>
+      <p id="har-detail-hint" class="har-muted">{t('har.detailHint', locale)}</p>
+      <div id="har-detail-body" hidden>
+        <p class="har-detail-url" id="har-detail-url"></p>
+        <div class="chips" role="group" aria-label={t('har.tabsLabel', locale)} id="har-tabs"></div>
+        <div id="har-panel" class="har-panel"></div>
+      </div>
+    </section>
+
+    <div class="har-export">
+      <div><h3>{t('har.sanitizeTitle', locale)}</h3><p class="har-muted">{t('har.sanitizeHint', locale)}</p></div>
+      <button class="btn" type="button" id="har-download-sanitized">{t('har.sanitizeButton', locale)}</button>
+    </div>
+    <p id="har-status" class="status" role="status" aria-live="polite" hidden></p>
+  </div>
+</div>
+<script src="../scripts/har-analyzer.ts"></script>
+<style>
+  .har-tool { display: flex; flex-direction: column; min-height: max(320px, min(calc(100svh - 320px), 800px)); }
+  .har-tool > .drop-empty { flex: 1; }
+  .har-start { justify-content: center; align-items: center; }
+  .har-workspace { min-width: 0; }
+  .har-file-head, .har-grid-head, .har-export { display: flex; justify-content: space-between; gap: 16px 24px; align-items: start; flex-wrap: wrap; }
+  .har-file-head .panel-title { margin-block: 0 4px; overflow-wrap: anywhere; }
+  .har-muted, .har-grid-head p { color: var(--slate); font-size: 14px; margin: 0; }
+  .har-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-block: 1px solid var(--line); margin-block: 24px; }
+  .har-stats div { display: flex; flex-direction: column; padding: 16px 20px; border-inline-end: 1px solid var(--line); min-width: 0; }
+  .har-stats div:first-child { padding-inline-start: 0; }
+  .har-stats div:last-child { border: 0; }
+  .har-stats strong { font-size: 28px; font-weight: 700; font-stretch: 75%; font-variant-numeric: tabular-nums; line-height: 1; }
+  .har-stats span { font-size: 14px; color: var(--slate); margin-block-start: 4px; }
+  .har-toolbar { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+  .har-toolbar label { min-width: 0; }
+  .har-toolbar .tool-select { width: 100%; }
+  .har-filters { margin-block: 20px; }
+  .har-grid-head { align-items: baseline; margin-block-end: 8px; }
+  .har-grid-head p:first-child { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .har-scroll { height: 440px; overflow: auto; border: 1.5px solid var(--line); border-radius: 4px; max-width: 100%; }
+  #har-table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; min-width: 860px; font-size: 14px; line-height: 1.3; }
+  :global(#har-table th), :global(#har-table td) { height: 38px; padding: 0 10px; border-block-end: 1px solid var(--line); text-align: start; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  :global(#har-table th) { position: sticky; inset-block-start: 0; z-index: 2; background: var(--fog); padding: 0; }
+  :global(#har-table th button) { display: block; width: 100%; height: 37px; padding: 7px 10px; border: 0; background: transparent; color: var(--slate); font: inherit; font-weight: 500; text-align: start; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :global(#har-table th button:hover) { color: var(--ink); background: var(--cobalt-wash); }
+  :global(#har-table td:first-child) { padding: 0; }
+  :global(#har-table td:first-child button) { display: block; width: 100%; height: 37px; padding: 7px 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  :global(#har-table tbody tr:not(.har-spacer):hover td) { background: var(--row-hover); cursor: pointer; }
+  :global(#har-table tr[data-selected] td) { background: var(--cobalt-wash); }
+  :global(#har-table tr[data-error] td:nth-child(2)) { font-weight: 700; }
+  :global(#har-table .har-num) { text-align: end; }
+  :global(#har-table .har-fmt) { font-stretch: 75%; font-weight: 600; }
+  :global(#har-table .har-muted-cell) { color: var(--slate); }
+  :global(#har-table .har-spacer td) { height: 0; border: 0; padding: 0; }
+  :global(.har-bar-track) { position: relative; height: 10px; }
+  :global(.har-bar) { position: absolute; inset-block: 0; min-width: 2px; background: var(--slate); border-radius: 1px; }
+  .har-none { padding: 20px; margin: 0; border: 1px solid var(--line); border-block-start: 0; }
+  .har-detail, .har-export { border-block-start: 1px solid var(--line); margin-block-start: 24px; padding-block-start: 24px; min-width: 0; }
+  .har-detail-title, .har-export h3 { margin: 0 0 8px; font-size: 22px; font-stretch: 88%; }
+  .har-detail-url { font-weight: 600; overflow-wrap: anywhere; margin: 0 0 16px; }
+  .har-panel { margin-block-start: 20px; min-width: 0; }
+  :global(.har-panel h4) { font-size: 16px; font-weight: 700; margin: 24px 0 8px; }
+  :global(.har-panel h4:first-child) { margin-block-start: 0; }
+  :global(.har-panel p) { margin: 0 0 12px; }
+  :global(.har-pairs) { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
+  :global(.har-pairs th), :global(.har-pairs td) { text-align: start; vertical-align: top; padding: 7px 12px 7px 0; border-block-end: 1px solid var(--line); overflow-wrap: anywhere; }
+  :global(.har-pairs th) { width: 34%; font-weight: 600; }
+  :global(.har-pairs thead th) { color: var(--slate); font-weight: 500; }
+  :global(.har-pairs td) { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+  :global(.har-panel .code-view) { max-height: 480px; font-size: 13px; }
+  :global(.har-panel img) { display: block; max-width: 100%; max-height: 360px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); }
+  :global(.har-timing) { display: grid; grid-template-columns: minmax(0, 220px) auto minmax(0, 1fr); gap: 8px 16px; align-items: center; font-size: 14px; }
+  :global(.har-timing .har-bar-track) { height: 12px; }
+  :global(.har-timing strong) { font-variant-numeric: tabular-nums; text-align: end; font-stretch: 75%; font-weight: 600; }
+  .har-export > div:first-child { max-width: 60ch; }
+  @media (max-width: 760px) { .har-stats { grid-template-columns: repeat(2, 1fr); } .har-stats div:nth-child(2) { border: 0; } .har-stats div:nth-child(3) { padding-inline-start: 0; } .har-toolbar { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .har-stats strong { font-size: 22px; } .har-grid-head p:last-child { display: none; } :global(.har-timing) { grid-template-columns: minmax(0, 1fr) auto; } :global(.har-timing .har-bar-track) { grid-column: 1 / -1; } :global(.har-pairs th) { width: 40%; } }
+</style>

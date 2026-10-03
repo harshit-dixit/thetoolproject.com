@@ -28,7 +28,7 @@ const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]))
     </div>
     <div class="file-line" id="xml-file-line" hidden><span class="file-name" id="xml-file-name"></span><span class="file-size" id="xml-file-size"></span></div>
     <div class="option-row">
-      <fieldset id="xml-record-group" hidden><legend>{t('xmlCsv.recordLabel', locale)}</legend><select class="tool-select" id="xml-record-path" aria-label={t('xmlCsv.recordLabel', locale)}></select><p class="input-hint">{t('xmlCsv.recordHint', locale)}</p></fieldset>
+      <fieldset id="xml-record-group" hidden><legend>{t('xmlCsv.recordLabel', locale)}</legend><select class="tool-select" id="xml-record-path" data-private aria-label={t('xmlCsv.recordLabel', locale)}></select><p class="input-hint">{t('xmlCsv.recordHint', locale)}</p></fieldset>
       <fieldset><legend>{t('jsonCsv.separator', locale)}</legend><div class="chips" role="group" aria-label={t('jsonCsv.separator', locale)}>
         <button type="button" data-xml-separator="comma" aria-pressed="true">{t('excel.comma', locale)}</button>
         <button type="button" data-xml-separator="semicolon" aria-pressed="false">{t('excel.semicolon', locale)}</button>

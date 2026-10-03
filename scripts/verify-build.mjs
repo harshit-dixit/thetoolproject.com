@@ -14,6 +14,7 @@ const xmlCsv = read('xml-to-csv/index.html');
 const xmlJson = read('xml-to-json/index.html');
 const csvSql = read('csv-to-sql/index.html');
 const csvViewer = read('csv-viewer/index.html');
+const harAnalyzer = read('har-analyzer/index.html');
 const csvJson = read('csv-to-json/index.html');
 const jsonBeautifier = read('json-beautifier/index.html');
 const wordCounter = read('word-counter/index.html');
@@ -251,6 +252,13 @@ assert.match(csvJson, /<h1 class="page-title">CSV to JSON<\/h1>/);
 assert.match(csvJson, /rel="canonical" href="https:\/\/thetoolproject\.com\/csv-to-json\/"/);
 assert.match(csvViewer, /<h1 class="page-title">CSV viewer<\/h1>/);
 assert.match(csvViewer, /rel="canonical" href="https:\/\/thetoolproject\.com\/csv-viewer\/"/);
+assert.match(home, /href="\/har-analyzer\/"/);
+assert.match(harAnalyzer, /<h1 class="page-title">HAR analyzer<\/h1>/);
+assert.match(harAnalyzer, /<title>HAR analyzer and HAR file viewer: open \.har files online \| thetoolproject<\/title>/);
+assert.match(harAnalyzer, /rel="canonical" href="https:\/\/thetoolproject\.com\/har-analyzer\/"/);
+assert.match(harAnalyzer, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/har-analyzer\/"/);
+assert.match(harAnalyzer, /<h3>How to open a HAR file<\/h3>/);
+assert.equal([...harAnalyzer.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]))[0].applicationCategory, 'DeveloperApplication');
 assert.match(xmlJson, /<title>XML to JSON converter: convert XML online \| thetoolproject<\/title>/);
 assert.match(xmlJson, /rel="canonical" href="https:\/\/thetoolproject\.com\/xml-to-json\/"/);
 assert.match(xmlJson, /<h1 class="page-title">XML to JSON<\/h1>/);
@@ -319,6 +327,7 @@ const englishUrls = [
   'https://thetoolproject.com/mht-to-pdf/',
   'https://thetoolproject.com/csv-to-sql/',
   'https://thetoolproject.com/csv-viewer/',
+  'https://thetoolproject.com/har-analyzer/',
   'https://thetoolproject.com/csv-to-json/',
   'https://thetoolproject.com/qr-code-scanner/',
   'https://thetoolproject.com/image-resizer/',
@@ -361,7 +370,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

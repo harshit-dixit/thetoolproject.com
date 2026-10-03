@@ -26,6 +26,7 @@ import DiceRollerTool from '../components/DiceRollerTool.astro';
 import VolumeCalculatorTool from '../components/VolumeCalculatorTool.astro';
 import AreaCalculatorTool from '../components/AreaCalculatorTool.astro';
 import CsvViewerTool from '../components/CsvViewerTool.astro';
+import HarAnalyzerTool from '../components/HarAnalyzerTool.astro';
 import CsvToJsonTool from '../components/CsvToJsonTool.astro';
 import QrCodeScannerTool from '../components/QrCodeScannerTool.astro';
 import ImageTool from '../components/ImageTool.astro';
@@ -425,6 +426,34 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <h3>{t('csvViewer.howSaveTitle', locale)}</h3>
           <p><RichText text={t('csvViewer.howSaveP1', locale)} /></p>
           <p>{t('csvViewer.howSaveP2', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'har-analyzer' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('harAnalyzer.leadStrong', locale)}</strong> {t('harAnalyzer.lead', locale)}</p><p class="caption">{t('harAnalyzer.caption', locale)}</p></div></div>
+        <HarAnalyzerTool locale={locale} />
+        <section aria-labelledby="har-how-title"><div class="sec-head"><h2 id="har-how-title">{t('harAnalyzer.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('harAnalyzer.howIntro', locale)} /></p>
+          <h3>{t('harAnalyzer.howFindTitle', locale)}</h3>
+          <p><RichText text={t('harAnalyzer.howFindP', locale, { errors: t('har.status.errors', locale) })} /></p>
+          <h3>{t('harAnalyzer.howDetailTitle', locale)}</h3>
+          <p>{t('harAnalyzer.howDetailP', locale)}</p>
+          <h3>{t('harAnalyzer.openTitle', locale)}</h3>
+          <p>{t('harAnalyzer.openP', locale)}</p>
+          <h3>{t('harAnalyzer.createTitle', locale)}</h3>
+          <p><RichText text={t('harAnalyzer.createChrome', locale)} /></p>
+          <p><RichText text={t('harAnalyzer.createFirefox', locale)} /></p>
+          <p><RichText text={t('harAnalyzer.createSafari', locale)} /></p>
+          <h3>{t('harAnalyzer.whatTitle', locale)}</h3>
+          <p><RichText text={t('harAnalyzer.whatP', locale)} links={{ spec: 'https://w3c.github.io/web-performance/specs/HAR/Overview.html' }} /></p>
+          <h3>{t('harAnalyzer.privacyTitle', locale)}</h3>
+          <p><RichText text={t('harAnalyzer.privacyP', locale, { sanitize: t('har.sanitizeButton', locale) })} /></p>
+          <h3>{t('harAnalyzer.limitsTitle', locale)}</h3>
+          <p><RichText text={t('harAnalyzer.limitsP', locale)} /></p>
+          <h3>{t('harAnalyzer.faqTitle', locale)}</h3>
+          <p><strong>{t('harAnalyzer.faqQ1', locale)}</strong> {t('harAnalyzer.faqA1', locale)}</p>
+          <p><strong>{t('harAnalyzer.faqQ2', locale)}</strong> {t('harAnalyzer.faqA2', locale)}</p>
+          <p><strong>{t('harAnalyzer.faqQ3', locale)}</strong> {t('harAnalyzer.faqA3', locale)}</p>
+          <p><strong>{t('harAnalyzer.faqQ4', locale)}</strong> {t('harAnalyzer.faqA4', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'json-beautifier' && <>

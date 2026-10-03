@@ -53,6 +53,7 @@
 |---|---|
 | **[JSON Beautifier](https://thetoolproject.com/json-beautifier/)** | Validate, format, and beautify JSON with configurable indentation, error markers, and single-click copy. |
 | **[CSV Viewer](https://thetoolproject.com/csv-viewer/)** | Open large CSV/TSV files in browser, search, sort, filter, inline edit, and re-export to CSV or JSON. |
+| **[HAR Analyzer](https://thetoolproject.com/har-analyzer/)** | Open a `.har` file from Chrome, Edge, Firefox or Safari: every request with its status, size, timing and a waterfall, filters for errors and request types, headers, payload, response and timing for each request, and a copy without cookies to share. |
 
 ### Text Utilities
 

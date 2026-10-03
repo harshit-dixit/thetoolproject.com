@@ -112,6 +112,11 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('csv-viewer', 'csvViewer'),
   },
+  harAnalyzer: {
+    id: 'har-analyzer',
+    category: 'DeveloperApplication',
+    locales: createToolLocales('har-analyzer', 'harAnalyzer'),
+  },
   jsonBeautifier: {
     id: 'json-beautifier',
     category: 'DeveloperApplication',
