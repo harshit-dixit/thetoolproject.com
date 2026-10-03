@@ -93,6 +93,7 @@
 | **[WebP to JPG (JPEG)](https://thetoolproject.com/webp-to-jpg/)** | WebP to JPG with a quality choice and a white or black fill for transparent areas. |
 | **[WebP to GIF](https://thetoolproject.com/webp-to-gif/)** | Animated WebP to animated GIF with every frame, its timing and the loop setting (ImageDecoder + gifenc). |
 | **[WebP to SVG](https://thetoolproject.com/webp-to-svg/)** | Trace WebP logos and icons into real vector paths (imagetracerjs), or embed the exact pixels in an SVG. |
+| **[Video to GIF](https://thetoolproject.com/video-to-gif/)** | Turn an MP4, MOV or WebM clip into an animated GIF: pick the start and end from the player, the width, frame rate (5–25 fps), speed and loop. Frames are read with the browser's own video player and encoded with gifenc in a Web Worker, so nothing is uploaded. |
 | **[Compress JPG to 100KB](https://thetoolproject.com/compress-jpg-to-100kb/)** | Target-driven canvas compression reducing JPG files to under 100 KB with real-time size readout. |
 | **[Compress JPG to 50KB](https://thetoolproject.com/compress-jpg-to-50kb/)** | Target-driven canvas compression reducing JPG files to 50 KB or less with exact file size shown before download. |
 | **[QR Code Scanner](https://thetoolproject.com/qr-code-scanner/)** | Scan QR codes via live webcam stream or decode from screenshots and image files using WebAssembly (`zxing-wasm`). |

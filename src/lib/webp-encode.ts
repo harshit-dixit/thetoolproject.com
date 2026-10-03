@@ -1,6 +1,5 @@
-// The encoders behind the WebP converter: GIF frames with gifenc, and SVG from traced or embedded pixels.
+// The encoders behind the WebP converter: GIF frames (gif-writer.ts), and SVG from traced or embedded pixels.
 // Only the worker imports this, after a file is chosen. Decoding and canvas work are in src/workers/webp-converter.ts.
-import { GIFEncoder, applyPalette, quantize } from 'gifenc';
 import ImageTracer from 'imagetracerjs';
 import type { ImagePixels } from './webp-convert';
 
@@ -37,26 +36,4 @@ export function embedSvg(png: Uint8Array, width: number, height: number) {
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><image width="${width}" height="${height}" xlink:href="data:image/png;base64,${base64(png)}"/></svg>`;
 }
 
-/**
- * Writes a GIF one frame at a time, so an animation never has to be held in memory as raw pixels.
- * Each frame gets its own 256-color palette; pixels less than half opaque become transparent, because GIF has no partial transparency.
- * Frames are whole, composited images, so each one is cleared before the next (disposal 2) and transparent areas stay see-through.
- */
-export function createGifWriter(repeat: number) {
-  const gif = GIFEncoder();
-  let partialAlpha = false;
-  return {
-    addFrame(frame: ImagePixels, delayMs: number) {
-      const rgba = new Uint8Array(frame.data.buffer, frame.data.byteOffset, frame.data.byteLength);
-      for (let i = 3; i < rgba.length && !partialAlpha; i += 4) if (rgba[i] !== 0 && rgba[i] !== 255) partialAlpha = true;
-      const palette = quantize(rgba, 256, { format: 'rgba4444', oneBitAlpha: true });
-      const index = applyPalette(rgba, palette, 'rgba4444');
-      const transparentIndex = palette.findIndex(color => color[3] === 0);
-      gif.writeFrame(index, frame.width, frame.height, { palette, delay: delayMs, repeat, transparent: transparentIndex >= 0, transparentIndex: Math.max(0, transparentIndex), dispose: 2 });
-    },
-    finish() {
-      gif.finish();
-      return { bytes: gif.bytes(), partialAlpha };
-    },
-  };
-}
+export { createGifWriter } from './gif-writer';

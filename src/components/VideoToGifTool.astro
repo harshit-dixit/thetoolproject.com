@@ -1,0 +1,106 @@
+---
+import { t, langTag, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { DEFAULT_SETTINGS, FRAME_RATES, LIMITS, SPEEDS, WIDTHS } from '../lib/video-gif';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'vgif.clipSummary.one', 'vgif.clipSummary.other', 'vgif.converting', 'vgif.done', 'vgif.download', 'vgif.errCanvas',
+  'vgif.errNoVideo', 'vgif.errOrder', 'vgif.errOutside', 'vgif.errSeek', 'vgif.errTime', 'vgif.errTooLarge', 'vgif.errTooLong',
+  'vgif.errUnplayable', 'vgif.errWorker', 'vgif.errWrongType', 'vgif.finishing', 'vgif.loading', 'vgif.meta', 'vgif.noteLarge',
+  'vgif.seconds', 'vgif.summary.one', 'vgif.summary.other', 'unit.bytes', 'unit.kb', 'unit.mb',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const number = (value: number) => new Intl.NumberFormat(langTag(locale)).format(value);
+const gigabytes = LIMITS.fileBytes / 1024 ** 3;
+---
+<div class="drop vgif-drop" id="vgif-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <input class="visually-hidden" type="file" id="vgif-file" accept="video/*,.mp4,.m4v,.mov,.webm,.mkv,.ogv,.avi,.wmv,.3gp" tabindex="-1" aria-label={t('vgif.fileAria', locale)} />
+    <div class="drop-empty" id="vgif-empty">
+      <h2 class="drop-title">{t('vgif.dropTitle', locale)}</h2>
+      <p class="drop-hint">{t('vgif.dropHint', locale, { size: number(gigabytes) })}</p>
+      <button class="btn" type="button" id="vgif-choose">{t('vgif.chooseButton', locale)}</button>
+    </div>
+    <div class="vgif-panel" id="vgif-panel" hidden>
+      <div class="file-line"><span class="file-name" id="vgif-name"></span><span class="file-size" id="vgif-size"></span></div>
+      <div class="vgif-player">
+        <video id="vgif-video" controls muted playsinline preload="metadata" aria-label={t('vgif.videoAria', locale)}></video>
+        <p class="vgif-meta" id="vgif-meta"></p>
+      </div>
+      <div class="vgif-editor" id="vgif-editor" hidden>
+        <h2 class="panel-title">{t('vgif.title', locale)}</h2>
+        <p class="panel-advice">{t('vgif.advice', locale)}</p>
+        <div class="vgif-times">
+          <div class="vgif-time">
+            <label class="field-label" for="vgif-start">{t('vgif.startLabel', locale)}</label>
+            <div class="vgif-time-row">
+              <input class="vgif-input" id="vgif-start" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="vgif-time-hint vgif-clip" />
+              <button class="btn alt" type="button" id="vgif-start-here">{t('vgif.startHere', locale)}</button>
+            </div>
+          </div>
+          <div class="vgif-time">
+            <label class="field-label" for="vgif-end">{t('vgif.endLabel', locale)}</label>
+            <div class="vgif-time-row">
+              <input class="vgif-input" id="vgif-end" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="vgif-time-hint vgif-clip" />
+              <button class="btn alt" type="button" id="vgif-end-here">{t('vgif.endHere', locale)}</button>
+            </div>
+          </div>
+        </div>
+        <p class="option-hint" id="vgif-time-hint">{t('vgif.timeHint', locale)}</p>
+        <div class="option-row">
+          <fieldset><legend>{t('vgif.widthLabel', locale)}</legend><div class="chips" role="group" aria-label={t('vgif.widthLabel', locale)}>
+            {WIDTHS.map(value => <button type="button" data-gif-width={value} aria-pressed={value === DEFAULT_SETTINGS.width ? 'true' : 'false'}>{value === 'original' ? t('vgif.widthOriginal', locale) : t('vgif.widthValue', locale, { width: number(value) })}</button>)}
+          </div></fieldset>
+          <fieldset><legend>{t('vgif.fpsLabel', locale)}</legend><div class="chips" role="group" aria-label={t('vgif.fpsLabel', locale)}>
+            {FRAME_RATES.map(value => <button type="button" data-fps={value} aria-pressed={value === DEFAULT_SETTINGS.fps ? 'true' : 'false'}>{t('vgif.fpsValue', locale, { fps: number(value) })}</button>)}
+          </div></fieldset>
+          <fieldset><legend>{t('vgif.speedLabel', locale)}</legend><div class="chips" role="group" aria-label={t('vgif.speedLabel', locale)}>
+            {SPEEDS.map(value => <button type="button" data-speed={value} aria-pressed={value === DEFAULT_SETTINGS.speed ? 'true' : 'false'}>{t('vgif.speedValue', locale, { speed: number(value) })}</button>)}
+          </div></fieldset>
+          <fieldset><legend>{t('vgif.loopLabel', locale)}</legend><div class="chips" role="group" aria-label={t('vgif.loopLabel', locale)}>
+            <button type="button" data-loop="forever" aria-pressed="true">{t('vgif.loopForever', locale)}</button>
+            <button type="button" data-loop="once" aria-pressed="false">{t('vgif.loopOnce', locale)}</button>
+          </div></fieldset>
+        </div>
+        <p class="vgif-clip" id="vgif-clip" aria-live="polite"></p>
+        <div class="actions input-actions">
+          <button class="btn" type="button" id="vgif-convert">{t('vgif.convertButton', locale)}</button>
+          <button class="btn alt" type="button" id="vgif-change">{t('vgif.changeButton', locale)}</button>
+        </div>
+      </div>
+      <div id="vgif-result" class="result vgif-result" hidden>
+        <p class="result-summary" id="vgif-summary"></p>
+        <img class="vgif-preview" id="vgif-preview" alt={t('vgif.resultAlt', locale)} />
+        <p class="result-note" id="vgif-note"></p>
+        <div class="actions"><button class="btn" type="button" id="vgif-download">{t('vgif.download', locale)}</button></div>
+      </div>
+    </div>
+    <p id="vgif-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+  </div>
+</div>
+<style>
+  /* Choosing a video grows the frame after the file dialog closes, which doesn't count as input.
+     Filling the first screen keeps the section below out of view, so that growth isn't a layout shift. */
+  .vgif-drop { display: flex; flex-direction: column; min-height: max(320px, min(calc(100svh - 320px), 800px)); }
+  .vgif-drop > .tool-frame { width: 100%; flex: 1; display: flex; flex-direction: column; }
+  .vgif-drop .drop-empty { flex: 1; }
+  .vgif-player { margin-block-start: 20px; }
+  .vgif-player video { display: block; width: 100%; max-height: 360px; background: var(--ink); border-radius: 4px; }
+  .vgif-meta { margin: 8px 0 0; font-size: 14px; color: var(--slate); font-stretch: 75%; font-weight: 600; font-variant-numeric: tabular-nums; min-height: 1.5em; }
+  .vgif-editor .panel-title { margin-block-start: 24px; }
+  .vgif-times { display: flex; flex-wrap: wrap; gap: 16px 32px; margin-block-start: 20px; }
+  .vgif-time-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .vgif-input { font: inherit; font-size: 18px; font-variant-numeric: tabular-nums; width: 9ch; min-width: 0; background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; padding: 10px 14px; color: var(--ink); }
+  .vgif-input:focus { border-color: var(--cobalt); }
+  .vgif-input[aria-invalid="true"] { border-color: var(--ink); }
+  .option-hint { margin: 8px 0 0; font-size: 14px; color: var(--slate); }
+  .vgif-clip { margin: 0; min-height: 1.55em; font-variant-numeric: tabular-nums; }
+  .vgif-clip.error { font-weight: 600; }
+  #vgif-status.error { font-weight: 600; }
+  .vgif-result { margin-block-start: 26px; }
+  .vgif-preview { display: block; max-width: 100%; height: auto; margin-block-start: 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--fog); }
+</style>
+<script src="../scripts/video-to-gif.ts"></script>

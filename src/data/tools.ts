@@ -97,6 +97,11 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('webp-to-svg', 'webpSvg'),
   },
+  videoToGif: {
+    id: 'video-to-gif',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('video-to-gif', 'videoGif'),
+  },
   qrCodeScanner: {
     id: 'qr-code-scanner',
     category: 'UtilitiesApplication',

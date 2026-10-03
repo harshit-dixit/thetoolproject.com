@@ -15,6 +15,7 @@ const xmlJson = read('xml-to-json/index.html');
 const csvSql = read('csv-to-sql/index.html');
 const csvViewer = read('csv-viewer/index.html');
 const harAnalyzer = read('har-analyzer/index.html');
+const videoGif = read('video-to-gif/index.html');
 const csvJson = read('csv-to-json/index.html');
 const jsonBeautifier = read('json-beautifier/index.html');
 const wordCounter = read('word-counter/index.html');
@@ -40,7 +41,7 @@ const home = read('index.html');
 const hasGuides = existsSync(new URL('../dist/guides/json/index.html', import.meta.url)) && existsSync(new URL('../dist/guides/json-syntax-square-brackets/index.html', import.meta.url));
 const notFound = read('404.html');
 const sitemap = read('sitemap-0.xml');
-assert.match(tool, /<title>JSON to HTML converter \| thetoolproject<\/title>/);
+assert.match(tool, /<title>JSON to HTML converter \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(tool, /<meta name="description" content="Convert JSON to HTML tables or lists/);
 assert.match(tool, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-html\/"/);
 assert.match(tool, /hreflang="en" href="https:\/\/thetoolproject\.com\/json-to-html\/"/);
@@ -65,7 +66,7 @@ assert.ok(!existsSync(new URL('../dist/ja/eml-to-pdf/index.html', import.meta.ur
 assert.doesNotMatch(read('ja/index.html'), /eml-to-pdf/);
 assert.match(home, /href="\/mht-to-pdf\/"/);
 assert.match(mhtPdf, /<h1 class="page-title">MHT to PDF<\/h1>/);
-assert.match(mhtPdf, /<title>MHT to PDF converter: convert \.mht files to PDF \| thetoolproject<\/title>/);
+assert.match(mhtPdf, /<title>MHT to PDF converter: convert \.mht files to PDF \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(mhtPdf, /rel="canonical" href="https:\/\/thetoolproject\.com\/mht-to-pdf\/"/);
 assert.match(mhtPdf, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/mht-to-pdf\/"/);
 assert.doesNotMatch(mhtPdf, /hreflang="ja"/);
@@ -83,7 +84,7 @@ assert.match(webpPages['webp-to-png'], /href="\/webp-converter\/"/);
 assert.match(webpPages['webp-converter'], /data-format="svg"/);
 assert.doesNotMatch(webpPages['webp-to-png'], /data-quality=|data-svg-mode=/);
 assert.match(webpPages['webp-to-svg'], /data-svg-mode="trace" aria-pressed="true"/);
-assert.match(excel, /<title>Excel to CSV converter for XLSX and XLS \| thetoolproject<\/title>/);
+assert.match(excel, /<title>Excel to CSV converter for XLSX and XLS \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(excel, /<meta name="description" content="Convert Excel XLSX, XLS and ODS sheets to CSV/);
 assert.match(excel, /rel="canonical" href="https:\/\/thetoolproject\.com\/excel-to-csv\/"/);
 assert.match(excel, /hreflang="en" href="https:\/\/thetoolproject\.com\/excel-to-csv\/"/);
@@ -94,7 +95,7 @@ assert.deepEqual(excelLd.map(item => item['@type']), ['WebApplication', 'Breadcr
 assert.equal(excelLd[0].applicationCategory, 'UtilitiesApplication');
 assert.equal(excelLd[0].offers.price, '0');
 assert.match(home, /href="\/json-to-excel\/"/);
-assert.match(jsonExcel, /<title>JSON to Excel converter: JSON to XLSX \| thetoolproject<\/title>/);
+assert.match(jsonExcel, /<title>JSON to Excel converter: JSON to XLSX \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(jsonExcel, /<meta name="description" content="Convert JSON to an Excel XLSX file/);
 assert.match(jsonExcel, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-excel\/"/);
 assert.match(jsonExcel, /hreflang="x-default" href="https:\/\/thetoolproject\.com\/json-to-excel\/"/);
@@ -107,14 +108,14 @@ assert.match(home, /href="\/json-beautifier\/"/);
 assert.match(jsonBeautifier, /<h1 class="page-title">JSON beautifier<\/h1>/);
 assert.match(jsonBeautifier, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-beautifier\/"/);
 assert.match(home, /href="\/word-counter\/"/);
-assert.match(wordCounter, /<title>Word counter and character counter online \| thetoolproject<\/title>/);
+assert.match(wordCounter, /<title>Word counter and character counter online \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(wordCounter, /<h1 class="page-title">Word counter<\/h1>/);
 assert.match(wordCounter, /rel="canonical" href="https:\/\/thetoolproject\.com\/word-counter\/"/);
 assert.match(wordCounter, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/word-counter\/"/);
 assert.match(wordCounter, /href="https:\/\/doi\.org\/10\.1016\/j\.jml\.2019\.104047" target="_blank"/);
 assert.match(read('ja/word-counter/index.html'), /<h1 class="page-title">文字数カウント<\/h1>/);
 assert.match(home, /href="\/tip-calculator\/"/);
-assert.match(tipCalculator, /<title>Tip calculator: how much to tip and split the bill \| thetoolproject<\/title>/);
+assert.match(tipCalculator, /<title>Tip calculator: how much to tip and split the bill \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(tipCalculator, /<h1 class="page-title">Tip calculator<\/h1>/);
 assert.match(tipCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/tip-calculator\/"/);
 assert.match(tipCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/tip-calculator\/"/);
@@ -122,7 +123,7 @@ assert.match(tipCalculator, /<option value="USD" selected[ >]/);
 assert.match(read('ja/tip-calculator/index.html'), /<h1 class="page-title">割り勘計算<\/h1>/);
 assert.match(read('ja/tip-calculator/index.html'), /<option value="JPY" selected[ >]/);
 assert.match(home, /href="\/high-school-gpa-calculator\/"/);
-assert.match(highSchoolGpa, /<title>High school GPA calculator: weighted and unweighted \| thetoolproject<\/title>/);
+assert.match(highSchoolGpa, /<title>High school GPA calculator: weighted and unweighted \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(highSchoolGpa, /<h1 class="page-title">High school GPA calculator<\/h1>/);
 assert.match(highSchoolGpa, /rel="canonical" href="https:\/\/thetoolproject\.com\/high-school-gpa-calculator\/"/);
 assert.match(highSchoolGpa, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/high-school-gpa-calculator\/"/);
@@ -133,14 +134,14 @@ assert.match(read('de/high-school-gpa-calculator/index.html'), /<th scope="row">
 assert.match(highSchoolGpa, /href="\/gpa-calculator\/"/);
 assert.match(home, /href="\/gpa-calculator\/"/);
 assert.match(home, /href="\/age-calculator\/"/);
-assert.match(ageCalculator, /<title>Age calculator: calculate age by date of birth \| thetoolproject<\/title>/);
+assert.match(ageCalculator, /<title>Age calculator: calculate age by date of birth \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(ageCalculator, /<h1 class="page-title">Age calculator<\/h1>/);
 assert.match(ageCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/age-calculator\/"/);
 assert.match(ageCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/age-calculator\/"/);
 assert.match(ageCalculator, /id="age-birth" type="date"/);
 assert.match(read('ja/age-calculator/index.html'), /<h1 class="page-title">年齢計算<\/h1>/);
 assert.match(home, /href="\/dice-roller\/"/);
-assert.match(diceRoller, /<title>Dice roller: roll dice online, from d6 to d20 for D&amp;D \| thetoolproject<\/title>/);
+assert.match(diceRoller, /<title>Dice roller: roll dice online, from d6 to d20 for D&amp;D \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(diceRoller, /<h1 class="page-title">Dice roller<\/h1>/);
 assert.match(diceRoller, /rel="canonical" href="https:\/\/thetoolproject\.com\/dice-roller\/"/);
 assert.match(diceRoller, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/dice-roller\/"/);
@@ -154,7 +155,7 @@ assert.match(read('ja/dice-roller/index.html'), /data-sides="20" aria-pressed="f
 assert.match(home, /href="\/volume-calculator\/"/);
 assert.match(home, /href="\/area-calculator\/"/);
 assert.match(home, /href="\/guides\/how-to-find-volume-and-area\/"/);
-assert.match(volumeCalculator, /<title>Volume calculator: cylinder, cone, tank and pipe volume \| thetoolproject<\/title>/);
+assert.match(volumeCalculator, /<title>Volume calculator: cylinder, cone, tank and pipe volume \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(volumeCalculator, /<h1 class="page-title">Volume calculator<\/h1>/);
 assert.match(volumeCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/volume-calculator\/"/);
 assert.match(volumeCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/volume-calculator\/"/);
@@ -166,7 +167,7 @@ assert.match(volumeCalculator, /<th scope="row">Cylinder<\/th><td class="fmt">V 
 assert.match(volumeCalculator, /href="\/guides\/how-to-find-volume-and-area\/"/);
 assert.match(volumeCalculator, /href="https:\/\/www\.engineeringtoolbox\.com\/steel-pipes-dimensions-d_43\.html" target="_blank"/);
 assert.match(read('de/volume-calculator/index.html'), /data-unit="cm" aria-pressed="true"/);
-assert.match(areaCalculator, /<title>Area calculator: circle, triangle, trapezoid and surface area \| thetoolproject<\/title>/);
+assert.match(areaCalculator, /<title>Area calculator: circle, triangle, trapezoid and surface area \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(areaCalculator, /<h1 class="page-title">Area calculator<\/h1>/);
 assert.match(areaCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/area-calculator\/"/);
 assert.match(areaCalculator, /data-shape="solid-cylinder" aria-pressed="false"/);
@@ -180,7 +181,7 @@ assert.match(geometryGuide, /rel="canonical" href="https:\/\/thetoolproject\.com
 assert.match(geometryGuide, /href="\/volume-calculator\/\?shape=tank-horizontal"/);
 assert.match(geometryGuide, /href="\/area-calculator\/\?shape=triangle-sides"/);
 assert.match(home, /href="\/auto-loan-calculator\/"/);
-assert.match(autoLoan, /<title>Auto loan calculator: car payment calculator with tax and trade-in \| thetoolproject<\/title>/);
+assert.match(autoLoan, /<title>Auto loan calculator: car payment calculator with tax and trade-in \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(autoLoan, /<h1 class="page-title">Auto loan calculator<\/h1>/);
 assert.match(autoLoan, /rel="canonical" href="https:\/\/thetoolproject\.com\/auto-loan-calculator\/"/);
 assert.match(autoLoan, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/auto-loan-calculator\/"/);
@@ -191,7 +192,7 @@ assert.match(autoLoan, /data-rate-preset/);
 assert.doesNotMatch(read('de/auto-loan-calculator/index.html'), /data-rate-preset/);
 assert.match(read('ja/auto-loan-calculator/index.html'), /<option value="JPY" selected[ >]/);
 assert.match(home, /href="\/guides\/cum-laude\/"/);
-assert.match(gpaCalculator, /<title>GPA calculator: college semester and cumulative GPA \| thetoolproject<\/title>/);
+assert.match(gpaCalculator, /<title>GPA calculator: college semester and cumulative GPA \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(gpaCalculator, /<h1 class="page-title">GPA calculator<\/h1>/);
 assert.match(gpaCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/gpa-calculator\/"/);
 assert.match(gpaCalculator, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/gpa-calculator\/"/);
@@ -204,12 +205,12 @@ assert.match(read('fr/gpa-calculator/index.html'), /<th scope="row">B<\/th><td c
 assert.match(cumLaudeGuide, /<h1>What is cum laude\? Magna and summa cum laude explained<\/h1>/);
 assert.match(cumLaudeGuide, /rel="canonical" href="https:\/\/thetoolproject\.com\/guides\/cum-laude\/"/);
 assert.match(cumLaudeGuide, /href="\/gpa-calculator\/"/);
-assert.match(jsonCsv, /<title>JSON to CSV converter: convert JSON files online \| thetoolproject<\/title>/);
+assert.match(jsonCsv, /<title>JSON to CSV converter: convert JSON files online \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(jsonCsv, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
 assert.match(jsonCsv, /hreflang="x-default" href="https:\/\/thetoolproject\.com\/json-to-csv\/"/);
 assert.match(jsonCsv, /href="\/guides\/json-to-csv\/"/);
 assert.match(home, /href="\/xml-to-csv\/"/);
-assert.match(xmlCsv, /<title>XML to CSV converter: convert XML files online \| thetoolproject<\/title>/);
+assert.match(xmlCsv, /<title>XML to CSV converter: convert XML files online \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(xmlCsv, /rel="canonical" href="https:\/\/thetoolproject\.com\/xml-to-csv\/"/);
 assert.match(xmlCsv, /<h1 class="page-title">XML to CSV<\/h1>/);
 const xmlCsvLd = [...xmlCsv.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
@@ -221,7 +222,7 @@ assert.match(csvSql, /rel="canonical" href="https:\/\/thetoolproject\.com\/csv-t
 assert.match(home, /href="\/csv-viewer\/"/);
 assert.match(home, /href="\/csv-to-json\/"/);
 assert.match(home, /href="\/qr-code-scanner\/"/);
-assert.match(qrScanner, /<title>QR code scanner free online: camera or image \| thetoolproject<\/title>/);
+assert.match(qrScanner, /<title>QR code scanner free online: camera or image \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(qrScanner, /rel="canonical" href="https:\/\/thetoolproject\.com\/qr-code-scanner\/"/);
 assert.match(qrScanner, /<h1 class="page-title">QR code scanner<\/h1>/);
 assert.match(home, /href="\/image-resizer\/"/);
@@ -254,12 +255,19 @@ assert.match(csvViewer, /<h1 class="page-title">CSV viewer<\/h1>/);
 assert.match(csvViewer, /rel="canonical" href="https:\/\/thetoolproject\.com\/csv-viewer\/"/);
 assert.match(home, /href="\/har-analyzer\/"/);
 assert.match(harAnalyzer, /<h1 class="page-title">HAR analyzer<\/h1>/);
-assert.match(harAnalyzer, /<title>HAR analyzer and HAR file viewer: open \.har files online \| thetoolproject<\/title>/);
+assert.match(harAnalyzer, /<title>HAR analyzer and HAR file viewer: open \.har files online \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(harAnalyzer, /rel="canonical" href="https:\/\/thetoolproject\.com\/har-analyzer\/"/);
 assert.match(harAnalyzer, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/har-analyzer\/"/);
 assert.match(harAnalyzer, /<h3>How to open a HAR file<\/h3>/);
 assert.equal([...harAnalyzer.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]))[0].applicationCategory, 'DeveloperApplication');
-assert.match(xmlJson, /<title>XML to JSON converter: convert XML online \| thetoolproject<\/title>/);
+assert.match(home, /href="\/video-to-gif\/"/);
+assert.match(videoGif, /<h1 class="page-title">Video to GIF<\/h1>/);
+assert.match(videoGif, /<title>Video to GIF converter: free, online, no upload \| thetoolproject<\/title>/);
+assert.match(videoGif, /rel="canonical" href="https:\/\/thetoolproject\.com\/video-to-gif\/"/);
+assert.match(videoGif, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/video-to-gif\/"/);
+assert.match(videoGif, /<h3>Making a GIF from a YouTube video<\/h3>/);
+assert.match(videoGif, /accept="video\/\*/);
+assert.match(xmlJson, /<title>XML to JSON converter: convert XML online \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(xmlJson, /rel="canonical" href="https:\/\/thetoolproject\.com\/xml-to-json\/"/);
 assert.match(xmlJson, /<h1 class="page-title">XML to JSON<\/h1>/);
 const xmlJsonLd = [...xmlJson.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
@@ -328,6 +336,7 @@ const englishUrls = [
   'https://thetoolproject.com/csv-to-sql/',
   'https://thetoolproject.com/csv-viewer/',
   'https://thetoolproject.com/har-analyzer/',
+  'https://thetoolproject.com/video-to-gif/',
   'https://thetoolproject.com/csv-to-json/',
   'https://thetoolproject.com/qr-code-scanner/',
   'https://thetoolproject.com/image-resizer/',
@@ -370,7 +379,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'video-to-gif', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

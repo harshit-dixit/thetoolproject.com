@@ -34,6 +34,7 @@ import CompressPdfTool from '../components/CompressPdfTool.astro';
 import EmlToPdfTool from '../components/EmlToPdfTool.astro';
 import MhtToPdfTool from '../components/MhtToPdfTool.astro';
 import WebpConverterTool from '../components/WebpConverterTool.astro';
+import VideoToGifTool from '../components/VideoToGifTool.astro';
 import type { OutputFormat } from '../lib/webp-convert';
 import { publishedToolLocales, getPublishedToolPath } from '../data/tools';
 import { buildStaticPaths, type RouteProps } from '../data/routes';
@@ -815,6 +816,29 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><strong>{t('emlPdf.faqQ1', locale)}</strong> {t('emlPdf.faqA1', locale)}</p>
           <p><strong>{t('emlPdf.faqQ2', locale)}</strong> {t('emlPdf.faqA2', locale)}</p>
           <p><strong>{t('emlPdf.faqQ3', locale)}</strong> {t('emlPdf.faqA3', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'video-to-gif' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('videoGif.leadStrong', locale)}</strong> {t('videoGif.lead', locale)}</p><p class="caption">{t('videoGif.caption', locale)}</p></div></div>
+        <VideoToGifTool locale={locale} />
+        <section aria-labelledby="vgif-how-title"><div class="sec-head"><h2 id="vgif-how-title">{t('videoGif.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('videoGif.howIntro', locale, { startHere: t('vgif.startHere', locale), endHere: t('vgif.endHere', locale), button: t('vgif.convertButton', locale) })} /></p>
+          <h3>{t('videoGif.howSettingsTitle', locale)}</h3>
+          <p>{t('videoGif.howSettingsP', locale)}</p>
+          <h3>{t('videoGif.howFormatsTitle', locale)}</h3>
+          <p>{t('videoGif.howFormatsP', locale)}</p>
+          <h3>{t('videoGif.howYoutubeTitle', locale)}</h3>
+          <p><RichText text={t('videoGif.howYoutubeP', locale)} links={{ studio: 'https://support.google.com/youtube/answer/56100', terms: 'https://www.youtube.com/t/terms' }} /></p>
+          <h3>{t('videoGif.howPhoneTitle', locale)}</h3>
+          <p><RichText text={t('videoGif.howPhoneP', locale, { choose: t('vgif.chooseButton', locale) })} /></p>
+          <h3>{t('videoGif.howGifTitle', locale)}</h3>
+          <p><RichText text={t('videoGif.howGifP', locale)} links={{ webp: getPublishedToolPath('webpToGif', locale) }} /></p>
+          <h3>{t('webp.faqTitle', locale)}</h3>
+          <p><strong>{t('videoGif.faqQ1', locale)}</strong> {t('videoGif.faqA1', locale)}</p>
+          <p><strong>{t('videoGif.faqQ2', locale)}</strong> {t('videoGif.faqA2', locale)}</p>
+          <p><strong>{t('videoGif.faqQ3', locale)}</strong> {t('videoGif.faqA3', locale)}</p>
+          <p><strong>{t('videoGif.faqQ4', locale)}</strong> {t('videoGif.faqA4', locale)}</p>
+          <p><strong>{t('videoGif.faqQ5', locale)}</strong> {t('videoGif.faqA5', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'mht-to-pdf' && <>
