@@ -20,7 +20,7 @@ describe('routing and review gate', () => {
         const entry = tool.locales[loc];
         expect(entry, `tool ${key} should have entry for ${loc}`).toBeDefined();
         expect(entry?.reviewed, `tool ${key} ${loc} must be reviewed`).toBe(!heldBack.includes(loc));
-        expect(entry?.path).toBe(`/${loc}/${tool.id}/`);
+        expect(entry?.path).toMatch(new RegExp(`^/${loc}/[a-z0-9]+(?:-[a-z0-9]+)*/$`));
         expect(entry?.title).toBeTruthy();
         expect(entry?.description).toBeTruthy();
         expect(entry?.h1).toBeTruthy();
@@ -28,6 +28,31 @@ describe('routing and review gate', () => {
       const published = publishedToolLocales(tool);
       expect(published.map(([l]) => l)).toEqual(locales.filter(l => !heldBack.includes(l)));
     }
+  });
+
+  it('publishes unique normalized canonical paths and the German pilot under its stable identity', () => {
+    const routes = buildStaticPaths({ allowDrafts: false });
+    const paths = routes.map(route => route.props.entry.path);
+    expect(new Set(paths).size).toBe(paths.length);
+    for (const route of routes) {
+      const { locale, entry } = route.props;
+      expect(entry.reviewed).toBe(true);
+      const prefix = locale === 'en' ? '/' : `/${locale}/`;
+      expect(entry.path.startsWith(prefix)).toBe(true);
+      if (route.props.kind === 'page' && route.props.page.id === 'notFound') {
+        expect(entry.path).toBe(`${prefix}404.html`);
+      } else {
+        expect(entry.path).toMatch(/^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*\/)*$/);
+        expect(route.params.path).toBe(entry.path.slice(1, -1) || undefined);
+      }
+    }
+    expect(getPublishedToolPath('wordCounter', 'de')).toBe('/de/woerterzaehler/');
+    expect(getPublishedToolPath('word-counter', 'de')).toBe('/de/woerterzaehler/');
+    expect(getPublishedToolPath('wordCounter', 'en')).toBe('/word-counter/');
+    const pilot = routes.find(route => route.params.path === 'de/woerterzaehler');
+    expect(pilot?.props.kind).toBe('tool');
+    if (pilot?.props.kind === 'tool') expect(pilot.props.tool).toBe(tools.wordCounter);
+    expect(paths).not.toContain('/de/word-counter/');
   });
 
   it('every site page has an English reviewed route', () => {
@@ -55,7 +80,7 @@ describe('routing and review gate', () => {
   it('getPublishedToolPath resolves reviewed localized paths', () => {
     expect(getPublishedToolPath('compressPdf', 'en')).toBe('/compress-pdf/');
     expect(getPublishedToolPath('compress-pdf', 'en')).toBe('/compress-pdf/');
-    expect(getPublishedToolPath('compressPdf', 'es')).toBe('/es/compress-pdf/');
+    expect(getPublishedToolPath('compressPdf', 'es')).toBe('/es/comprimir-pdf/');
     expect(() => getPublishedToolPath('nonexistent', 'en')).toThrow(/Unknown tool/);
   });
 
@@ -88,8 +113,8 @@ describe('routing and review gate', () => {
   });
 
   it('getPublishedPagePath resolves reviewed localized paths', () => {
-    expect(getPublishedPagePath('about', 'es')).toBe('/es/about/');
-    expect(getPublishedPagePath('privacy', 'de')).toBe('/de/privacy/');
+    expect(getPublishedPagePath('about', 'es')).toBe('/es/acerca-de/');
+    expect(getPublishedPagePath('privacy', 'de')).toBe('/de/datenschutzerklaerung/');
     expect(getPublishedPagePath('notFound', 'es')).toBe('/es/404.html');
   });
 
@@ -144,7 +169,7 @@ describe('routing and review gate', () => {
     // Verify draft fixture: only English is published
     expect(draftToolFixture.locales.en?.reviewed).toBe(true);
     expect(draftToolFixture.locales.es?.reviewed).toBe(false);
-    expect(draftToolFixture.locales.es?.path).toBe('/es/compress-pdf-to-100kb/');
+    expect(draftToolFixture.locales.es?.path).toBe('/es/comprimir-pdf-a-100kb/');
     const draftPublished = publishedToolLocales(draftToolFixture);
     expect(draftPublished.map(([loc]) => loc)).toEqual(['en']);
 

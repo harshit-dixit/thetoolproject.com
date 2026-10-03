@@ -1,5 +1,6 @@
 import { locales, reviewedLocales } from '../i18n/locales.mjs';
 import { dictionaries, type Locale } from '../i18n/dictionaries';
+import { getLocalizedPath, localizedPaths, type LocalizedPathMap } from './localized-paths.mjs';
 
 export { locales };
 export type { Locale };
@@ -16,7 +17,8 @@ export type ToolRouteOverrides = Partial<Record<Locale, ToolRouteOverride>>;
 export function createToolLocales(
   id: string,
   prefix: string,
-  overrides?: ToolRouteOverrides
+  overrides?: ToolRouteOverrides,
+  mapping: LocalizedPathMap = localizedPaths
 ): Record<Locale, ToolLocale> {
   const result: Partial<Record<Locale, ToolLocale>> = {};
   for (const locale of locales) {
@@ -25,7 +27,7 @@ export function createToolLocales(
     const defaultReviewed = reviewedLocales.includes(locale);
     const override = overrides?.[locale];
     result[locale] = {
-      path: override?.path ?? defaultPath,
+      path: override?.path ?? getLocalizedPath('tool', id, locale, defaultPath, mapping),
       title: d[`${prefix}.title`],
       description: d[`${prefix}.description`],
       h1: d[`${prefix}.h1`],

@@ -1,0 +1,3 @@
+# Independent Cloudflare asset redirect rules belong here, one per line.
+# Do not add localized migration aliases: the shared path map generates them.
+# Supported format: /old-path /destination 301

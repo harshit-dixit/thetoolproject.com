@@ -1,6 +1,7 @@
 import { locales, type Locale } from './tools';
 import { dictionaries } from '../i18n/dictionaries';
 import { reviewedLocales } from '../i18n/locales.mjs';
+import { getLocalizedPath, localizedPaths, type LocalizedPathMap } from './localized-paths.mjs';
 
 export type PageLocale = {
   path: string;
@@ -25,7 +26,8 @@ export type PageRouteOverrides = Partial<Record<Locale, PageRouteOverride>>;
 export function createPageLocales(
   pathGen: (locale: Locale) => string,
   prefix: string,
-  overrides?: PageRouteOverrides
+  overrides?: PageRouteOverrides,
+  mapping: LocalizedPathMap = localizedPaths
 ): Record<Locale, PageLocale> {
   const result: Partial<Record<Locale, PageLocale>> = {};
   for (const locale of locales) {
@@ -34,7 +36,8 @@ export function createPageLocales(
     const defaultReviewed = reviewedLocales.includes(locale);
     const override = overrides?.[locale];
     result[locale] = {
-      path: override?.path ?? defaultPath,
+      // Site-page dictionary prefixes are the stable page IDs.
+      path: override?.path ?? getLocalizedPath('page', prefix, locale, defaultPath, mapping),
       title: d[`${prefix}.title`],
       description: d[`${prefix}.description`],
       reviewed: override?.reviewed ?? defaultReviewed,

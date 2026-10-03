@@ -1,6 +1,57 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import assert from 'node:assert/strict';
+import { generateLocalizedRedirects, loadRoutingRegistries } from './localized-redirects.mjs';
+import { localizedPaths } from '../src/data/localized-paths.mjs';
+import { historicalPathForms } from '../src/data/localized-path-validation.mjs';
+import { htmlLang } from '../src/i18n/locales.mjs';
+import { checkArtifact } from './localized-routing-check.mjs';
+await checkArtifact();
+await generateLocalizedRedirects({ distCheck: true });
+const { tools, pages } = await loadRoutingRegistries();
+const toolPath = (id, locale) => Object.values(tools).find(tool => tool.id === id).locales[locale].path;
+// Verify metadata and footer navigation for every batch using actual published identities.
+const absolute = path => `https://thetoolproject.com${path}`;
+for (const [kind, registry] of [['tool', tools], ['page', pages]]) {
+  for (const item of Object.values(registry).filter(item => item.id !== 'notFound')) {
+    const entries = Object.entries(item.locales).filter(([, entry]) => entry.reviewed);
+    const expectedAlternates = Object.fromEntries([
+      ...entries.map(([locale, entry]) => [htmlLang[locale], absolute(entry.path)]),
+      ['x-default', absolute(item.locales.en.path)],
+    ]);
+    for (const [locale, entry] of entries) {
+      const html = readFileSync(new URL(`../dist/${entry.path.slice(1)}index.html`, import.meta.url), 'utf8');
+      assert.ok(html.includes(`<html lang="${htmlLang[locale]}"`), `${item.id}:${locale} language`);
+      assert.deepEqual([...html.matchAll(/<link rel="canonical" href="([^"]+)"/g)].map(match => match[1]), [absolute(entry.path)]);
+      const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)];
+      assert.equal(alternates.length, entries.length + 1, `${item.id}:${locale} unique alternates`);
+      assert.deepEqual(Object.fromEntries(alternates.map(([, lang, url]) => [lang, url])), expectedAlternates);
+      const select = html.match(/<select id="language-select"[^>]*>([\s\S]*?)<\/select>/)[1];
+      assert.deepEqual([...select.matchAll(/<option value="([^"]+)"/g)].map(match => match[1]),
+        Object.keys(pages.home.locales).filter(locale => pages.home.locales[locale].reviewed)
+          .map(locale => item.locales[locale]?.reviewed ? item.locales[locale].path : pages.home.locales[locale].path));
+      const footer = html.slice(html.indexOf('<footer>'));
+      for (const id of ['about', 'contact', 'privacy', 'terms']) {
+        assert.ok(footer.includes(`href="${pages[id].locales[locale].path}"`), `${item.id}:${locale} footer ${id}`);
+      }
+      if (kind === 'tool') {
+        assert.ok(html.includes(`data-tool="${item.id}"`));
+        const data = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
+        assert.equal(data.find(item => item['@type'] === 'WebApplication').url, absolute(entry.path));
+        assert.equal(data.find(item => item['@type'] === 'BreadcrumbList').itemListElement.at(-1).item, absolute(entry.path));
+      }
+    }
+  }
+}
+const historical = new Set(Object.values(localizedPaths).flatMap(kind => Object.values(kind)
+  .flatMap(item => Object.values(item).flatMap(change => change.previousPaths.flatMap(historicalPathForms)))));
+for (const file of readdirSync(new URL('../dist/', import.meta.url), { recursive: true }).filter(file => file.endsWith('.html'))) {
+  const html = readFileSync(new URL(`../dist/${file.replaceAll('\\', '/')}`, import.meta.url), 'utf8');
+  for (const [, value] of html.matchAll(/(?:href|value)="([^"]+)"/g)) {
+    const url = new URL(value, 'https://thetoolproject.com');
+    assert.ok(url.origin !== 'https://thetoolproject.com' || !historical.has(url.pathname), `${file} links to legacy URL ${value}`);
+  }
+}
 const read = path => readFileSync(new URL(`../dist/${path}`, import.meta.url), 'utf8');
 const tool = read('json-to-html/index.html');
 const excel = read('excel-to-csv/index.html');
@@ -40,7 +91,8 @@ const pdf500 = read('compress-pdf-to-500kb/index.html');
 const home = read('index.html');
 const hasGuides = existsSync(new URL('../dist/guides/json/index.html', import.meta.url)) && existsSync(new URL('../dist/guides/json-syntax-square-brackets/index.html', import.meta.url));
 const notFound = read('404.html');
-const sitemap = read('sitemap-0.xml');
+const sitemap = [...read('sitemap-index.xml').matchAll(/<loc>([^<]+)<\/loc>/g)]
+  .map(([, url]) => read(new URL(url).pathname.slice(1))).join('\n');
 assert.match(tool, /<title>JSON to HTML converter \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(tool, /<meta name="description" content="Convert JSON to HTML tables or lists/);
 assert.match(tool, /rel="canonical" href="https:\/\/thetoolproject\.com\/json-to-html\/"/);
@@ -68,7 +120,7 @@ assert.match(home, /href="\/mht-to-pdf\/"/);
 assert.match(mhtPdf, /<h1 class="page-title">MHT to PDF<\/h1>/);
 assert.match(mhtPdf, /<title>MHT to PDF converter: convert \.mht files to PDF \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(mhtPdf, /rel="canonical" href="https:\/\/thetoolproject\.com\/mht-to-pdf\/"/);
-assert.match(mhtPdf, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/mht-to-pdf\/"/);
+assert.ok(mhtPdf.includes(`hreflang="de" href="https://thetoolproject.com${toolPath('mht-to-pdf', 'de')}"`));
 assert.doesNotMatch(mhtPdf, /hreflang="ja"/);
 assert.ok(!existsSync(new URL('../dist/ja/mht-to-pdf/index.html', import.meta.url)), 'MHT to PDF has no Japanese page yet');
 assert.doesNotMatch(read('ja/index.html'), /mht-to-pdf/);
@@ -114,6 +166,38 @@ assert.match(wordCounter, /rel="canonical" href="https:\/\/thetoolproject\.com\/
 assert.match(wordCounter, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/word-counter\/"/);
 assert.match(wordCounter, /href="https:\/\/doi\.org\/10\.1016\/j\.jml\.2019\.104047" target="_blank"/);
 assert.match(read('ja/word-counter/index.html'), /<h1 class="page-title">文字数カウント<\/h1>/);
+// Independent pilot expectations catch an incorrect mapping as well as stale output.
+const pilotPath = '/de/woerterzaehler/';
+const pilotUrl = `https://thetoolproject.com${pilotPath}`;
+assert.equal(tools.wordCounter.id, 'word-counter');
+assert.equal(tools.wordCounter.locales.de.path, pilotPath);
+assert.ok(!existsSync(new URL('../dist/de/word-counter/index.html', import.meta.url)));
+const wordCounterPaths = Object.fromEntries(Object.entries(tools.wordCounter.locales).filter(([, entry]) => entry.reviewed).map(([locale, entry]) => [locale, entry.path]));
+for (const [locale, path] of Object.entries(wordCounterPaths)) {
+  const html = read(`${path.slice(1)}index.html`);
+  assert.ok(html.includes(`lang="${locale === 'pt' ? 'pt-BR' : locale}"`));
+  assert.ok(html.includes('data-tool="word-counter"'));
+  const canonicals = [...html.matchAll(/<link rel="canonical" href="([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(canonicals, [`https://thetoolproject.com${path}`]);
+  const alternates = Object.fromEntries([...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)]
+    .map(([, lang, href]) => [lang, href]));
+  assert.deepEqual(alternates, Object.fromEntries([
+    ...Object.entries(wordCounterPaths).map(([lang, href]) => [lang === 'pt' ? 'pt-BR' : lang, `https://thetoolproject.com${href}`]),
+    ['x-default', 'https://thetoolproject.com/word-counter/'],
+  ]));
+  assert.ok(html.includes(`<option value="${pilotPath}"`), `${locale} language selector links to German canonical`);
+  const data = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(match => JSON.parse(match[1]));
+  assert.equal(data.find(item => item['@type'] === 'WebApplication').url, `https://thetoolproject.com${path}`);
+  const breadcrumbs = data.find(item => item['@type'] === 'BreadcrumbList').itemListElement;
+  assert.equal(breadcrumbs[0].item, `https://thetoolproject.com${locale === 'en' ? '/' : `/${locale}/`}`);
+  assert.equal(breadcrumbs.at(-1).item, `https://thetoolproject.com${path}`);
+}
+assert.ok(read('de/index.html').includes(`href="${pilotPath}"`));
+for (const file of readdirSync(new URL('../dist/', import.meta.url), { recursive: true }).filter(file => file.endsWith('.html'))) {
+  const html = read(file);
+  assert.doesNotMatch(html, /(?:href|value)="(?:https:\/\/thetoolproject\.com)?\/de\/word-counter(?:\/|["?#])/, `${file} contains a legacy navigation/metadata URL`);
+}
+assert.ok(read(`${toolPath('word-counter', 'de').slice(1)}index.html`).includes(pilotUrl));
 assert.match(home, /href="\/tip-calculator\/"/);
 assert.match(tipCalculator, /<title>Tip calculator: how much to tip and split the bill \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(tipCalculator, /<h1 class="page-title">Tip calculator<\/h1>/);
@@ -130,7 +214,7 @@ assert.match(highSchoolGpa, /hreflang="ja" href="https:\/\/thetoolproject\.com\/
 assert.match(highSchoolGpa, /href="https:\/\/bigfuture\.collegeboard\.org\/[^"]+" target="_blank"/);
 // The scale table gives A+ both values, and the German page formats points with a decimal comma.
 assert.match(highSchoolGpa, /<th scope="row">A\+<\/th><td class="fmt">97–100<\/td><td class="fmt">4\.0 or 4\.3<\/td>/);
-assert.match(read('de/high-school-gpa-calculator/index.html'), /<th scope="row">B\+<\/th><td class="fmt">87–89<\/td><td class="fmt">3,3<\/td><td class="fmt">3,8<\/td><td class="fmt">4,3<\/td>/);
+assert.match(read(`${toolPath('high-school-gpa-calculator', 'de').slice(1)}index.html`), /<th scope="row">B\+<\/th><td class="fmt">87–89<\/td><td class="fmt">3,3<\/td><td class="fmt">3,8<\/td><td class="fmt">4,3<\/td>/);
 assert.match(highSchoolGpa, /href="\/gpa-calculator\/"/);
 assert.match(home, /href="\/gpa-calculator\/"/);
 assert.match(home, /href="\/age-calculator\/"/);
@@ -144,13 +228,13 @@ assert.match(home, /href="\/dice-roller\/"/);
 assert.match(diceRoller, /<title>Dice roller: roll dice online, from d6 to d20 for D&amp;D \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(diceRoller, /<h1 class="page-title">Dice roller<\/h1>/);
 assert.match(diceRoller, /rel="canonical" href="https:\/\/thetoolproject\.com\/dice-roller\/"/);
-assert.match(diceRoller, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/dice-roller\/"/);
+assert.ok(diceRoller.includes(`hreflang="de" href="https://thetoolproject.com${toolPath('dice-roller', 'de')}"`));
 assert.match(diceRoller, /id="dice-roll"[^>]*>Roll 1d6<\/button>/);
 // Two dice: 6 ways out of 36 to roll a 7. The SRD credit renders as a link.
 assert.match(diceRoller, /<th scope="row">7<\/th><td class="fmt">6<\/td><td class="fmt">16\.67%<\/td>/);
 assert.match(diceRoller, /href="https:\/\/dnd\.wizards\.com\/resources\/systems-reference-document"/);
 // German pages write dice as W6 and Japanese pages as D6.
-assert.match(read('de/dice-roller/index.html'), /id="dice-roll"[^>]*>1W6 würfeln<\/button>/);
+assert.match(read(`${toolPath('dice-roller', 'de').slice(1)}index.html`), /id="dice-roll"[^>]*>1W6 würfeln<\/button>/);
 assert.match(read('ja/dice-roller/index.html'), /data-sides="20" aria-pressed="false"[^>]*>D20<\/button>/);
 assert.match(home, /href="\/volume-calculator\/"/);
 assert.match(home, /href="\/area-calculator\/"/);
@@ -166,7 +250,7 @@ assert.match(volumeCalculator, /<label class="field-label" for="vol-r">Radius \(
 assert.match(volumeCalculator, /<th scope="row">Cylinder<\/th><td class="fmt">V = π × r² × h<\/td>/);
 assert.match(volumeCalculator, /href="\/guides\/how-to-find-volume-and-area\/"/);
 assert.match(volumeCalculator, /href="https:\/\/www\.engineeringtoolbox\.com\/steel-pipes-dimensions-d_43\.html" target="_blank"/);
-assert.match(read('de/volume-calculator/index.html'), /data-unit="cm" aria-pressed="true"/);
+assert.match(read(`${toolPath('volume-calculator', 'de').slice(1)}index.html`), /data-unit="cm" aria-pressed="true"/);
 assert.match(areaCalculator, /<title>Area calculator: circle, triangle, trapezoid and surface area \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(areaCalculator, /<h1 class="page-title">Area calculator<\/h1>/);
 assert.match(areaCalculator, /rel="canonical" href="https:\/\/thetoolproject\.com\/area-calculator\/"/);
@@ -174,7 +258,7 @@ assert.match(areaCalculator, /data-shape="solid-cylinder" aria-pressed="false"/)
 assert.match(areaCalculator, /<th scope="row">Triangle \(Three sides\)<\/th>/);
 assert.match(areaCalculator, /href="\/volume-calculator\/"/);
 // The guides are English only, so the other languages link to the English guide and say so.
-assert.match(read('fr/area-calculator/index.html'), /href="\/guides\/how-to-find-volume-and-area\/"/);
+assert.match(read(`${toolPath('area-calculator', 'fr').slice(1)}index.html`), /href="\/guides\/how-to-find-volume-and-area\/"/);
 assert.match(geometryGuide, /<h1>How to find the volume and area of common shapes<\/h1>/);
 assert.doesNotMatch(geometryGuide, /every shape|any shape/);
 assert.match(geometryGuide, /rel="canonical" href="https:\/\/thetoolproject\.com\/guides\/how-to-find-volume-and-area\/"/);
@@ -189,7 +273,7 @@ assert.match(autoLoan, /<option value="USD" selected[ >]/);
 assert.match(autoLoan, /id="loan-apr"[^>]* value="6.35"/);
 assert.match(autoLoan, /<td class="fmt">\$765<\/td><td class="fmt">\$542<\/td>/);
 assert.match(autoLoan, /data-rate-preset/);
-assert.doesNotMatch(read('de/auto-loan-calculator/index.html'), /data-rate-preset/);
+assert.doesNotMatch(read(`${toolPath('auto-loan-calculator', 'de').slice(1)}index.html`), /data-rate-preset/);
 assert.match(read('ja/auto-loan-calculator/index.html'), /<option value="JPY" selected[ >]/);
 assert.match(home, /href="\/guides\/cum-laude\/"/);
 assert.match(gpaCalculator, /<title>GPA calculator: college semester and cumulative GPA \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
@@ -201,7 +285,7 @@ assert.match(gpaCalculator, /href="\/guides\/cum-laude\/"/);
 // The scale table shows each letter in 0.3 steps and in thirds, and the French page uses a decimal comma.
 assert.match(gpaCalculator, /<th scope="row">A\+<\/th><td class="fmt">97–100<\/td><td class="fmt">4\.0 or 4\.3<\/td><td class="fmt">4\.0 or 4\.33<\/td>/);
 assert.match(gpaCalculator, /<th scope="row">B\+<\/th><td class="fmt">87–89<\/td><td class="fmt">3\.3<\/td><td class="fmt">3\.33<\/td>/);
-assert.match(read('fr/gpa-calculator/index.html'), /<th scope="row">B<\/th><td class="fmt">83–86<\/td><td class="fmt">3,0<\/td><td class="fmt">3,0<\/td>/);
+assert.match(read(`${toolPath('gpa-calculator', 'fr').slice(1)}index.html`), /<th scope="row">B<\/th><td class="fmt">83–86<\/td><td class="fmt">3,0<\/td><td class="fmt">3,0<\/td>/);
 assert.match(cumLaudeGuide, /<h1>What is cum laude\? Magna and summa cum laude explained<\/h1>/);
 assert.match(cumLaudeGuide, /rel="canonical" href="https:\/\/thetoolproject\.com\/guides\/cum-laude\/"/);
 assert.match(cumLaudeGuide, /href="\/gpa-calculator\/"/);
@@ -355,17 +439,16 @@ const englishUrls = [
   'https://thetoolproject.com/terms/',
   ...(hasGuides ? ['https://thetoolproject.com/guides/json-syntax-square-brackets/', 'https://thetoolproject.com/guides/json-to-csv/', 'https://thetoolproject.com/guides/json/', 'https://thetoolproject.com/guides/cum-laude/', 'https://thetoolproject.com/guides/how-to-find-volume-and-area/'] : []),
 ];
-const expectedUrls = [
-  ...englishUrls,
-  ...['es', 'pt', 'de', 'fr', 'ja'].flatMap(locale =>
-    englishUrls
-      .filter(url => !new URL(url).pathname.startsWith('/guides/'))
-      // EML to PDF and MHT to PDF have no Japanese page until the PDF font covers Japanese (src/data/tools.ts).
-      .filter(url => !(locale === 'ja' && ['/eml-to-pdf/', '/mht-to-pdf/'].includes(new URL(url).pathname)))
-      .map(url => `https://thetoolproject.com/${locale}${new URL(url).pathname}`)
-  ),
-].sort();
+const registryUrls = [...Object.values(tools), ...Object.values(pages).filter(page => page.id !== 'notFound')]
+  .flatMap(item => Object.values(item.locales).filter(entry => entry.reviewed)
+    .map(entry => `https://thetoolproject.com${entry.path}`));
+// Keep the independently listed English/guide coverage; translated URLs come from actual entries.
+assert.deepEqual(registryUrls.filter(url => !/^\/(es|pt|de|fr|ja)(\/|$)/.test(new URL(url).pathname)).sort(),
+  englishUrls.filter(url => !new URL(url).pathname.startsWith('/guides/')).sort());
+const expectedUrls = [...registryUrls, ...englishUrls.filter(url => new URL(url).pathname.startsWith('/guides/'))].sort();
 assert.deepEqual(sitemapUrls, expectedUrls);
+assert.ok(sitemapUrls.includes(pilotUrl));
+assert.ok(!sitemapUrls.includes('https://thetoolproject.com/de/word-counter/'));
 assert.ok(existsSync(new URL('../dist/404.html', import.meta.url)));
 const jsDir = new URL('../dist/_astro/', import.meta.url);
 // First-load JS is every module script the page itself references, plus the chunks those scripts import
