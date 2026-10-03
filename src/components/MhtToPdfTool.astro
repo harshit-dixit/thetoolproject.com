@@ -1,0 +1,71 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+const clientKeys: TranslationKey[] = [
+  'mht.errEmpty', 'mht.errFont', 'mht.errGeneral', 'mht.errNoPage', 'mht.errNotMht', 'mht.errPrint', 'mht.errTimeout', 'mht.errTooLarge',
+  'mht.errTooManyPages', 'mht.errUnsupportedScript', 'mht.errWorker', 'mht.errWrongType', 'mht.errZipNoMht', 'mht.errZipUnreadable',
+  'mht.fromZip', 'mht.noteCharset', 'mht.noteImages.one', 'mht.noteImages.other', 'mht.noteRemoteImages.one', 'mht.noteRemoteImages.other',
+  'mht.noteSkippedImages.one', 'mht.noteSkippedImages.other', 'mht.pdfAddress', 'mht.pdfNoContent', 'mht.pdfSaved', 'mht.printFrameTitle',
+  'mht.printPreparing', 'mht.ready', 'mht.reading', 'mht.savedFrom', 'mht.summary', 'mht.untitled',
+  'eml.noteDropped.one', 'eml.noteDropped.other', 'eml.pages.one', 'eml.pages.other', 'eml.pdfPage', 'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+// Letter where it's the paper standard (US English), A4 elsewhere. The translation file decides, shared with EML to PDF.
+const pageSize = t('eml.defaultPageSize', locale);
+if (pageSize !== 'letter' && pageSize !== 'a4') throw new Error(`eml.defaultPageSize must be letter or a4 in "${locale}", not "${pageSize}"`);
+---
+<div class="drop" id="mht-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <input class="visually-hidden" type="file" id="mht-file" accept=".mht,.mhtml,.zip,multipart/related,application/x-mimearchive" tabindex="-1" aria-label={t('mht.fileAria', locale)} />
+    <div class="drop-empty" id="mht-empty">
+      <h2 class="drop-title">{t('mht.dropTitle', locale)}</h2>
+      <p class="drop-hint">{t('mht.dropHint', locale)}</p>
+      <button class="btn" type="button" id="mht-choose">{t('mht.chooseButton', locale)}</button>
+    </div>
+    <div id="mht-panel" hidden>
+      <div class="file-line"><span class="file-name" id="mht-name"></span><span class="file-size" id="mht-size"></span></div>
+      <h2 class="panel-title mht-title" id="mht-title"></h2>
+      <p class="panel-advice mht-url" id="mht-url"></p>
+      <div class="option-row">
+        <fieldset><legend>{t('eml.pageSize', locale)}</legend><div class="chips" role="group" aria-label={t('eml.pageSize', locale)}>
+          <button type="button" data-page-size="letter" aria-pressed={pageSize === 'letter' ? 'true' : 'false'}>{t('eml.pageLetter', locale)}</button>
+          <button type="button" data-page-size="a4" aria-pressed={pageSize === 'a4' ? 'true' : 'false'}>{t('eml.pageA4', locale)}</button>
+        </div></fieldset>
+        <fieldset><legend>{t('mht.headerLabel', locale)}</legend><div class="chips" role="group" aria-label={t('mht.headerLabel', locale)}>
+          <button type="button" data-header="on" aria-pressed="true">{t('mht.headerOn', locale)}</button>
+          <button type="button" data-header="off" aria-pressed="false">{t('mht.headerOff', locale)}</button>
+        </div></fieldset>
+      </div>
+      <p id="mht-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+      <div id="mht-result" class="result" hidden>
+        <p class="result-summary" id="mht-summary"></p>
+        <div class="result-view" id="mht-preview" hidden><iframe class="preview-frame mht-preview-frame" id="mht-preview-frame" title={t('eml.previewTitle', locale)}></iframe></div>
+        <p class="result-note" id="mht-note"></p>
+      </div>
+      <div class="actions input-actions">
+        <button class="btn" type="button" id="mht-download" disabled>{t('eml.download', locale)}</button>
+        <button class="btn alt" type="button" id="mht-print" disabled>{t('mht.printButton', locale)}</button>
+        <button class="btn alt" type="button" id="mht-change">{t('eml.changeButton', locale)}</button>
+      </div>
+      <p class="result-note mht-print-hint">{t('mht.printHint', locale, { print: t('mht.printButton', locale) })}</p>
+    </div>
+  </div>
+</div>
+<style>
+  .mht-title { overflow-wrap: anywhere; }
+  .mht-url { overflow-wrap: anywhere; }
+  #mht-panel .option-row { margin-block-start: 22px; }
+  #mht-result { margin-block-start: 22px; }
+  #mht-download:disabled, #mht-print:disabled { opacity: 0.5; cursor: default; }
+  .mht-print-hint { margin-block-start: 12px; }
+  /* Tall enough to read most of the first page at the panel's width. */
+  .mht-preview-frame { height: 560px; }
+  @media (max-width: 560px) { .mht-preview-frame { height: 420px; } }
+  /* The print view is laid out off screen at a desktop width; only the print dialog shows it. */
+  :global(.mht-print-frame) { position: fixed; inset-block-start: 0; inset-inline-start: -10000px; width: 1024px; height: 768px; border: 0; }
+</style>
+<script src="../scripts/mht-to-pdf.ts"></script>

@@ -6,6 +6,7 @@ const tool = read('json-to-html/index.html');
 const excel = read('excel-to-csv/index.html');
 const dbfExcel = read('dbf-to-excel/index.html');
 const emlPdf = read('eml-to-pdf/index.html');
+const mhtPdf = read('mht-to-pdf/index.html');
 const webpPages = Object.fromEntries(['webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg'].map(id => [id, read(`${id}/index.html`)]));
 const jsonExcel = read('json-to-excel/index.html');
 const jsonCsv = read('json-to-csv/index.html');
@@ -61,6 +62,14 @@ assert.match(emlPdf, /rel="canonical" href="https:\/\/thetoolproject\.com\/eml-t
 assert.doesNotMatch(emlPdf, /hreflang="ja"/);
 assert.ok(!existsSync(new URL('../dist/ja/eml-to-pdf/index.html', import.meta.url)), 'EML to PDF has no Japanese page yet');
 assert.doesNotMatch(read('ja/index.html'), /eml-to-pdf/);
+assert.match(home, /href="\/mht-to-pdf\/"/);
+assert.match(mhtPdf, /<h1 class="page-title">MHT to PDF<\/h1>/);
+assert.match(mhtPdf, /<title>MHT to PDF converter: convert \.mht files to PDF \| thetoolproject<\/title>/);
+assert.match(mhtPdf, /rel="canonical" href="https:\/\/thetoolproject\.com\/mht-to-pdf\/"/);
+assert.match(mhtPdf, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/mht-to-pdf\/"/);
+assert.doesNotMatch(mhtPdf, /hreflang="ja"/);
+assert.ok(!existsSync(new URL('../dist/ja/mht-to-pdf/index.html', import.meta.url)), 'MHT to PDF has no Japanese page yet');
+assert.doesNotMatch(read('ja/index.html'), /mht-to-pdf/);
 for (const [id, h1] of [['webp-converter', 'WebP converter'], ['webp-to-png', 'WebP to PNG'], ['webp-to-jpg', 'WebP to JPG (JPEG)'], ['webp-to-gif', 'WebP to GIF'], ['webp-to-svg', 'WebP to SVG']]) {
   assert.match(home, new RegExp(`href="/${id}/"`));
   assert.ok(webpPages[id].includes(`<h1 class="page-title">${h1}</h1>`), `${id} has the H1 "${h1}"`);
@@ -307,6 +316,7 @@ const englishUrls = [
   'https://thetoolproject.com/excel-to-csv/',
   'https://thetoolproject.com/dbf-to-excel/',
   'https://thetoolproject.com/eml-to-pdf/',
+  'https://thetoolproject.com/mht-to-pdf/',
   'https://thetoolproject.com/csv-to-sql/',
   'https://thetoolproject.com/csv-viewer/',
   'https://thetoolproject.com/csv-to-json/',
@@ -332,8 +342,8 @@ const expectedUrls = [
   ...['es', 'pt', 'de', 'fr', 'ja'].flatMap(locale =>
     englishUrls
       .filter(url => !new URL(url).pathname.startsWith('/guides/'))
-      // EML to PDF has no Japanese page until the PDF font covers Japanese (src/data/tools.ts).
-      .filter(url => !(locale === 'ja' && new URL(url).pathname === '/eml-to-pdf/'))
+      // EML to PDF and MHT to PDF have no Japanese page until the PDF font covers Japanese (src/data/tools.ts).
+      .filter(url => !(locale === 'ja' && ['/eml-to-pdf/', '/mht-to-pdf/'].includes(new URL(url).pathname)))
       .map(url => `https://thetoolproject.com/${locale}${new URL(url).pathname}`)
   ),
 ].sort();
@@ -351,7 +361,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

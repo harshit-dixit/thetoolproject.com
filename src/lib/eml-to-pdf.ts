@@ -40,32 +40,35 @@ export class PdfError extends Error {
   constructor(readonly code: PdfErrorCode) { super(code); }
 }
 
-const PAGE_SIZES: Record<PageSize, [number, number]> = { letter: [612, 792], a4: [595.28, 841.89] };
-const MARGIN = 54;
+export const PAGE_SIZES: Record<PageSize, [number, number]> = { letter: [612, 792], a4: [595.28, 841.89] };
+export const MARGIN = 54;
 const FOOTER = 28;
-const SIZE = { body: 10.5, table: 9.5, header: 9.5, title: 16, footer: 8, h1: 16, h2: 13.5, h3: 11.5 };
-const LEADING = 1.4;
+export const SIZE = { body: 10.5, table: 9.5, header: 9.5, title: 16, footer: 8, h1: 16, h2: 13.5, h3: 11.5 };
+export const LEADING = 1.4;
 const QUOTE_STEP = 12;
 const LIST_STEP = 18;
 const CELL_PAD = 4;
 const PX = 0.75; // CSS pixels to PDF points
 const MAX_PAGES = 1000;
-const INK = rgb(0.08, 0.09, 0.11);
-const MUTED = rgb(0.36, 0.39, 0.44);
+export const INK = rgb(0.08, 0.09, 0.11);
+export const MUTED = rgb(0.36, 0.39, 0.44);
 const LINK = rgb(0.06, 0.3, 0.78);
-const RULE = rgb(0.82, 0.84, 0.87);
+export const RULE = rgb(0.82, 0.84, 0.87);
 const ITALIC = degrees(11);
 
-type Style = { font: PDFFont; size: number; color: RGB; italic: boolean; href?: string };
+export type Style = { font: PDFFont; size: number; color: RGB; italic: boolean; href?: string };
 type Piece = Style & { text: string; width: number; space: boolean };
 type Line = { pieces: Piece[]; width: number; size: number };
 
 /** Keeps the characters the font can draw, and counts what it drops. */
-class Glyphs {
+export class Glyphs {
   dropped = 0;
   letters = 0;
   missingLetters = 0;
   constructor(private readonly supported: Set<number>) {}
+
+  /** True when most letters are in a script the font doesn't have, so the PDF would be mostly blank. */
+  get mostlyMissing() { return this.missingLetters >= 20 && this.missingLetters > this.letters * 0.25; }
 
   clean(text: string): string {
     let out = '';
@@ -101,7 +104,7 @@ class Measure {
 }
 
 /** Breaks styled text into lines no wider than `width`. Breaks at spaces, and inside words only when a word is too long. */
-function wrap(runs: { text: string; style: Style }[], lineWidthLimit: number, measure: Measure, preserveSpaces: boolean): Line[] {
+export function wrap(runs: { text: string; style: Style }[], lineWidthLimit: number, measure: Measure, preserveSpaces: boolean): Line[] {
   // Table columns are sized to their longest word, so allow for rounding when that word is placed.
   const width = lineWidthLimit + 0.01;
   const lines: Line[] = [];
@@ -240,7 +243,7 @@ export async function isIntactPng(bytes: Uint8Array): Promise<boolean> {
   return header.interlaced ? inflated >= header.height : inflated === expected;
 }
 
-class Writer {
+export class Writer {
   readonly doc: PDFDocument;
   readonly measure = new Measure();
   readonly width: number;
@@ -435,6 +438,87 @@ function tableAsText(block: TableBlock): TextBlock[] {
   })));
 }
 
+/** The bytes of a data:image URL, or undefined for anything else. */
+export function dataUrlBytes(src: string): Uint8Array | undefined {
+  const data = /^data:image\/[\w.+-]+(;[^,]*)?,(.*)$/is.exec(src);
+  if (!data) return undefined;
+  if (/;base64/i.test(data[1] ?? '')) return fromBinary(base64Binary(data[2]));
+  try {
+    return new TextEncoder().encode(decodeURIComponent(data[2]));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Embeds a PNG or JPEG (other formats through `toPng`), or returns null when the image can't be read. */
+export async function embedImage(doc: PDFDocument, source: Uint8Array, toPng?: PdfOptions['toPng']): Promise<PDFImage | null> {
+  let bytes = source;
+  try {
+    let kind = sniffImage(bytes);
+    if (kind === 'other' && toPng) {
+      const png = await toPng(bytes);
+      if (png) { bytes = png; kind = 'png'; }
+    }
+    if (kind === 'png' && (await isIntactPng(bytes))) return await doc.embedPng(bytes);
+    if (kind === 'jpg') return await doc.embedJpg(bytes);
+  } catch {
+    // Damaged image data.
+  }
+  return null;
+}
+
+/** Removes the characters the font can't draw from every block, counting them in `glyphs`. */
+export function cleanBlocks(blocks: Block[], glyphs: Glyphs) {
+  for (const block of blocks) {
+    if (block.kind === 'text') block.runs = glyphs.runs(block.runs);
+    if (block.kind === 'table') for (const row of block.rows) for (const cell of row) cell.runs = glyphs.runs(cell.runs);
+  }
+}
+
+/** Draws body blocks at the current position. Images are embedded beforehand and looked up by `src`; a missing one is skipped. */
+export function drawBlocks(writer: Writer, blocks: Block[], images: Map<string, PDFImage | null>) {
+  for (const block of blocks) {
+    if (block.kind === 'text') {
+      if (block.runs.length) drawText(writer, block);
+    } else if (block.kind === 'table') {
+      if (!drawTable(writer, block)) for (const text of tableAsText(block)) drawText(writer, text);
+    } else if (block.kind === 'rule') {
+      writer.gap(SIZE.body, block.quote);
+      writer.ensure(6);
+      const x = MARGIN + indentOf(block);
+      writer.page.drawLine({ start: { x, y: writer.y - 3 }, end: { x: writer.width - MARGIN, y: writer.y - 3 }, thickness: 0.75, color: RULE });
+      writer.y -= 6;
+      writer.lastQuote = block.quote;
+    } else {
+      const image = images.get(block.src);
+      if (!image) continue;
+      const x = MARGIN + indentOf(block);
+      let width = (block.width ?? (block.height ? (block.height * image.width) / image.height : image.width)) * PX;
+      let height = (block.height ?? (block.width ? (block.width * image.height) / image.width : image.height)) * PX;
+      const scale = Math.min(1, (writer.width - MARGIN - x) / width, writer.pageHeight / height);
+      width *= scale;
+      height *= scale;
+      if (block.gap) writer.gap(SIZE.body, block.quote);
+      writer.ensure(height + 4);
+      if (block.quote) writer.quoteBars(block.quote, writer.y, writer.y - height - 4);
+      writer.page.drawImage(image, { x, y: writer.y - height - 2, width, height });
+      writer.y -= height + 4;
+      writer.lastQuote = block.quote;
+    }
+  }
+}
+
+/** Writes "Page n of m" at the foot of every page and returns the pages. */
+export function drawPageNumbers(writer: Writer, glyphs: Glyphs, label: (page: number, total: number) => string) {
+  const pages = writer.doc.getPages();
+  pages.forEach((page, index) => {
+    const text = glyphs.clean(label(index + 1, pages.length));
+    const width = writer.measure.width(writer.fonts.regular, text, SIZE.footer);
+    page.drawText(text, { x: (writer.width - width) / 2, y: MARGIN - 6, size: SIZE.footer, font: writer.fonts.regular, color: MUTED });
+  });
+  return pages;
+}
+
 export async function emailToPdf(email: ParsedEmail, fontBytes: { regular: Uint8Array; bold: Uint8Array }, options: PdfOptions): Promise<PdfResult> {
   const { labels } = options;
   const doc = await PDFDocument.create();
@@ -447,16 +531,13 @@ export async function emailToPdf(email: ParsedEmail, fontBytes: { regular: Uint8
   const hasText = email.text.some(part => part.trim());
   const body: PdfResult['body'] = options.body === 'text' ? (hasText ? 'text' : hasHtml ? 'html' : 'none') : hasHtml ? 'html' : hasText ? 'text' : 'none';
   const parsed = body === 'html'
-    ? email.html.map(htmlToBlocks)
-    : body === 'text' ? email.text.map(textToBlocks) : [];
+    ? email.html.map(part => htmlToBlocks(part))
+    : body === 'text' ? email.text.map(part => textToBlocks(part)) : [];
   const remoteImages = parsed.reduce((sum, part) => sum + part.remoteImages, 0);
   const blocks = parsed.flatMap((part, index) => index && part.blocks[0] ? [{ ...part.blocks[0], gap: true }, ...part.blocks.slice(1)] : part.blocks);
 
   // Clean every string first, so a message the font can't show fails before any work.
-  for (const block of blocks) {
-    if (block.kind === 'text') block.runs = glyphs.runs(block.runs);
-    if (block.kind === 'table') for (const row of block.rows) for (const cell of row) cell.runs = glyphs.runs(cell.runs);
-  }
+  cleanBlocks(blocks, glyphs);
   const headers = Object.fromEntries(Object.entries(email.headers).map(([key, value]) => [key, glyphs.clean(value)])) as ParsedEmail['headers'];
 
   // Images the body shows by Content-ID are part of the message, not attachments.
@@ -473,23 +554,9 @@ export async function emailToPdf(email: ParsedEmail, fontBytes: { regular: Uint8
       const file = byCid.get(id.replace(/^<|>$/g, '').toLowerCase());
       if (file) { shown.add(file); bytes = file.bytes; }
     } else {
-      const data = /^data:image\/[\w.+-]+(;[^,]*)?,(.*)$/is.exec(src);
-      if (data) bytes = /;base64/i.test(data[1] ?? '') ? fromBinary(base64Binary(data[2])) : new TextEncoder().encode(decodeURIComponent(data[2]));
+      bytes = dataUrlBytes(src);
     }
-    let image: PDFImage | null = null;
-    if (bytes?.length) {
-      try {
-        let kind = sniffImage(bytes);
-        if (kind === 'other' && options.toPng) {
-          const png = await options.toPng(bytes);
-          if (png) { bytes = png; kind = 'png'; }
-        }
-        if (kind === 'png' && (await isIntactPng(bytes))) image = await doc.embedPng(bytes);
-        else if (kind === 'jpg') image = await doc.embedJpg(bytes);
-      } catch {
-        image = null;
-      }
-    }
+    const image = bytes?.length ? await embedImage(doc, bytes, options.toPng) : null;
     if (!image) skippedImages++;
     images.set(src, image);
     return image;
@@ -499,7 +566,7 @@ export async function emailToPdf(email: ParsedEmail, fontBytes: { regular: Uint8
   const listed = email.attachments.filter(file => !shown.has(file));
   const names = listed.map(file => glyphs.clean(file.name) || file.name.replace(/[^\x20-\x7e]/g, '_'));
 
-  if (glyphs.missingLetters >= 20 && glyphs.missingLetters > glyphs.letters * 0.25) throw new PdfError('unsupportedScript');
+  if (glyphs.mostlyMissing) throw new PdfError('unsupportedScript');
 
   const writer = new Writer(doc, { regular, bold }, PAGE_SIZES[options.pageSize]);
 
@@ -530,42 +597,9 @@ export async function emailToPdf(email: ParsedEmail, fontBytes: { regular: Uint8
   // Body.
   const notice = email.encrypted && body === 'none' ? labels.encrypted : body === 'none' ? labels.noBody : '';
   if (notice) writer.lines(wrap([{ text: glyphs.clean(notice), style: { ...valueStyle, size: SIZE.body, color: MUTED, italic: true } }], writer.contentWidth, writer.measure, false), MARGIN, 0);
-  for (const block of blocks) {
-    if (block.kind === 'text') {
-      if (block.runs.length) drawText(writer, block);
-    } else if (block.kind === 'table') {
-      if (!drawTable(writer, block)) for (const text of tableAsText(block)) drawText(writer, text);
-    } else if (block.kind === 'rule') {
-      writer.gap(SIZE.body, block.quote);
-      writer.ensure(6);
-      const x = MARGIN + indentOf(block);
-      writer.page.drawLine({ start: { x, y: writer.y - 3 }, end: { x: writer.width - MARGIN, y: writer.y - 3 }, thickness: 0.75, color: RULE });
-      writer.y -= 6;
-      writer.lastQuote = block.quote;
-    } else {
-      const image = images.get(block.src);
-      if (!image) continue;
-      const x = MARGIN + indentOf(block);
-      let width = (block.width ?? (block.height ? (block.height * image.width) / image.height : image.width)) * PX;
-      let height = (block.height ?? (block.width ? (block.width * image.height) / image.width : image.height)) * PX;
-      const scale = Math.min(1, (writer.width - MARGIN - x) / width, writer.pageHeight / height);
-      width *= scale;
-      height *= scale;
-      if (block.gap) writer.gap(SIZE.body, block.quote);
-      writer.ensure(height + 4);
-      if (block.quote) writer.quoteBars(block.quote, writer.y, writer.y - height - 4);
-      writer.page.drawImage(image, { x, y: writer.y - height - 2, width, height });
-      writer.y -= height + 4;
-      writer.lastQuote = block.quote;
-    }
-  }
+  drawBlocks(writer, blocks, images);
 
-  const pages = doc.getPages();
-  pages.forEach((page, index) => {
-    const text = glyphs.clean(labels.page(index + 1, pages.length));
-    const width = writer.measure.width(regular, text, SIZE.footer);
-    page.drawText(text, { x: (writer.width - width) / 2, y: MARGIN - 6, size: SIZE.footer, font: regular, color: MUTED });
-  });
+  const pages = drawPageNumbers(writer, glyphs, labels.page);
 
   if (options.attachments === 'embed') {
     const used = new Set<string>();

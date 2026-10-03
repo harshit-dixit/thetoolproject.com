@@ -243,7 +243,7 @@ export function splitMultipart(body: string, boundary: string): string[] {
   return parts;
 }
 
-function decodeTransfer(body: string, encoding: string): string {
+export function decodeTransfer(body: string, encoding: string): string {
   if (encoding === 'base64') return base64Binary(body);
   if (encoding === 'quoted-printable') return quotedPrintableBinary(body);
   return body;

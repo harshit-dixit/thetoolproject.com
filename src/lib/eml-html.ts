@@ -11,6 +11,12 @@ export type TableCell = { runs: Run[]; span: number };
 export type TableBlock = Placement & { kind: 'table'; rows: TableCell[][] };
 export type Block = TextBlock | ImageBlock | RuleBlock | TableBlock;
 export type Body = { blocks: Block[]; remoteImages: number };
+export type HtmlOptions = {
+  /** Maps an image address to one the PDF can load, or undefined for an image on the internet. By default only cid: and data: images load. */
+  image?: (src: string) => string | undefined;
+  /** Makes a link absolute, for documents saved with relative links. */
+  link?: (href: string) => string | undefined;
+};
 
 type State = {
   bold: boolean; italic: boolean; href?: string; pre: boolean; hidden: boolean;
@@ -254,7 +260,7 @@ function cellRuns(blocks: TextBlock[]): Run[] {
   return runs;
 }
 
-export function htmlToBlocks(html: string): Body {
+export function htmlToBlocks(html: string, options: HtmlOptions = {}): Body {
   const builder = new Builder();
   const root: State = { bold: false, italic: false, pre: false, hidden: false, level: 0, indent: 0, quote: 0 };
   const stack: Entry[] = [];
@@ -302,11 +308,13 @@ export function htmlToBlocks(html: string): Body {
     }
     if (name === 'img') {
       if (next.hidden) return;
-      const src = (attributes.src ?? '').trim();
+      // Responsive images may only have a srcset; its first candidate stands in for src.
+      const src = (attributes.src || (attributes.srcset ?? '').trim().split(/\s+/)[0].replace(/,$/, '') || '').trim();
       const width = pixels(attributes.width) ?? pixels(cssValue(style, 'width'));
       const height = pixels(attributes.height) ?? pixels(cssValue(style, 'height'));
       if ((width !== undefined && width <= 3) || (height !== undefined && height <= 3)) return; // spacers and tracking pixels
-      if (/^(cid:|data:image\/)/i.test(src)) builder.block({ kind: 'image', src, ...(width ? { width } : {}), ...(height ? { height } : {}) }, current);
+      const local = options.image ? options.image(src) : /^(cid:|data:image\/)/i.test(src) ? src : undefined;
+      if (local) builder.block({ kind: 'image', src: local, ...(width ? { width } : {}), ...(height ? { height } : {}) }, current);
       else if (src) {
         builder.remoteImages++;
         const alt = (attributes.alt ?? '').replace(/\s+/g, ' ').trim();
@@ -323,7 +331,7 @@ export function htmlToBlocks(html: string): Body {
     if (weight) next.bold = /^(bold|bolder|[6-9]00)$/.test(weight) ? true : /^(normal|lighter|[1-5]00)$/.test(weight) ? false : next.bold;
     const fontStyle = cssValue(style, 'font-style');
     if (fontStyle) next.italic = fontStyle === 'italic' || fontStyle === 'oblique';
-    if (name === 'a') next.href = safeHref(attributes.href) ?? current.href;
+    if (name === 'a') next.href = safeHref(attributes.href && options.link ? options.link(attributes.href) : attributes.href) ?? current.href;
     if (name === 'pre' || name === 'plaintext' || name === 'listing') next.pre = true;
     if (/^h[1-6]$/.test(name)) { next.level = name === 'h1' ? 1 : name === 'h2' ? 2 : 3; next.bold = true; }
     if (name === 'blockquote') next.quote = current.quote + 1;

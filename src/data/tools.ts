@@ -209,10 +209,16 @@ export const tools: Record<string, Tool> = {
     // Publish ja once a Japanese font is added.
     locales: createToolLocales('eml-to-pdf', 'emlPdf', { ja: { reviewed: false } }),
   },
+  mhtToPdf: {
+    id: 'mht-to-pdf',
+    category: 'UtilitiesApplication',
+    // Same PDF font as EML to PDF (Latin, Greek and Cyrillic), so no Japanese page until a Japanese font is added.
+    locales: createToolLocales('mht-to-pdf', 'mhtPdf', { ja: { reviewed: false } }),
+  },
 };
 
 /** Tool locales held back on purpose, with the reason in tools.ts. Everything else must be published in every locale. */
-export const unpublishedToolLocales: Partial<Record<string, Locale[]>> = { emlToPdf: ['ja'] };
+export const unpublishedToolLocales: Partial<Record<string, Locale[]>> = { emlToPdf: ['ja'], mhtToPdf: ['ja'] };
 
 export function publishedToolLocales(tool: Tool): [Locale, ToolLocale][] {
   return Object.entries(tool.locales).filter((entry): entry is [Locale, ToolLocale] => !!entry[1]?.reviewed);

@@ -41,6 +41,7 @@
 | **[Excel to CSV](https://thetoolproject.com/excel-to-csv/)** | Extract sheets from Excel workbooks (`.xlsx`, `.xls`) to clean CSV files locally. |
 | **[DBF to Excel](https://thetoolproject.com/dbf-to-excel/)** | Convert dBASE/FoxPro `.dbf` tables to Excel `.xlsx` with record preview and legacy text encoding selection. |
 | **[EML to PDF](https://thetoolproject.com/eml-to-pdf/)** | Convert `.eml` emails to PDF with selectable text, sender/recipient header table, inline images, clickable links, and optional embedded attachments. |
+| **[MHT to PDF](https://thetoolproject.com/mht-to-pdf/)** | Convert `.mht` and `.mhtml` web archives to PDF with selectable text, links and saved images, or print the page with its original layout. |
 | **[XML to JSON](https://thetoolproject.com/xml-to-json/)** | High-performance XML parser converting complex XML tree structures into idiomatic JSON via streaming SAX. |
 | **[XML to CSV](https://thetoolproject.com/xml-to-csv/)** | Flatten XML record hierarchies directly into CSV format without memory exhaustion. |
 | **[CSV to SQL](https://thetoolproject.com/csv-to-sql/)** | Generate batch SQL `INSERT` statements from CSV data for PostgreSQL, MySQL, SQLite, and SQL Server. |
@@ -108,7 +109,7 @@ thetoolproject.com
 ├── Core Engines
 │   ├── SheetJS (xlsx)  Native Excel workbook parsing & generation
 │   ├── saxes           Streaming event-driven XML SAX parser
-│   ├── pdf-lib         PDF building for EML to PDF and Compress PDF (Noto Sans, SIL OFL, via fontkit)
+│   ├── pdf-lib         PDF building for EML to PDF, MHT to PDF and Compress PDF (Noto Sans, SIL OFL, via fontkit)
 │   ├── gifenc          GIF encoding for WebP to GIF (per-frame 256-color palettes)
 │   ├── imagetracerjs   Bitmap-to-vector tracing for WebP to SVG
 │   └── zxing-wasm      WebAssembly-powered barcode & QR computer vision
