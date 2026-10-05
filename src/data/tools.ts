@@ -154,6 +154,17 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('auto-loan-calculator', 'autoLoan'),
   },
+  overtimeCalculator: {
+    id: 'overtime-calculator',
+    category: 'UtilitiesApplication',
+    // Published after the localized URL migration, so it starts at its translated URLs and has no old paths to redirect.
+    locales: createToolLocales('overtime-calculator', 'overtime', {
+      es: { path: '/es/calculadora-de-horas-extras/' },
+      pt: { path: '/pt/calculadora-de-horas-extras/' },
+      de: { path: '/de/ueberstundenrechner/' },
+      fr: { path: '/fr/calcul-heures-supplementaires/' },
+    }),
+  },
   ageCalculator: {
     id: 'age-calculator',
     category: 'UtilitiesApplication',

@@ -21,6 +21,7 @@ import TipCalculatorTool from '../components/TipCalculatorTool.astro';
 import HighSchoolGpaTool from '../components/HighSchoolGpaTool.astro';
 import GpaCalculatorTool from '../components/GpaCalculatorTool.astro';
 import AutoLoanTool from '../components/AutoLoanTool.astro';
+import OvertimeTool from '../components/OvertimeTool.astro';
 import AgeCalculatorTool from '../components/AgeCalculatorTool.astro';
 import DiceRollerTool from '../components/DiceRollerTool.astro';
 import VolumeCalculatorTool from '../components/VolumeCalculatorTool.astro';
@@ -44,6 +45,7 @@ import { gradePoints, LETTERS, percentRange } from '../lib/high-school-gpa';
 import { pointsFor } from '../lib/college-gpa';
 import { usAverages, usRates, usRateTiers } from '../data/auto-loan-defaults';
 import { DIE_SIDES, sumDistribution } from '../lib/dice-roller';
+import { overtimeDefaults, overtimeRuleCountries, overtimeRuleSources } from '../data/overtime-defaults';
 
 export function getStaticPaths() {
   const allowDrafts = import.meta.env.DEV && process.env.PREVIEW_DRAFTS === 'true';
@@ -147,6 +149,32 @@ const autoLoanAverageRows: [TranslationKey, string, string][] = [
   ['autoLoan.averageRate', aprText(usRates.new.all), aprText(usRates.used.all)],
 ];
 const autoLoanFaqs = [1, 2, 3, 4, 5, 6] as const;
+
+// Overtime calculator: the "How much is overtime pay" table in the page currency, and the rules by country.
+const overtime = overtimeDefaults[locale];
+// Whole amounts without cents ($30), the rest to the cent ($22.50).
+const otMoney = (amount: number) => {
+  const value = Math.round(amount * 100) / 100;
+  return new Intl.NumberFormat(langTag(locale), { style: 'currency', currency: overtime.currency, minimumFractionDigits: Number.isInteger(value) ? 0 : undefined }).format(value);
+};
+const otTimes = `${formatNumber(overtime.multiplier, locale, 2)}${t('overtime.timesUnit', locale)}`;
+const otMultKey = (value: number) => `overtime.mult.${String(value).replace('.', '')}` as TranslationKey;
+const otTableRows = overtime.tableRates.map(rate => ({ rate: otMoney(rate), cells: overtime.multipliers.map(m => otMoney(rate * m)), ten: otMoney(rate * overtime.multiplier * 10) }));
+const otCountryName = new Intl.DisplayNames(langTag(locale), { type: 'region' });
+const otRuleRows = overtimeRuleCountries.map(code => ({ code, name: otCountryName.of(code)!, source: overtimeRuleSources[code] }));
+const otFaqs = [1, 2, 3, 4, 5, 6, 7] as const;
+const otSources = {
+  flsa: 'https://www.dol.gov/agencies/whd/overtime',
+  fs23: 'https://www.dol.gov/agencies/whd/fact-sheets/23-flsa-overtime-pay',
+  bonuses: 'https://www.dol.gov/agencies/whd/fact-sheets/56c-bonuses',
+  exempt: 'https://www.dol.gov/agencies/whd/overtime/salary-levels',
+  cfr: 'https://www.law.cornell.edu/cfr/text/29/778.113',
+  ca: 'https://www.dir.ca.gov/dlse/faq_overtime.htm',
+  irs: 'https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors',
+  faq: 'https://www.irs.gov/pub/taxpros/fs-2026-13.pdf',
+  s1a: 'https://www.irs.gov/pub/irs-pdf/f1040s1a.pdf',
+};
+const otThreshold = new Intl.NumberFormat(langTag(locale), { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(684);
 const ageFaqs = [1, 2, 3, 4, 5] as const;
 
 // Dice roller tables: the chance and average of each die, and the odds of each total with two d6.
@@ -606,6 +634,44 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         </div></section>
         <section aria-labelledby="auto-loan-faq-title"><div class="sec-head"><h2 id="auto-loan-faq-title">{t('autoLoan.faqTitle', locale)}</h2></div><div class="how-copy">
           {autoLoanFaqs.map(n => <><h3>{t(`autoLoan.faqQ${n}` as TranslationKey, locale)}</h3><p><RichText text={t(`autoLoan.faqA${n}` as TranslationKey, locale)} links={autoLoanSources} /></p></>)}
+        </div></section>
+      </>}
+      {tool.id === 'overtime-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('overtime.leadStrong', locale)}</strong> {t('overtime.lead', locale)}</p><p class="caption">{t('overtime.caption', locale)}</p></div></div>
+        <OvertimeTool locale={locale} />
+        <section aria-labelledby="how-title"><div class="sec-head"><h2 id="how-title">{t('overtime.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('overtime.howFormula', locale)} /></p>
+          <h3>{t('overtime.howRateTitle', locale)}</h3>
+          <p><RichText text={t('overtime.howRateP', locale)} links={otSources} /></p>
+          <h3>{t('overtime.howSalaryTitle', locale)}</h3>
+          <p><RichText text={t('overtime.howSalaryP', locale)} links={otSources} /></p>
+          <h3>{t('overtime.howDoubleTitle', locale)}</h3>
+          <p><RichText text={t('overtime.howDoubleP', locale)} links={otSources} /></p>
+        </div></section>
+        <section aria-labelledby="overtime-table-title"><div class="sec-head"><h2 id="overtime-table-title">{t('overtime.tableTitle', locale)}</h2><p>{t('overtime.tableIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table hs-gpa-scale"><thead><tr><th scope="col">{t('overtime.colRate', locale)}</th>{overtime.multipliers.map(m => <th scope="col">{t(otMultKey(m), locale)}</th>)}<th scope="col">{t('overtime.colTen', locale, { rate: otTimes })}</th></tr></thead>
+            <tbody>{otTableRows.map(row => <tr><th scope="row">{row.rate}</th>{row.cells.map(cell => <td class="fmt">{cell}</td>)}<td class="fmt">{row.ten}</td></tr>)}</tbody>
+          </table></div>
+        </section>
+        <section aria-labelledby="overtime-rules-title"><div class="sec-head"><h2 id="overtime-rules-title">{t('overtime.rulesTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('overtime.rulesP1', locale, { threshold: otThreshold })} links={otSources} /></p>
+          <p><RichText text={t('overtime.rulesP2', locale, { threshold: otThreshold })} links={otSources} /></p>
+          <p><RichText text={t('overtime.rulesP3', locale)} links={otSources} /></p>
+        </div></section>
+        <section aria-labelledby="overtime-countries-title"><div class="sec-head"><h2 id="overtime-countries-title">{t('overtime.countriesTitle', locale)}</h2><p>{t('overtime.countriesIntro', locale)}</p></div>
+          <div class="table-scroll"><table class="spec-table mapping-table"><thead><tr><th scope="col">{t('overtime.colCountry', locale)}</th><th scope="col">{t('overtime.colRule', locale)}</th></tr></thead>
+            <tbody>{otRuleRows.map(row => <tr><th scope="row"><a href={row.source} rel="noopener">{row.name}</a></th><td>{t(`overtime.rules.${row.code}` as TranslationKey, locale)}</td></tr>)}</tbody>
+          </table></div>
+        </section>
+        <section aria-labelledby="overtime-tax-title"><div class="sec-head"><h2 id="overtime-tax-title">{t('overtime.noTaxTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('overtime.noTaxP1', locale)} links={otSources} /></p>
+          <p><RichText text={t('overtime.noTaxP2', locale)} links={otSources} /></p>
+          <p>{t('overtime.noTaxP3', locale)}</p>
+          <p><RichText text={t('overtime.noTaxP4', locale)} links={otSources} /></p>
+          <p>{t('overtime.noTaxExample', locale)}</p>
+        </div></section>
+        <section aria-labelledby="overtime-faq-title"><div class="sec-head"><h2 id="overtime-faq-title">{t('overtime.faqTitle', locale)}</h2></div><div class="how-copy">
+          {otFaqs.map(n => <><h3>{t(`overtime.faqQ${n}` as TranslationKey, locale)}</h3><p><RichText text={t(`overtime.faqA${n}` as TranslationKey, locale)} links={otSources} /></p></>)}
         </div></section>
       </>}
       {tool.id === 'age-calculator' && <>
