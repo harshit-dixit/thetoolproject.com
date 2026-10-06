@@ -99,6 +99,29 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('webp-to-svg', 'webpSvg'),
   },
+  // One page for JPG and JPEG, as for WebP to JPG. Merging into one image and merging into a PDF are different
+  // searches, so the PDF has its own page; both share one tool. Published after the localized URL migration, so
+  // they start at their translated URLs and have no old paths to redirect.
+  mergeJpg: {
+    id: 'merge-jpg',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('merge-jpg', 'mergeJpg', {
+      es: { path: '/es/unir-jpg/' },
+      pt: { path: '/pt/juntar-jpg/' },
+      de: { path: '/de/jpg-zusammenfuegen/' },
+      fr: { path: '/fr/fusionner-jpg/' },
+    }),
+  },
+  mergeJpgPdf: {
+    id: 'merge-jpg-to-pdf',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('merge-jpg-to-pdf', 'mergeJpgPdf', {
+      es: { path: '/es/unir-jpg-a-pdf/' },
+      pt: { path: '/pt/juntar-jpg-em-pdf/' },
+      de: { path: '/de/jpg-zu-pdf-zusammenfuegen/' },
+      fr: { path: '/fr/fusionner-jpg-en-pdf/' },
+    }),
+  },
   videoToGif: {
     id: 'video-to-gif',
     category: 'UtilitiesApplication',
@@ -163,6 +186,14 @@ export const tools: Record<string, Tool> = {
       pt: { path: '/pt/calculadora-de-horas-extras/' },
       de: { path: '/de/ueberstundenrechner/' },
       fr: { path: '/fr/calcul-heures-supplementaires/' },
+    }),
+  },
+  // A US federal tax deduction, so it's published in English only; the overtime calculator links to it from every language.
+  noTaxOvertime: {
+    id: 'no-tax-on-overtime-calculator',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('no-tax-on-overtime-calculator', 'noTax', {
+      es: { reviewed: false }, pt: { reviewed: false }, de: { reviewed: false }, fr: { reviewed: false }, ja: { reviewed: false },
     }),
   },
   ageCalculator: {
@@ -241,7 +272,7 @@ export const tools: Record<string, Tool> = {
 };
 
 /** Tool locales held back on purpose, with the reason in tools.ts. Everything else must be published in every locale. */
-export const unpublishedToolLocales: Partial<Record<string, Locale[]>> = { emlToPdf: ['ja'], mhtToPdf: ['ja'] };
+export const unpublishedToolLocales: Partial<Record<string, Locale[]>> = { emlToPdf: ['ja'], mhtToPdf: ['ja'], noTaxOvertime: ['es', 'pt', 'de', 'fr', 'ja'] };
 
 export function publishedToolLocales(tool: Tool): [Locale, ToolLocale][] {
   return Object.entries(tool.locales).filter((entry): entry is [Locale, ToolLocale] => !!entry[1]?.reviewed);

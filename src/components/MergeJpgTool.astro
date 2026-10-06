@@ -1,0 +1,127 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { COLUMNS, GAPS, LAYOUTS, LIMITS, MARGINS, ORIENTATIONS, PAGE_SIZES, QUALITIES, type MergeOutput } from '../lib/merge-jpg';
+
+// Without an output this is the Merge JPG page, with chips for one JPG image or a PDF.
+interface Props { output?: MergeOutput; locale?: Locale }
+const { output, locale = 'en' } = Astro.props;
+const initial: MergeOutput = output ?? 'image';
+// Letter on the English page, A4 elsewhere, as for the other PDF tools.
+const paper = t('eml.defaultPageSize', locale) === 'a4' ? 'a4' : 'letter';
+
+const clientKeys: TranslationKey[] = [
+  'merge.advicePdf', 'merge.adviceImage', 'merge.convertImage', 'merge.convertPdf', 'merge.doneImage', 'merge.donePdf',
+  'merge.downloadImage', 'merge.downloadPdf', 'merge.errCanvas', 'merge.errDecode', 'merge.errGeneral', 'merge.errNoImages',
+  'merge.errTimeout', 'merge.errWorker', 'merge.fileCount.one', 'merge.fileCount.other', 'merge.merging', 'merge.moveDown',
+  'merge.moveUp', 'merge.noteLimit.one', 'merge.noteLimit.other', 'merge.noteReencoded.one', 'merge.noteReencoded.other',
+  'merge.noteScaled', 'merge.noteSkipped.one', 'merge.noteSkipped.other', 'merge.noteTooBig.one', 'merge.noteTooBig.other',
+  'merge.noteUnreadable.one', 'merge.noteUnreadable.other', 'merge.reading', 'merge.remove', 'merge.rowMeta', 'merge.rowReading',
+  'merge.savingImage', 'merge.savingPdf', 'merge.summaryImage', 'merge.summaryPdf.one', 'merge.summaryPdf.other',
+  'merge.titleImage.one', 'merge.titleImage.other', 'merge.titlePdf.one', 'merge.titlePdf.other',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const layoutLabels: Record<string, TranslationKey> = { vertical: 'merge.layoutVertical', horizontal: 'merge.layoutHorizontal', grid: 'merge.layoutGrid' };
+const gapLabels: TranslationKey[] = ['merge.gapNone', 'merge.gapSmall', 'merge.gapLarge'];
+const qualityLabels: TranslationKey[] = ['webp.qualityMax', 'webp.qualityHigh', 'webp.qualitySmall'];
+const pageLabels: Record<string, TranslationKey> = { fit: 'merge.pageFit', a4: 'eml.pageA4', letter: 'eml.pageLetter' };
+const orientationLabels: Record<string, TranslationKey> = { auto: 'merge.orientationAuto', portrait: 'merge.orientationPortrait', landscape: 'merge.orientationLandscape' };
+const marginLabels: Record<string, TranslationKey> = { none: 'merge.marginNone', small: 'merge.marginSmall', large: 'merge.marginLarge' };
+---
+<div class="drop merge-drop" id="merge-tool" data-initial-output={initial} data-fixed={output ? 'true' : 'false'} data-paper={paper} data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <input class="visually-hidden" type="file" id="merge-files" accept=".jpg,.jpeg,.jfif,.png,.webp,image/jpeg,image/png,image/webp" multiple tabindex="-1" aria-label={t('merge.fileAria', locale)} />
+    <div class="drop-empty" id="merge-empty">
+      <h2 class="drop-title">{t('merge.dropTitle', locale)}</h2>
+      <p class="drop-hint">{t('merge.dropHint', locale, { files: LIMITS.files, size: LIMITS.fileBytes / 1024 / 1024 })}</p>
+      <button class="btn" type="button" id="merge-choose">{t('merge.chooseButton', locale)}</button>
+    </div>
+    <div class="merge-panel" id="merge-panel" hidden>
+      <div class="file-line"><span class="file-name" id="merge-name"></span><span class="file-size" id="merge-size"></span></div>
+      <h2 class="panel-title" id="merge-title"></h2>
+      <p class="panel-advice" id="merge-advice"></p>
+      <ol class="merge-list" id="merge-list" aria-label={t('merge.listAria', locale)}></ol>
+      <p class="result-note" id="merge-input-note" hidden></p>
+      <div class="merge-add-row"><button class="btn alt" type="button" id="merge-add">{t('merge.addButton', locale)}</button></div>
+      <div class="option-row">
+        {!output && <fieldset><legend>{t('merge.outputLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.outputLabel', locale)}>
+          <button type="button" data-output="image" aria-pressed={initial === 'image' ? 'true' : 'false'}>{t('merge.outputImage', locale)}</button>
+          <button type="button" data-output="pdf" aria-pressed={initial === 'pdf' ? 'true' : 'false'}>{t('merge.outputPdf', locale)}</button>
+        </div></fieldset>}
+        {initial === 'image' && <>
+          <fieldset data-show="image"><legend>{t('merge.layoutLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.layoutLabel', locale)}>
+            {LAYOUTS.map((value, i) => <button type="button" data-layout={value} aria-pressed={i === 0 ? 'true' : 'false'}>{t(layoutLabels[value], locale)}</button>)}
+          </div></fieldset>
+          <fieldset data-show="grid" hidden><legend>{t('merge.columnsLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.columnsLabel', locale)}>
+            {COLUMNS.map((value, i) => <button type="button" data-columns={value} aria-pressed={i === 0 ? 'true' : 'false'}>{value}</button>)}
+          </div></fieldset>
+          <fieldset data-show="image"><legend>{t('merge.fitLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.fitLabel', locale)}>
+            <button type="button" data-fit="match" aria-pressed="true">{t('merge.fitMatch', locale)}</button>
+            <button type="button" data-fit="original" aria-pressed="false">{t('merge.fitOriginal', locale)}</button>
+          </div></fieldset>
+          <fieldset data-show="image"><legend>{t('merge.gapLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.gapLabel', locale)}>
+            {GAPS.map((value, i) => <button type="button" data-gap={value} aria-pressed={i === 0 ? 'true' : 'false'}>{t(gapLabels[i], locale)}</button>)}
+          </div></fieldset>
+          <fieldset data-show="image"><legend>{t('merge.backgroundLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.backgroundLabel', locale)}>
+            <button type="button" data-background="white" aria-pressed="true">{t('webp.backgroundWhite', locale)}</button>
+            <button type="button" data-background="black" aria-pressed="false">{t('webp.backgroundBlack', locale)}</button>
+          </div></fieldset>
+          <fieldset data-show="image"><legend>{t('webp.qualityLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.qualityLabel', locale)}>
+            {QUALITIES.map((value, i) => <button type="button" data-quality={value} aria-pressed={i === 1 ? 'true' : 'false'}>{t(qualityLabels[i], locale)}</button>)}
+          </div></fieldset>
+        </>}
+        <fieldset data-show="pdf" hidden={initial !== 'pdf'}><legend>{t('eml.pageSize', locale)}</legend><div class="chips" role="group" aria-label={t('eml.pageSize', locale)}>
+          {PAGE_SIZES.map(value => <button type="button" data-page-size={value} aria-pressed={value === paper ? 'true' : 'false'}>{t(pageLabels[value], locale)}</button>)}
+        </div></fieldset>
+        <fieldset data-show="paper" hidden={initial !== 'pdf'}><legend>{t('merge.orientationLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.orientationLabel', locale)}>
+          {ORIENTATIONS.map((value, i) => <button type="button" data-orientation={value} aria-pressed={i === 0 ? 'true' : 'false'}>{t(orientationLabels[value], locale)}</button>)}
+        </div></fieldset>
+        <fieldset data-show="paper" hidden={initial !== 'pdf'}><legend>{t('merge.marginLabel', locale)}</legend><div class="chips" role="group" aria-label={t('merge.marginLabel', locale)}>
+          {MARGINS.map(value => <button type="button" data-margin={value} aria-pressed={value === 'small' ? 'true' : 'false'}>{t(marginLabels[value], locale)}</button>)}
+        </div></fieldset>
+      </div>
+      <div class="actions input-actions">
+        <button class="btn" type="button" id="merge-convert"></button>
+        <button class="btn alt" type="button" id="merge-change">{t('merge.changeButton', locale)}</button>
+      </div>
+      <div id="merge-result" class="result merge-result" hidden>
+        <p class="result-summary" id="merge-summary"></p>
+        <img class="merge-preview" id="merge-preview" alt={t('merge.previewAlt', locale)} hidden />
+        <p class="result-note" id="merge-note"></p>
+        <div class="actions"><button class="btn" type="button" id="merge-download"></button></div>
+      </div>
+    </div>
+    <p id="merge-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+  </div>
+</div>
+<style>
+  /* Choosing files grows the frame after the file dialog closes, which doesn't count as input.
+     Filling the first screen keeps the section below out of view, so that growth isn't a layout shift. */
+  .merge-drop { display: flex; flex-direction: column; min-height: max(320px, min(calc(100svh - 320px), 800px)); }
+  .merge-drop > .tool-frame { width: 100%; flex: 1; display: flex; flex-direction: column; }
+  .merge-drop .drop-empty { flex: 1; }
+  #merge-status.error { font-weight: 600; }
+  .merge-list { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 8px; max-height: 420px; overflow-y: auto; counter-reset: merge; }
+  /* The rows are created by the script, so they don't carry this component's scoped attribute. */
+  .merge-list :global(.merge-row) { counter-increment: merge; display: grid; grid-template-columns: 2ch 48px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 6px 8px 6px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); }
+  .merge-list :global(.merge-row)::before { content: counter(merge); color: var(--slate); font-size: 14px; font-stretch: 75%; font-weight: 600; font-variant-numeric: tabular-nums; text-align: end; }
+  .merge-list :global(.merge-row img) { width: 48px; height: 48px; object-fit: contain; background: var(--fog); }
+  .merge-list :global(.merge-row strong) { display: block; overflow-wrap: anywhere; font-weight: 600; }
+  .merge-list :global(.merge-row span) { color: var(--slate); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .merge-list :global(.merge-row-buttons) { display: flex; gap: 4px; }
+  .merge-list :global(.merge-icon) { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; cursor: pointer; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; transition: border-color 0.15s, background-color 0.15s; }
+  .merge-list :global(.merge-icon:hover:not(:disabled)) { border-color: var(--cobalt); color: var(--cobalt); background: var(--cobalt-wash); }
+  .merge-list :global(.merge-icon:disabled) { color: var(--line); cursor: default; }
+  #merge-input-note { margin-block: 12px 0; }
+  .merge-add-row { margin-block-start: 12px; }
+  .merge-panel .option-row:empty { display: none; }
+  .merge-result { margin-block-start: 26px; }
+  .merge-preview { display: block; max-width: 100%; max-height: 480px; margin-block-start: 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--fog); }
+  @media (max-width: 560px) {
+    .merge-list :global(.merge-row) { grid-template-columns: 48px minmax(0, 1fr); padding-inline-start: 8px; }
+    .merge-list :global(.merge-row)::before { display: none; }
+    .merge-list :global(.merge-row-buttons) { grid-column: 1 / -1; justify-content: flex-end; }
+  }
+</style>
+<script src="../scripts/merge-jpg.ts"></script>

@@ -67,6 +67,8 @@ const csvSql = read('csv-to-sql/index.html');
 const csvViewer = read('csv-viewer/index.html');
 const harAnalyzer = read('har-analyzer/index.html');
 const videoGif = read('video-to-gif/index.html');
+const mergeJpg = read('merge-jpg/index.html');
+const mergeJpgPdf = read('merge-jpg-to-pdf/index.html');
 const csvJson = read('csv-to-json/index.html');
 const jsonBeautifier = read('json-beautifier/index.html');
 const wordCounter = read('word-counter/index.html');
@@ -137,6 +139,26 @@ assert.match(webpPages['webp-to-png'], /href="\/webp-converter\/"/);
 assert.match(webpPages['webp-converter'], /data-format="svg"/);
 assert.doesNotMatch(webpPages['webp-to-png'], /data-quality=|data-svg-mode=/);
 assert.match(webpPages['webp-to-svg'], /data-svg-mode="trace" aria-pressed="true"/);
+// Merge JPG: one image or a PDF from the hub, a PDF only on its own page, with translated URLs.
+assert.match(home, /href="\/merge-jpg\/"/);
+assert.match(home, /href="\/merge-jpg-to-pdf\/"/);
+assert.match(mergeJpg, /<title>Merge JPG: combine JPG files into one image or PDF online \| thetoolproject<\/title>/);
+assert.match(mergeJpg, /<h1 class="page-title">Merge JPG<\/h1>/);
+assert.match(mergeJpg, /rel="canonical" href="https:\/\/thetoolproject\.com\/merge-jpg\/"/);
+assert.match(mergeJpg, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/jpg-zusammenfuegen\/"/);
+assert.match(mergeJpg, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/merge-jpg\/"/);
+assert.match(mergeJpg, /data-output="pdf"/);
+assert.match(mergeJpg, /data-layout="vertical" aria-pressed="true"/);
+assert.match(mergeJpg, /href="\/merge-jpg-to-pdf\/"/);
+assert.match(mergeJpgPdf, /<h1 class="page-title">Merge JPG to PDF<\/h1>/);
+assert.match(mergeJpgPdf, /hreflang="fr" href="https:\/\/thetoolproject\.com\/fr\/fusionner-jpg-en-pdf\/"/);
+assert.doesNotMatch(mergeJpgPdf, /data-output=|data-layout=|data-quality=/);
+assert.match(mergeJpgPdf, /href="\/merge-jpg\/"/);
+assert.match(mergeJpgPdf, /href="\/compress-pdf\/"/);
+// Letter on the English page, A4 elsewhere.
+assert.match(mergeJpgPdf, /data-page-size="letter" aria-pressed="true"/);
+assert.match(read('de/jpg-zu-pdf-zusammenfuegen/index.html'), /data-page-size="a4" aria-pressed="true"/);
+assert.match(read('ja/merge-jpg-to-pdf/index.html'), /<h1 class="page-title">JPGをPDFに結合<\/h1>/);
 assert.match(excel, /<title>Excel to CSV converter for XLSX and XLS \|Video to GIF converter: free, online, no upload | thetoolproject<\/title>/);
 assert.match(excel, /<meta name="description" content="Convert Excel XLSX, XLS and ODS sheets to CSV/);
 assert.match(excel, /rel="canonical" href="https:\/\/thetoolproject\.com\/excel-to-csv\/"/);
@@ -277,20 +299,38 @@ assert.match(autoLoan, /data-rate-preset/);
 assert.doesNotMatch(read(`${toolPath('auto-loan-calculator', 'de').slice(1)}index.html`), /data-rate-preset/);
 assert.match(read('ja/auto-loan-calculator/index.html'), /<option value="JPY" selected[ >]/);
 assert.match(home, /href="\/overtime-calculator\/"/);
-assert.match(overtimePage, /<title>Overtime calculator: overtime pay and no tax on overtime \| thetoolproject<\/title>/);
+assert.match(overtimePage, /<title>Overtime calculator: overtime pay and rate per hour \| thetoolproject<\/title>/);
 assert.match(overtimePage, /<h1 class="page-title">Overtime calculator<\/h1>/);
 assert.match(overtimePage, /rel="canonical" href="https:\/\/thetoolproject\.com\/overtime-calculator\/"/);
 assert.match(overtimePage, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/ueberstundenrechner\/"/);
 assert.match(overtimePage, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/overtime-calculator\/"/);
 assert.match(overtimePage, /<option value="USD" selected[ >]/);
 assert.match(overtimePage, /id="ot-multiplier"[^>]* value="1.5"/);
-// The US tax panel is English only, and its bracket list has no id so analytics never gets it.
-assert.match(overtimePage, /id="ot-tax"/);
-assert.match(overtimePage, /<select class="tool-select" data-tax-bracket[ >]/);
-assert.doesNotMatch(overtimePage, /<select[^>]* id="[^"]*"[^>]*data-tax-bracket|<select[^>]*data-tax-bracket[^>]* id="/);
+// The deduction has its own page: the English overtime page links to it from the answer, and every language from its section.
+assert.match(overtimePage, /id="ot-tax-link"[^>]*>Estimate your deduction</);
+assert.doesNotMatch(overtimePage, /data-tax-bracket/);
 // The "How much is overtime pay" table: $20 at time and a half is $30, and 10 hours of it $300.
 assert.match(overtimePage, /<th scope="row">\$20<\/th><td class="fmt">\$30<\/td><td class="fmt">\$40<\/td><td class="fmt">\$300<\/td>/);
-for (const locale of ['es', 'pt', 'de', 'fr', 'ja']) assert.doesNotMatch(read(`${toolPath('overtime-calculator', locale).slice(1)}index.html`), /id="ot-tax"/);
+for (const locale of ['es', 'pt', 'de', 'fr', 'ja']) {
+  const page = read(`${toolPath('overtime-calculator', locale).slice(1)}index.html`);
+  assert.doesNotMatch(page, /id="ot-tax-link"/);
+  assert.match(page, /href="\/no-tax-on-overtime-calculator\/"/);
+}
+// The no tax on overtime calculator: a US deduction, so English only, with no translated pages, alternates or links to them.
+const noTaxPage = read('no-tax-on-overtime-calculator/index.html');
+assert.match(home, /href="\/no-tax-on-overtime-calculator\/"/);
+assert.match(noTaxPage, /<title>No tax on overtime calculator: estimate your deduction \| thetoolproject<\/title>/);
+assert.match(noTaxPage, /<h1 class="page-title">No tax on overtime calculator<\/h1>/);
+assert.match(noTaxPage, /rel="canonical" href="https:\/\/thetoolproject\.com\/no-tax-on-overtime-calculator\/"/);
+assert.doesNotMatch(noTaxPage, /hreflang="(es|pt|de|fr|ja)"/);
+assert.match(noTaxPage, /href="\/overtime-calculator\/"/);
+for (const locale of ['es', 'pt', 'de', 'fr', 'ja']) {
+  assert.ok(!existsSync(new URL(`../dist/${locale}/no-tax-on-overtime-calculator/index.html`, import.meta.url)), `No ${locale} no tax on overtime page`);
+  assert.doesNotMatch(read(`${locale}/index.html`), /no-tax-on-overtime-calculator/);
+}
+// Its bracket list has no id, so analytics never gets a visitor's bracket.
+assert.match(noTaxPage, /<select class="tool-select" data-tax-bracket[ >]/);
+assert.doesNotMatch(noTaxPage, /<select[^>]* id="[^"]*"[^>]*data-tax-bracket|<select[^>]*data-tax-bracket[^>]* id="/);
 assert.match(read('pt/calculadora-de-horas-extras/index.html'), /id="ot-regular"[^>]* value="220"/);
 assert.match(read('ja/overtime-calculator/index.html'), /<option value="JPY" selected[ >]/);
 assert.match(home, /href="\/guides\/cum-laude\/"/);
@@ -424,6 +464,7 @@ const englishUrls = [
   'https://thetoolproject.com/tip-calculator/',
   'https://thetoolproject.com/auto-loan-calculator/',
   'https://thetoolproject.com/overtime-calculator/',
+  'https://thetoolproject.com/no-tax-on-overtime-calculator/',
   'https://thetoolproject.com/age-calculator/',
   'https://thetoolproject.com/dice-roller/',
   'https://thetoolproject.com/volume-calculator/',
@@ -448,6 +489,8 @@ const englishUrls = [
   'https://thetoolproject.com/webp-to-jpg/',
   'https://thetoolproject.com/webp-to-gif/',
   'https://thetoolproject.com/webp-to-svg/',
+  'https://thetoolproject.com/merge-jpg/',
+  'https://thetoolproject.com/merge-jpg-to-pdf/',
   'https://thetoolproject.com/compress-jpg-to-100kb/',
   'https://thetoolproject.com/compress-jpg-to-50kb/',
   'https://thetoolproject.com/compress-pdf/',
@@ -481,7 +524,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'overtime-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'video-to-gif', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'overtime-calculator', 'no-tax-on-overtime-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'video-to-gif', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'merge-jpg', 'merge-jpg-to-pdf', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

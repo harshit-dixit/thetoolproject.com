@@ -1,0 +1,187 @@
+---
+import { t, langTag, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { DEDUCTION_CAP, PHASE_OUT_PER_STEP, PHASE_OUT_START, PHASE_OUT_STEP, PERIODS_PER_YEAR, TAX_BRACKETS } from '../lib/overtime';
+
+interface Props { locale?: Locale }
+const { locale = 'en' } = Astro.props;
+
+// The deduction is in US dollars, so every amount on this tool is too, whatever the page language.
+const clientKeys: TranslationKey[] = [
+  'overtime.errAmount', 'overtime.errHours', 'overtime.errMultiplier', 'overtime.breakdownFix',
+  'noTax.breakdownEmpty', 'noTax.breakdownEmptyW2', 'noTax.breakdownHalf', 'noTax.breakdownCap', 'noTax.breakdownPhase',
+  'noTax.breakdownSeparate', 'noTax.errWeeks', 'noTax.live',
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const lang = langTag(locale);
+const number = (value: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(value);
+const usd = (value: number) => new Intl.NumberFormat(lang, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+const placeholder = new Intl.NumberFormat(lang, { minimumFractionDigits: 2 }).format(0);
+const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent', maximumFractionDigits: 0 }).format(value / 100);
+const multipliers = [1.5, 2];
+const incomeHint = t('noTax.incomeHint', locale, {
+  single: usd(PHASE_OUT_START.single), joint: usd(PHASE_OUT_START.joint), step: usd(PHASE_OUT_PER_STEP), per: usd(PHASE_OUT_STEP),
+});
+---
+<div class="drop nt-drop" id="no-tax-tool" data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame nt-grid">
+    <div class="nt-top">
+      <div class="chips" role="group" aria-label={t('noTax.sourceLabel', locale)}>
+        <button type="button" data-source="hours" aria-pressed="true">{t('noTax.sourceHours', locale)}</button>
+        <button type="button" data-source="w2" aria-pressed="false">{t('noTax.sourceW2', locale)}</button>
+      </div>
+    </div>
+
+    <div class="nt-main">
+      <div data-source-panel="hours">
+        <div class="nt-field">
+          <label class="field-label" for="nt-rate">{t('overtime.rateLabel', locale)}</label>
+          <div class="nt-box">
+            <span class="nt-affix" aria-hidden="true">$</span>
+            <input class="nt-input" id="nt-rate" type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby="nt-rate-hint nt-rate-error" />
+          </div>
+          <p class="input-hint" id="nt-rate-hint">{t('noTax.rateHint', locale)}</p>
+          <p class="nt-error" id="nt-rate-error" hidden></p>
+        </div>
+        <div class="nt-pair">
+          <div class="nt-field">
+            <label class="field-label" for="nt-hours">{t('noTax.hoursLabel', locale)}</label>
+            <div class="nt-box">
+              <input class="nt-input" id="nt-hours" type="text" inputmode="decimal" autocomplete="off" placeholder={number(0)} aria-describedby="nt-hours-hint nt-hours-error" />
+            </div>
+            <p class="nt-error" id="nt-hours-error" hidden></p>
+          </div>
+          <div class="nt-field">
+            <label class="field-label" for="nt-weeks">{t('noTax.weeksLabel', locale)}</label>
+            <div class="nt-box">
+              <input class="nt-input" id="nt-weeks" type="text" inputmode="numeric" autocomplete="off" value={String(PERIODS_PER_YEAR.week)} aria-describedby="nt-weeks-error" />
+            </div>
+            <p class="nt-error" id="nt-weeks-error" hidden></p>
+          </div>
+        </div>
+        <p class="input-hint" id="nt-hours-hint">{t('noTax.hoursHint', locale)}</p>
+        <div class="nt-field">
+          <label class="field-label" for="nt-multiplier">{t('overtime.multiplierLabel', locale)}</label>
+          <div class="nt-row">
+            <div class="chips" role="group" aria-label={t('overtime.multiplierPresets', locale)}>
+              {multipliers.map(value => <button type="button" data-multiplier={value} aria-pressed={value === 1.5 ? 'true' : 'false'}>{t(`overtime.mult.${String(value).replace('.', '')}` as TranslationKey, locale)}</button>)}
+            </div>
+            <div class="nt-box is-suffix nt-short">
+              <span class="nt-affix nt-unit" aria-hidden="true">{t('overtime.timesUnit', locale)}</span>
+              <input class="nt-input" id="nt-multiplier" type="text" inputmode="decimal" autocomplete="off" value={number(1.5)} aria-describedby="nt-multiplier-error" />
+            </div>
+          </div>
+          <p class="nt-error" id="nt-multiplier-error" hidden></p>
+        </div>
+      </div>
+
+      <div class="nt-field" data-source-panel="w2" hidden>
+        <label class="field-label" for="nt-own">{t('noTax.ownLabel', locale)}</label>
+        <div class="nt-box">
+          <span class="nt-affix" aria-hidden="true">$</span>
+          <input class="nt-input" id="nt-own" type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby="nt-own-hint nt-own-error" />
+        </div>
+        <p class="input-hint" id="nt-own-hint">{t('noTax.ownHint', locale)}</p>
+        <p class="nt-error" id="nt-own-error" hidden></p>
+      </div>
+    </div>
+
+    <div class="nt-results">
+      <p class="nt-big-label">{t('noTax.resultDeduction', locale)}</p>
+      <p class="nt-big" data-result="deduction">–</p>
+      <dl class="nt-list">
+        <div data-row="week"><dt>{t('noTax.resultQualifiedWeek', locale)}</dt><dd data-result="qualifiedWeek">–</dd></div>
+        <div><dt>{t('noTax.resultQualifiedYear', locale)}</dt><dd data-result="qualifiedYear">–</dd></div>
+        <div><dt>{t('noTax.resultSaved', locale)}</dt><dd data-result="taxSaved">–</dd></div>
+      </dl>
+      <p class="nt-breakdown" id="nt-breakdown">{t('noTax.breakdownEmpty', locale, { cap: usd(DEDUCTION_CAP.single) })}</p>
+      <p class="input-hint">{t('noTax.note', locale)}</p>
+    </div>
+
+    <div class="nt-return">
+      <h2 class="nt-title">{t('noTax.returnTitle', locale)}</h2>
+      <div class="nt-field">
+        <span class="field-label" id="nt-status-label">{t('noTax.statusLabel', locale)}</span>
+        <div class="chips" role="group" aria-labelledby="nt-status-label">
+          <button type="button" data-filing="single" aria-pressed="true">{t('noTax.single', locale)}</button>
+          <button type="button" data-filing="joint" aria-pressed="false">{t('noTax.joint', locale)}</button>
+          <button type="button" data-filing="separate" aria-pressed="false">{t('noTax.separate', locale)}</button>
+        </div>
+      </div>
+      <div class="nt-field" id="nt-spouse-field" hidden>
+        <label class="field-label" for="nt-spouse">{t('noTax.spouseLabel', locale)}</label>
+        <div class="nt-box">
+          <span class="nt-affix" aria-hidden="true">$</span>
+          <input class="nt-input" id="nt-spouse" type="text" inputmode="decimal" autocomplete="off" placeholder={placeholder} aria-describedby="nt-spouse-hint nt-spouse-error" />
+        </div>
+        <p class="input-hint" id="nt-spouse-hint">{t('noTax.spouseHint', locale)}</p>
+        <p class="nt-error" id="nt-spouse-error" hidden></p>
+      </div>
+      <div class="nt-pair nt-pair-top">
+        <div class="nt-field">
+          <label class="field-label" for="nt-income">{t('noTax.incomeLabel', locale)}</label>
+          <div class="nt-box">
+            <span class="nt-affix" aria-hidden="true">$</span>
+            <input class="nt-input" id="nt-income" type="text" inputmode="decimal" autocomplete="off" placeholder={number(0)} aria-describedby="nt-income-hint nt-income-error" />
+          </div>
+          <p class="input-hint" id="nt-income-hint">{incomeHint}</p>
+          <p class="nt-error" id="nt-income-error" hidden></p>
+        </div>
+        <div class="nt-field">
+          {/* No id, so the page-wide option tracking never records a visitor's tax bracket. */}
+          <label class="field-label nt-bracket">
+            {t('noTax.bracketLabel', locale)}
+            <select class="tool-select" data-tax-bracket>
+              <option value="">{t('noTax.bracketNone', locale)}</option>
+              {TAX_BRACKETS.map(rate => <option value={rate}>{t('noTax.bracketOption', locale, { rate: percent(rate) })}</option>)}
+            </select>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="visually-hidden" id="nt-live" aria-live="polite" aria-atomic="true"></p>
+</div>
+<style>
+  .nt-drop { min-height: 0; }
+  /* The answer sits beside the fields on wide screens, and straight after them on phones. */
+  .nt-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "top top" "main results" "return results"; gap: 28px 40px; align-items: start; max-width: 1000px; }
+  .nt-top { grid-area: top; }
+  .nt-main { grid-area: main; min-width: 0; }
+  .nt-results { grid-area: results; min-width: 0; }
+  .nt-return { grid-area: return; min-width: 0; }
+  .nt-field + .nt-field, .nt-pair + .nt-field, .nt-field + .nt-pair, .input-hint + .nt-field { margin-block-start: 24px; }
+  .nt-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: end; }
+  .nt-pair-top { align-items: start; }
+  .nt-pair .nt-field + .nt-field { margin: 0; }
+  .nt-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .nt-box { display: flex; align-items: center; background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; transition: border-color 0.15s; min-width: 0; }
+  .nt-box:focus-within { border-color: var(--cobalt); outline: 2px solid var(--cobalt); outline-offset: 3px; }
+  .nt-box .nt-input:focus-visible { outline: none; }
+  .nt-box.is-suffix { flex-direction: row-reverse; }
+  .nt-short { width: 9em; }
+  .nt-affix { padding-inline: 14px 0; color: var(--slate); font-weight: 600; font-size: 20px; flex: none; }
+  .nt-box.is-suffix .nt-affix { padding-inline: 0 14px; }
+  .nt-unit { font-size: 18px; font-weight: 500; }
+  .nt-input { font: 600 20px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: transparent; border: 0; border-radius: 4px; padding: 12px 14px; width: 100%; min-width: 0; min-height: 50px; }
+  .nt-bracket { display: block; }
+  .nt-bracket .tool-select { display: block; width: 100%; min-height: 50px; margin-block-start: 8px; }
+  .nt-error { margin-block: 8px 0; font-weight: 600; font-size: 14px; }
+  .nt-big-label { font-size: 14px; font-weight: 500; color: var(--slate); margin: 0; }
+  .nt-big { margin: 6px 0 0; font-size: clamp(40px, 5.2vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .nt-list { margin: 20px 0 0; border-block-start: 1px solid var(--line); }
+  .nt-list div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-block: 10px; border-block-end: 1px solid var(--line); }
+  .nt-list div[hidden] { display: none; }
+  .nt-list dt { color: var(--slate); min-width: 0; }
+  .nt-list dd { margin: 0; font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .nt-breakdown { color: var(--slate); margin-block: 16px; min-height: 3.1em; }
+  .nt-title { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin-block: 0 16px; }
+  @media (max-width: 860px) {
+    .nt-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main" "results" "return"; gap: 28px; }
+    .nt-results, .nt-return { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    .nt-pair { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+<script src="../scripts/no-tax-overtime.ts"></script>

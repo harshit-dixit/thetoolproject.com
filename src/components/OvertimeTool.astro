@@ -1,8 +1,8 @@
 ---
 import { t, langTag, type TranslationKey } from '../i18n/utils';
-import type { Locale } from '../data/tools';
+import { getPublishedToolPath, type Locale } from '../data/tools';
 import { overtimeDefaults } from '../data/overtime-defaults';
-import { DEDUCTION_CAP, PHASE_OUT_PER_STEP, PHASE_OUT_START, PHASE_OUT_STEP, PERIODS_PER_YEAR, TAX_BRACKETS, type SalaryPeriod } from '../lib/overtime';
+import type { SalaryPeriod } from '../lib/overtime';
 import { currencies, currencyAffix, currencyDigits } from '../lib/tip-calculator';
 
 interface Props { locale?: Locale }
@@ -16,12 +16,7 @@ const clientKeys: TranslationKey[] = [
   'overtime.breakdownEmpty', 'overtime.breakdownEmptySalary', 'overtime.breakdownFix', 'overtime.breakdown.one', 'overtime.breakdown.other',
   'overtime.breakdownBonus', 'overtime.breakdownShare', 'overtime.errAmount', 'overtime.errHours', 'overtime.errMultiplier',
   'overtime.errTooManyHours.week', 'overtime.errTooManyHours.month', 'overtime.errNoRegular', 'overtime.live',
-  ...(defaults.usTax ? [
-    'overtime.taxPeriodsLabel.week', 'overtime.taxPeriodsLabel.month', 'overtime.taxResultQualifiedPeriod.week', 'overtime.taxResultQualifiedPeriod.month',
-    'overtime.taxBreakdownEmpty', 'overtime.taxBreakdownNone', 'overtime.taxBreakdownHalf', 'overtime.taxBreakdownCap', 'overtime.taxBreakdownPhase',
-    'overtime.taxBreakdownSeparate', 'overtime.taxBreakdownMonth', 'overtime.taxBreakdownCurrency', 'overtime.errPeriods', 'overtime.liveTax',
-    'overtime.taxResultQualifiedYear', 'overtime.taxResultQualifiedYearMost', 'overtime.breakdownLimit.one', 'overtime.breakdownLimit.other',
-  ] as TranslationKey[] : []),
+  ...(defaults.usTax ? ['overtime.taxTeaser', 'overtime.taxQualified', 'overtime.breakdownLimit.one', 'overtime.breakdownLimit.other'] as TranslationKey[] : []),
 ];
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 const lang = langTag(locale);
@@ -31,21 +26,15 @@ const names = new Intl.DisplayNames(lang, { type: 'currency' });
 // The page's own currency first, then the rest in the usual order.
 const currencyOptions = [defaults.currency, ...currencies.filter(code => code !== defaults.currency)].map(code => ({ code, label: `${names.of(code)} (${code})` }));
 const number = (value: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(value);
-const usd = (value: number) => new Intl.NumberFormat(lang, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 const placeholder = new Intl.NumberFormat(lang, { minimumFractionDigits: digits }).format(0);
 const multKey = (value: number) => `overtime.mult.${String(value).replace('.', '')}` as TranslationKey;
 const salaryPeriods: SalaryPeriod[] = ['week', 'biweek', 'semimonth', 'month', 'year'];
 const period = defaults.period;
 const salaried = defaults.basis === 'salary';
 const regularKey = `overtime.${salaried ? 'regularSalaryLabel' : 'regularLabel'}.${period}` as TranslationKey;
-
-const taxIncomeHint = defaults.usTax ? t('overtime.taxIncomeHint', locale, {
-  single: usd(PHASE_OUT_START.single), joint: usd(PHASE_OUT_START.joint), step: usd(PHASE_OUT_PER_STEP), per: usd(PHASE_OUT_STEP),
-}) : '';
-const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent', maximumFractionDigits: 0 }).format(value / 100);
 ---
 <div class="drop ot-drop" id="overtime-tool" data-strings={JSON.stringify(strings)} data-locale={locale} data-defaults={JSON.stringify(defaults)}>
-  <div class:list={['tool-frame', 'ot-grid', { 'ot-no-tax': !defaults.usTax }]}>
+  <div class="tool-frame ot-grid">
     <div class="ot-top">
       <div class="ot-top-chips">
         <div class="chips" role="group" aria-label={t('overtime.basisLabel', locale)}>
@@ -134,6 +123,8 @@ const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent
         <div><dt id="ot-total-label">{t(`overtime.resultTotal.${period}` as TranslationKey, locale)}</dt><dd data-result="totalPay">–</dd></div>
       </dl>
       <p class="ot-breakdown" id="ot-breakdown">{t(salaried ? 'overtime.breakdownEmptySalary' : 'overtime.breakdownEmpty', locale)}</p>
+      {/* The deduction has its own calculator; the link carries this week's rate and hours over in the fragment. */}
+      {defaults.usTax && <p class="ot-tax-link"><span id="ot-tax-qualified">{t('overtime.taxTeaser', locale)}</span> <a href={getPublishedToolPath('noTaxOvertime', locale)} id="ot-tax-link">{t('overtime.taxLink', locale)}</a></p>}
     </div>
 
     <div class="ot-options">
@@ -166,95 +157,23 @@ const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent
         <p class="ot-error" id="ot-bonus-error" hidden></p>
       </div>
     </div>
-
-    {defaults.usTax && (
-      <div class="ot-tax" id="ot-tax">
-        <h2 class="ot-title">{t('overtime.taxTitle', locale)}</h2>
-        <p class="ot-tax-intro">{t('overtime.taxIntro', locale)}</p>
-        <div class="ot-field">
-          <label class="field-label" for="ot-tax-periods" id="ot-tax-periods-label">{t(`overtime.taxPeriodsLabel.${period}` as TranslationKey, locale)}</label>
-          <div class="ot-box ot-short">
-            <input class="ot-input" id="ot-tax-periods" type="text" inputmode="numeric" autocomplete="off" value={String(PERIODS_PER_YEAR[period])} aria-describedby="ot-tax-periods-error" />
-          </div>
-          <p class="ot-error" id="ot-tax-periods-error" hidden></p>
-        </div>
-        <div class="ot-field">
-          <label class="field-label" for="ot-tax-own">{t('overtime.taxOwnLabel', locale)}</label>
-          <div class="ot-box">
-            <span class="ot-affix" aria-hidden="true">$</span>
-            <input class="ot-input" id="ot-tax-own" type="text" inputmode="decimal" autocomplete="off" placeholder={number(0)} aria-describedby="ot-tax-own-hint ot-tax-own-error" />
-          </div>
-          <p class="input-hint" id="ot-tax-own-hint">{t('overtime.taxOwnHint', locale)}</p>
-          <p class="ot-error" id="ot-tax-own-error" hidden></p>
-        </div>
-        <div class="ot-field">
-          <span class="field-label" id="ot-tax-status-label">{t('overtime.taxStatusLabel', locale)}</span>
-          <div class="chips" role="group" aria-labelledby="ot-tax-status-label">
-            <button type="button" data-filing="single" aria-pressed="true">{t('overtime.taxSingle', locale)}</button>
-            <button type="button" data-filing="joint" aria-pressed="false">{t('overtime.taxJoint', locale)}</button>
-            <button type="button" data-filing="separate" aria-pressed="false">{t('overtime.taxSeparate', locale)}</button>
-          </div>
-        </div>
-        <div class="ot-field" id="ot-tax-spouse-field" hidden>
-          <label class="field-label" for="ot-tax-spouse">{t('overtime.taxSpouseLabel', locale)}</label>
-          <div class="ot-box">
-            <span class="ot-affix" aria-hidden="true">$</span>
-            <input class="ot-input" id="ot-tax-spouse" type="text" inputmode="decimal" autocomplete="off" placeholder={number(0)} aria-describedby="ot-tax-spouse-hint ot-tax-spouse-error" />
-          </div>
-          <p class="input-hint" id="ot-tax-spouse-hint">{t('overtime.taxSpouseHint', locale)}</p>
-          <p class="ot-error" id="ot-tax-spouse-error" hidden></p>
-        </div>
-        <div class="ot-pair ot-pair-top">
-          <div class="ot-field">
-            <label class="field-label" for="ot-tax-income">{t('overtime.taxIncomeLabel', locale)}</label>
-            <div class="ot-box">
-              <span class="ot-affix" aria-hidden="true">$</span>
-              <input class="ot-input" id="ot-tax-income" type="text" inputmode="decimal" autocomplete="off" placeholder={number(0)} aria-describedby="ot-tax-income-hint ot-tax-income-error" />
-            </div>
-            <p class="input-hint" id="ot-tax-income-hint">{taxIncomeHint}</p>
-            <p class="ot-error" id="ot-tax-income-error" hidden></p>
-          </div>
-          <div class="ot-field">
-            {/* No id, so the page-wide option tracking never records a visitor's tax bracket. */}
-            <label class="field-label ot-bracket">
-              {t('overtime.taxBracketLabel', locale)}
-              <select class="tool-select" data-tax-bracket>
-                <option value="">{t('overtime.taxBracketNone', locale)}</option>
-                {TAX_BRACKETS.map(rate => <option value={rate}>{t('overtime.taxBracketOption', locale, { rate: percent(rate) })}</option>)}
-              </select>
-            </label>
-          </div>
-        </div>
-        <dl class="ot-list">
-          <div><dt id="ot-tax-period-label">{t(`overtime.taxResultQualifiedPeriod.${period}` as TranslationKey, locale)}</dt><dd data-result="qualifiedPeriod">–</dd></div>
-          <div><dt id="ot-tax-year-label">{t(period === 'month' ? 'overtime.taxResultQualifiedYearMost' : 'overtime.taxResultQualifiedYear', locale)}</dt><dd data-result="qualifiedYear">–</dd></div>
-          <div><dt>{t('overtime.taxResultDeduction', locale)}</dt><dd data-result="deduction">–</dd></div>
-          <div><dt>{t('overtime.taxResultSaved', locale)}</dt><dd data-result="taxSaved">–</dd></div>
-        </dl>
-        <p class="ot-breakdown" id="ot-tax-breakdown">{t('overtime.taxBreakdownEmpty', locale, { cap: usd(DEDUCTION_CAP.single) })}</p>
-        <p class="input-hint">{t('overtime.taxNote', locale)}</p>
-      </div>
-    )}
   </div>
   <p class="visually-hidden" id="ot-live" aria-live="polite" aria-atomic="true"></p>
 </div>
 <style>
   .ot-drop { min-height: 0; }
   /* Beside the fields on wide screens. On phones the answer comes straight after the main fields. */
-  .ot-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "top top" "main results" "options tax"; gap: 28px 40px; align-items: start; max-width: 1000px; }
-  .ot-grid.ot-no-tax { grid-template-areas: "top top" "main results" "options ."; }
+  .ot-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "top top" "main results" "options ."; gap: 28px 40px; align-items: start; max-width: 1000px; }
   .ot-top { grid-area: top; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
   .ot-top-chips { display: flex; gap: 12px 24px; flex-wrap: wrap; }
   .ot-currency { font-size: 14px; min-width: 0; max-width: 100%; }
   .ot-main { grid-area: main; min-width: 0; }
   .ot-results { grid-area: results; min-width: 0; }
   .ot-options { grid-area: options; min-width: 0; }
-  .ot-tax { grid-area: tax; min-width: 0; }
-  .ot-field + .ot-field, .ot-pair + .ot-field, .ot-field + .ot-pair, .ot-pair + .ot-pair, .ot-tax-intro + .ot-field { margin-block-start: 24px; }
+  .ot-field + .ot-field, .ot-pair + .ot-field, .ot-field + .ot-pair, .ot-pair + .ot-pair { margin-block-start: 24px; }
   .ot-main > .ot-field[hidden] + .ot-field { margin-block-start: 0; }
   .ot-options > .input-hint + .ot-field { margin-block-start: 24px; }
   .ot-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: end; }
-  .ot-pair-top { align-items: start; }
   .ot-pair .ot-field + .ot-field { margin: 0; }
   .ot-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   .ot-grow { flex: 1 1 10em; }
@@ -268,8 +187,6 @@ const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent
   .ot-box.is-suffix .ot-affix { padding-inline: 0 14px; }
   .ot-unit { font-size: 18px; font-weight: 500; }
   .ot-input { font: 600 20px/1.2 var(--font); font-variant-numeric: tabular-nums; color: var(--ink); background: transparent; border: 0; border-radius: 4px; padding: 12px 14px; width: 100%; min-width: 0; min-height: 50px; }
-  .ot-bracket { display: block; }
-  .ot-bracket .tool-select { display: block; width: 100%; min-height: 50px; margin-block-start: 8px; }
   .ot-error { margin-block: 8px 0; font-weight: 600; font-size: 14px; }
   .ot-big-label { font-size: 14px; font-weight: 500; color: var(--slate); margin: 0; }
   .ot-big { margin: 6px 0 0; font-size: clamp(40px, 5.2vw, 56px); font-weight: 800; font-stretch: 88%; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -280,11 +197,10 @@ const percent = (value: number) => new Intl.NumberFormat(lang, { style: 'percent
   .ot-list dd { margin: 0; font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .ot-breakdown { color: var(--slate); margin-block: 16px 0; min-height: 3.1em; }
   .ot-title { font-size: 20px; font-weight: 700; font-stretch: 88%; line-height: 1.2; margin-block: 0 16px; }
-  .ot-tax-intro { color: var(--slate); margin: 0; }
-  .ot-tax .ot-list { margin-block-start: 24px; }
+  .ot-tax-link { margin-block: 16px 0; padding-block-start: 16px; border-block-start: 1px solid var(--line); }
   @media (max-width: 860px) {
-    .ot-grid, .ot-grid.ot-no-tax { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main" "results" "options" "tax"; gap: 28px; }
-    .ot-results, .ot-options, .ot-tax { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+    .ot-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main" "results" "options"; gap: 28px; }
+    .ot-results, .ot-options { padding-block-start: 24px; border-block-start: 1px solid var(--line); }
   }
   @media (max-width: 560px) {
     .ot-pair { grid-template-columns: minmax(0, 1fr); }

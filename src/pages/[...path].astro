@@ -22,6 +22,7 @@ import HighSchoolGpaTool from '../components/HighSchoolGpaTool.astro';
 import GpaCalculatorTool from '../components/GpaCalculatorTool.astro';
 import AutoLoanTool from '../components/AutoLoanTool.astro';
 import OvertimeTool from '../components/OvertimeTool.astro';
+import NoTaxOvertimeTool from '../components/NoTaxOvertimeTool.astro';
 import AgeCalculatorTool from '../components/AgeCalculatorTool.astro';
 import DiceRollerTool from '../components/DiceRollerTool.astro';
 import VolumeCalculatorTool from '../components/VolumeCalculatorTool.astro';
@@ -36,8 +37,9 @@ import EmlToPdfTool from '../components/EmlToPdfTool.astro';
 import MhtToPdfTool from '../components/MhtToPdfTool.astro';
 import WebpConverterTool from '../components/WebpConverterTool.astro';
 import VideoToGifTool from '../components/VideoToGifTool.astro';
+import MergeJpgTool from '../components/MergeJpgTool.astro';
 import type { OutputFormat } from '../lib/webp-convert';
-import { publishedToolLocales, getPublishedToolPath } from '../data/tools';
+import { tools, publishedToolLocales, getPublishedToolPath } from '../data/tools';
 import { buildStaticPaths, type RouteProps } from '../data/routes';
 import { t, formatNumber, langTag, type TranslationKey } from '../i18n/utils';
 import { tipDefaults } from '../data/tip-defaults';
@@ -81,6 +83,16 @@ const webpFormatRows: [keyof typeof webpLinks, TranslationKey, TranslationKey, T
   ['gif', 'webpGif.h1', 'webpConverter.gifBest', 'webpConverter.gifKeeps'],
   ['svg', 'webpSvg.h1', 'webpConverter.svgBest', 'webpConverter.svgKeeps'],
 ];
+
+// Merge JPG and Merge JPG to PDF share one tool; the copy names its chips and buttons.
+const mergeLinks = { hub: getPublishedToolPath('mergeJpg', locale), pdf: getPublishedToolPath('mergeJpgPdf', locale), compress: getPublishedToolPath('compressPdf', locale) };
+const mergeLabels = {
+  add: t('merge.addButton', locale), image: t('merge.outputImage', locale), pdf: t('merge.outputPdf', locale), outputLabel: t('merge.outputLabel', locale),
+  vertical: t('merge.layoutVertical', locale), horizontal: t('merge.layoutHorizontal', locale), grid: t('merge.layoutGrid', locale),
+  match: t('merge.fitMatch', locale), original: t('merge.fitOriginal', locale), high: t('webp.qualityHigh', locale),
+  button: t('merge.convertPdf', locale), a4: t('eml.pageA4', locale), letter: t('eml.pageLetter', locale), auto: t('merge.orientationAuto', locale),
+  small: t('merge.marginSmall', locale), large: t('merge.marginLarge', locale), fit: t('merge.pageFit', locale),
+};
 
 // Usual tips by service, for the "How much to tip" table.
 const tipGuideRows = ['restaurant', 'bar', 'takeout', 'delivery', 'grocery', 'coffee', 'hair', 'nails', 'tattoo', 'rideshare', 'movers', 'hotel'] as const;
@@ -162,7 +174,7 @@ const otMultKey = (value: number) => `overtime.mult.${String(value).replace('.',
 const otTableRows = overtime.tableRates.map(rate => ({ rate: otMoney(rate), cells: overtime.multipliers.map(m => otMoney(rate * m)), ten: otMoney(rate * overtime.multiplier * 10) }));
 const otCountryName = new Intl.DisplayNames(langTag(locale), { type: 'region' });
 const otRuleRows = overtimeRuleCountries.map(code => ({ code, name: otCountryName.of(code)!, source: overtimeRuleSources[code] }));
-const otFaqs = [1, 2, 3, 4, 5, 6, 7] as const;
+const otFaqs = [1, 2, 3, 4, 5] as const;
 const otSources = {
   flsa: 'https://www.dol.gov/agencies/whd/overtime',
   fs23: 'https://www.dol.gov/agencies/whd/fact-sheets/23-flsa-overtime-pay',
@@ -173,7 +185,12 @@ const otSources = {
   irs: 'https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors',
   faq: 'https://www.irs.gov/pub/taxpros/fs-2026-13.pdf',
   s1a: 'https://www.irs.gov/pub/irs-pdf/f1040s1a.pdf',
+  calc: getPublishedToolPath('noTaxOvertime', locale),
+  ot: getPublishedToolPath('overtimeCalculator', locale),
 };
+// The no tax on overtime calculator is in English only, so other languages say so beside the link.
+const noTaxNote = tools.noTaxOvertime.locales[locale]?.reviewed ? '' : ` ${t('guide.inEnglish', locale)}`;
+const noTaxFaqs = [1, 2, 3, 4] as const;
 const otThreshold = new Intl.NumberFormat(langTag(locale), { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(684);
 const ageFaqs = [1, 2, 3, 4, 5] as const;
 
@@ -373,6 +390,42 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><strong>{t(`${webp.prefix}.faqQ1`, locale)}</strong> <RichText text={t(`${webp.prefix}.faqA1`, locale)} links={webpLinks} params={{ trace: t('webp.svgTrace', locale), embed: t('webp.svgEmbed', locale) }} /></p>
           <p><strong>{t(`${webp.prefix}.faqQ2`, locale)}</strong> <RichText text={t(`${webp.prefix}.faqA2`, locale)} links={webpLinks} /></p>
           <p><strong>{t('webp.faqUploadQ', locale)}</strong> {t('webp.faqUploadA', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'merge-jpg' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('mergeJpg.leadStrong', locale)}</strong> {t('mergeJpg.lead', locale)}</p><p class="caption">{t('mergeJpg.caption', locale)}</p></div></div>
+        <MergeJpgTool locale={locale} />
+        <section aria-labelledby="merge-how-title"><div class="sec-head"><h2 id="merge-how-title">{t('mergeJpg.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('mergeJpg.howIntro', locale)} params={mergeLabels} /></p>
+          <h3>{t('mergeJpg.howLayoutTitle', locale)}</h3>
+          <p><RichText text={t('mergeJpg.howLayoutP', locale)} params={mergeLabels} /></p>
+          <h3>{t('mergeJpg.howQualityTitle', locale)}</h3>
+          <p><RichText text={t('mergeJpg.howQualityP', locale)} params={mergeLabels} /></p>
+          <h3>{t('mergeJpg.howPdfTitle', locale)}</h3>
+          <p><RichText text={t('mergeJpg.howPdfP', locale)} params={mergeLabels} links={mergeLinks} /></p>
+          <h3>{t('mergeJpg.howJpegTitle', locale)}</h3>
+          <p>{t('mergeJpg.howJpegP', locale)}</p>
+          <h3>{t('webp.faqTitle', locale)}</h3>
+          <p><strong>{t('mergeJpg.faqQ1', locale)}</strong> {t('mergeJpg.faqA1', locale)}</p>
+          <p><strong>{t('mergeJpg.faqQ2', locale)}</strong> {t('mergeJpg.faqA2', locale)}</p>
+          <p><strong>{t('merge.faqUploadQ', locale)}</strong> {t('merge.faqUploadA', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'merge-jpg-to-pdf' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('mergeJpgPdf.leadStrong', locale)}</strong> {t('mergeJpgPdf.lead', locale)}</p><p class="caption">{t('mergeJpgPdf.caption', locale)}</p></div></div>
+        <MergeJpgTool locale={locale} output="pdf" />
+        <section aria-labelledby="merge-pdf-how-title"><div class="sec-head"><h2 id="merge-pdf-how-title">{t('mergeJpgPdf.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('mergeJpgPdf.howIntro', locale)} params={mergeLabels} /></p>
+          <h3>{t('mergeJpgPdf.howPageTitle', locale)}</h3>
+          <p><RichText text={t('mergeJpgPdf.howPageP', locale)} params={mergeLabels} /></p>
+          <h3>{t('mergeJpgPdf.howQualityTitle', locale)}</h3>
+          <p><RichText text={t('mergeJpgPdf.howQualityP', locale)} links={mergeLinks} /></p>
+          <h3>{t('mergeJpgPdf.howScanTitle', locale)}</h3>
+          <p><RichText text={t('mergeJpgPdf.howScanP', locale)} links={mergeLinks} /></p>
+          <h3>{t('webp.faqTitle', locale)}</h3>
+          <p><strong>{t('mergeJpgPdf.faqQ1', locale)}</strong> <RichText text={t('mergeJpgPdf.faqA1', locale)} params={mergeLabels} /></p>
+          <p><strong>{t('mergeJpgPdf.faqQ2', locale)}</strong> <RichText text={t('mergeJpgPdf.faqA2', locale)} links={mergeLinks} /></p>
+          <p><strong>{t('merge.faqUploadQ', locale)}</strong> {t('merge.faqUploadA', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'compress-jpg-to-100kb' && <>
@@ -664,14 +717,25 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           </table></div>
         </section>
         <section aria-labelledby="overtime-tax-title"><div class="sec-head"><h2 id="overtime-tax-title">{t('overtime.noTaxTitle', locale)}</h2></div><div class="how-copy">
-          <p><RichText text={t('overtime.noTaxP1', locale)} links={otSources} /></p>
-          <p><RichText text={t('overtime.noTaxP2', locale)} links={otSources} /></p>
-          <p>{t('overtime.noTaxP3', locale)}</p>
-          <p><RichText text={t('overtime.noTaxP4', locale)} links={otSources} /></p>
-          <p>{t('overtime.noTaxExample', locale)}</p>
+          <p><RichText text={t('overtime.noTaxSummary', locale)} links={otSources} params={{ note: noTaxNote }} /></p>
         </div></section>
         <section aria-labelledby="overtime-faq-title"><div class="sec-head"><h2 id="overtime-faq-title">{t('overtime.faqTitle', locale)}</h2></div><div class="how-copy">
           {otFaqs.map(n => <><h3>{t(`overtime.faqQ${n}` as TranslationKey, locale)}</h3><p><RichText text={t(`overtime.faqA${n}` as TranslationKey, locale)} links={otSources} /></p></>)}
+        </div></section>
+      </>}
+      {tool.id === 'no-tax-on-overtime-calculator' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('noTax.leadStrong', locale)}</strong> {t('noTax.lead', locale)}</p><p class="caption">{t('noTax.caption', locale)}</p></div></div>
+        <NoTaxOvertimeTool locale={locale} />
+        <section aria-labelledby="no-tax-about-title"><div class="sec-head"><h2 id="no-tax-about-title">{t('noTax.aboutTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('noTax.aboutP1', locale)} links={otSources} /></p>
+          <p><RichText text={t('noTax.aboutP2', locale)} links={otSources} /></p>
+          <p>{t('noTax.aboutP3', locale)}</p>
+          <p><RichText text={t('noTax.aboutP4', locale)} links={otSources} /></p>
+          <p>{t('noTax.example', locale)}</p>
+          <p><RichText text={t('noTax.aboutP5', locale)} links={otSources} /></p>
+        </div></section>
+        <section aria-labelledby="no-tax-faq-title"><div class="sec-head"><h2 id="no-tax-faq-title">{t('noTax.faqTitle', locale)}</h2></div><div class="how-copy">
+          {noTaxFaqs.map(n => <><h3>{t(`noTax.faqQ${n}` as TranslationKey, locale)}</h3><p><RichText text={t(`noTax.faqA${n}` as TranslationKey, locale)} links={otSources} /></p></>)}
         </div></section>
       </>}
       {tool.id === 'age-calculator' && <>

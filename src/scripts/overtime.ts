@@ -1,5 +1,5 @@
 import type { OvertimeDefaults } from '../data/overtime-defaults';
-import { calculateDeduction, calculateOvertime, DEDUCTION_CAP, FLSA_PREMIUM, FLSA_WEEK_HOURS, MAX_HOURS, MAX_MULTIPLIER, PERIODS_PER_YEAR, PHASE_OUT_START, type FilingStatus, type OvertimeResult, type PayBasis, type Period, type SalaryPeriod } from '../lib/overtime';
+import { calculateOvertime, FLSA_PREMIUM, FLSA_WEEK_HOURS, MAX_HOURS, MAX_MULTIPLIER, PERIODS_PER_YEAR, type OvertimeResult, type PayBasis, type Period, type SalaryPeriod } from '../lib/overtime';
 import { currencies, currencyAffix, currencyDigits, currencyForLanguage, parseAmount } from '../lib/tip-calculator';
 import { i18nFrom } from '../i18n/client';
 import { trackResult } from '../lib/analytics';
@@ -13,24 +13,22 @@ const STORAGE_KEY = 'overtime-currency';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const input = (id: string) => $<HTMLInputElement>(id);
 const fields = { rate: input('ot-rate'), salary: input('ot-salary'), regular: input('ot-regular'), hours: input('ot-hours'), multiplier: input('ot-multiplier'), hours2: input('ot-hours2'), multiplier2: input('ot-multiplier2'), bonus: input('ot-bonus') };
-const tax = defaults.usTax ? { periods: input('ot-tax-periods'), own: input('ot-tax-own'), spouse: input('ot-tax-spouse'), income: input('ot-tax-income') } : undefined;
 const salaryPeriod = $<HTMLSelectElement>('ot-salary-period');
 const currencySelect = $<HTMLSelectElement>('ot-currency');
-const bracketSelect = root.querySelector<HTMLSelectElement>('[data-tax-bracket]');
 const breakdown = $('ot-breakdown');
-const taxBreakdown = document.getElementById('ot-tax-breakdown');
 const live = $('ot-live');
+const taxLink = document.querySelector<HTMLAnchorElement>('#ot-tax-link');
+const taxQualified = document.getElementById('ot-tax-qualified')!;
+const taxPath = taxLink?.getAttribute('href') ?? '';
 const chips = (name: string) => [...root.querySelectorAll<HTMLButtonElement>(`[data-${name}]`)];
 const basisChips = chips('basis');
 const periodChips = chips('period');
 const multiplierChips = chips('multiplier');
-const filingChips = chips('filing');
 
 let currency = defaults.currency;
 let digits = currencyDigits(currency);
 let basis: PayBasis = defaults.basis;
 let period: Period = defaults.period;
-let filing: FilingStatus = 'single';
 let liveTimer: ReturnType<typeof setTimeout> | undefined;
 let reportTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -73,7 +71,7 @@ function clearResults(message: string) {
   cancelPending();
   root.querySelectorAll<HTMLElement>('[data-result]').forEach(cell => { cell.textContent = '–'; });
   breakdown.textContent = message;
-  if (taxBreakdown) taxBreakdown.textContent = t('overtime.taxBreakdownEmpty', { cap: usd(DEDUCTION_CAP.single, 0) });
+  updateTaxLink();
 }
 
 function update() {
@@ -134,55 +132,22 @@ function update() {
   const base = result.regularPay + result.bonus;
   if (extra > 0 && base > 0) sentences.push(t('overtime.breakdownShare', { percent: formatPercent(extra / base) }));
   breakdown.textContent = sentences.join(' ');
-  const taxSettled = updateTax(result);
-  announce([t('overtime.live', { pay: money(extra), total: money(result.totalPay) }), taxSettled].filter(Boolean).join(' '));
-  report({ basis, period, multiplier: String(multiplier.value), second: String(second), bonus: String(result.bonus > 0), ...(tax ? { filing } : {}) });
+  updateTaxLink(result);
+  announce(t('overtime.live', { pay: money(extra), total: money(result.totalPay) }));
+  report({ basis, period, multiplier: String(multiplier.value), second: String(second), bonus: String(result.bonus > 0) });
 }
 
-/** The no tax on overtime estimate, on the English page. Returns the sentence to announce. */
-function updateTax(result: OvertimeResult): string | undefined {
-  if (!tax || !taxBreakdown) return;
-  const periods = read(tax.periods, () => t('overtime.errPeriods', { max: formatNumber(PERIODS_PER_YEAR[period]) }), PERIODS_PER_YEAR[period]);
-  if (periods.value !== undefined && !Number.isInteger(periods.value)) { showError(tax.periods, t('overtime.errPeriods', { max: formatNumber(PERIODS_PER_YEAR[period]) })); periods.bad = true; }
-  const own = readMoney(tax.own, 3250);
-  // The spouse's field is hidden unless filing jointly, so a leftover mistake there can't block the answer.
-  const joint = filing === 'joint';
-  const spouse = joint ? readMoney(tax.spouse, 5000) : { value: undefined, bad: false };
-  if (!joint) showError(tax.spouse);
-  const income = readMoney(tax.income, 90000);
-  const bracket = bracketSelect?.value ? Number(bracketSelect.value) : undefined;
-  const cells = ['qualifiedPeriod', 'qualifiedYear', 'deduction', 'taxSaved'];
-  if (periods.bad || own.bad || spouse.bad || income.bad) {
-    cells.forEach(name => setResult(name, '–'));
-    taxBreakdown.textContent = t('overtime.breakdownFix');
-    return;
-  }
-  // The deduction is in US dollars; in another currency there's no honest way to apply its limits.
-  const dollars = currency === 'USD';
-  // The W-2 figure, when there is one, is what the deduction is claimed on. Otherwise the period is repeated over the year:
-  // an upper bound for a month, whose overtime hours may not all be over 40 in their week.
-  const reported = own.value !== undefined;
-  const yearly = reported ? own.value! : result.qualified * (periods.value ?? 0);
-  $('ot-tax-year-label').textContent = t(period === 'month' && !reported ? 'overtime.taxResultQualifiedYearMost' : 'overtime.taxResultQualifiedYear');
-  const outcome = calculateDeduction({ qualified: yearly + (spouse.value ?? 0), status: filing, income: income.value, bracket, digits: 2 });
-  setResult('qualifiedPeriod', money(result.qualified));
-  setResult('qualifiedYear', reported ? usd(yearly) : money(yearly));
-  setResult('deduction', dollars ? usd(outcome.deduction) : '–');
-  setResult('taxSaved', dollars && outcome.taxSaved !== undefined ? usd(outcome.taxSaved) : '–');
-
-  const sentences: string[] = [];
-  if (result.flsaHours === 0 && result.overtimePay + result.limitPay + result.secondPay > 0) sentences.push(t('overtime.taxBreakdownNone'));
-  else if (result.qualified > 0) sentences.push(t('overtime.taxBreakdownHalf', { qualified: money(result.qualified), pay: money(result.overtimePay + result.limitPay + result.secondPay) }));
-  if (period === 'month' && result.qualified > 0 && !reported) sentences.push(t('overtime.taxBreakdownMonth'));
-  if (!outcome.eligible) sentences.push(t('overtime.taxBreakdownSeparate'));
-  else if (!dollars) sentences.push(t('overtime.taxBreakdownCurrency'));
-  else {
-    const status = filing === 'joint' ? 'joint' : 'single';
-    if (outcome.overCap) sentences.push(t('overtime.taxBreakdownCap', { cap: usd(DEDUCTION_CAP[status], 0) }));
-    if (outcome.reduction > 0) sentences.push(t('overtime.taxBreakdownPhase', { start: usd(PHASE_OUT_START[status], 0), reduction: usd(outcome.reduction, 0) }));
-  }
-  taxBreakdown.textContent = sentences.length ? sentences.join(' ') : t('overtime.taxBreakdownEmpty', { cap: usd(DEDUCTION_CAP.single, 0) });
-  return dollars && outcome.eligible && outcome.deduction > 0 ? t('overtime.liveTax', { deduction: usd(outcome.deduction) }) : undefined;
+/** The link to the no tax on overtime calculator, on the English page: this week's qualified overtime, and the hours to carry over. */
+function updateTaxLink(result?: OvertimeResult) {
+  if (!taxLink) return;
+  // The deduction counts hours over 40 in a workweek and is in dollars, so only a week in US dollars has an amount to show.
+  const shown = result && period === 'week' && currency === 'USD' && result.qualified > 0 ? result : undefined;
+  taxQualified.textContent = shown ? t('overtime.taxQualified', { qualified: usd(shown.qualified) }) : t('overtime.taxTeaser');
+  if (!shown) { taxLink.href = taxPath; return; }
+  // One rate, the hours past 40 and the premium they average, so the other calculator arrives at the same qualified amount.
+  const mult = 1 + shown.qualified / (shown.regularRate * shown.flsaHours);
+  const handoff = new URLSearchParams({ rate: String(Math.round(shown.regularRate * 100) / 100), hours: String(shown.flsaHours), mult: String(Math.round(mult * 100) / 100) });
+  taxLink.href = `${taxPath}#${handoff}`;
 }
 
 // Screen readers hear the answer once typing pauses, not on every keystroke.
@@ -191,7 +156,7 @@ function announce(text: string) {
   liveTimer = setTimeout(() => { live.textContent = text; }, 1000);
 }
 
-// Only the settings the inputs settle on are reported. Pay, hours, income and the tax bracket never are.
+// Only the settings the inputs settle on are reported. Pay and hours never are.
 function report(params: Record<string, string>) {
   clearTimeout(reportTimer);
   reportTimer = setTimeout(() => trackResult('success', { ...params, currency }), 1500);
@@ -215,10 +180,6 @@ function relabel() {
   $('ot-hours2-label').textContent = t(`overtime.secondLabel.${period}`);
   $('ot-bonus-label').textContent = t(`overtime.bonusLabel.${period}`);
   $('ot-total-label').textContent = t(`overtime.resultTotal.${period}`);
-  if (tax) {
-    $('ot-tax-periods-label').textContent = t(`overtime.taxPeriodsLabel.${period}`);
-    $('ot-tax-period-label').textContent = t(`overtime.taxResultQualifiedPeriod.${period}`);
-  }
 }
 
 function setBasis(next: PayBasis) {
@@ -238,7 +199,6 @@ function setPeriod(next: Period) {
     const converted = next === 'month' ? regular * ratio : regular / ratio;
     fields.regular.value = formatNumber(Math.round(converted * 100) / 100, { useGrouping: false, maximumFractionDigits: 2 });
   }
-  if (tax && parseAmount(tax.periods.value, locale) === PERIODS_PER_YEAR[period]) tax.periods.value = String(PERIODS_PER_YEAR[next]);
   period = next;
   press(periodChips, periodChips.find(chip => chip.dataset.period === next));
   relabel();
@@ -248,15 +208,8 @@ function setPeriod(next: Period) {
 basisChips.forEach(chip => chip.addEventListener('click', () => setBasis(chip.dataset.basis === 'salary' ? 'salary' : 'hourly')));
 periodChips.forEach(chip => chip.addEventListener('click', () => setPeriod(chip.dataset.period === 'month' ? 'month' : 'week')));
 multiplierChips.forEach(chip => chip.addEventListener('click', () => { fields.multiplier.value = formatNumber(Number(chip.dataset.multiplier)); update(); }));
-filingChips.forEach(chip => chip.addEventListener('click', () => {
-  filing = (chip.dataset.filing as FilingStatus) || 'single';
-  press(filingChips, chip);
-  $('ot-tax-spouse-field').hidden = filing !== 'joint';
-  update();
-}));
-for (const field of [...Object.values(fields), ...Object.values(tax ?? {})]) field.addEventListener('input', update);
+for (const field of Object.values(fields)) field.addEventListener('input', update);
 salaryPeriod.addEventListener('change', update);
-bracketSelect?.addEventListener('change', update);
 currencySelect.addEventListener('change', () => {
   setCurrency(currencySelect.value);
   try { localStorage.setItem(STORAGE_KEY, currency); } catch { /* storage can be blocked; the choice just isn't remembered */ }

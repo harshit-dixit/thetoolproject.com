@@ -301,7 +301,9 @@ describe('routing and review gate', () => {
     // The dev draft preview adds exactly the held-back tool locales.
     const preview = buildStaticPaths({ allowDrafts: true });
     expect(preview).toHaveLength(production.length + heldBackTotal);
-    expect(preview.filter(route => !production.some(other => other.params.path === route.params.path)).map(route => route.params.path)).toEqual(['ja/eml-to-pdf', 'ja/mht-to-pdf']);
+    expect(preview.filter(route => !production.some(other => other.params.path === route.params.path)).map(route => route.params.path)).toEqual([
+      ...['es', 'pt', 'de', 'fr', 'ja'].map(locale => `${locale}/no-tax-on-overtime-calculator`), 'ja/eml-to-pdf', 'ja/mht-to-pdf',
+    ]);
     expect(preview.some(route => route.params.path === 'ja/404')).toBe(true);
     expect(preview.some(route => route.params.path === 'ja')).toBe(true);
   });
