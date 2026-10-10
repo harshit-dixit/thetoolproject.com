@@ -243,7 +243,7 @@ function add(files: File[], fresh: boolean) {
     list.append(item.row);
   }
   if (!items.length) {
-    showStatus(t('merge.errNoImages'), true);
+    showStatus(t(root.dataset.source === 'jfif' ? 'jfifPdf.errNoImages' : 'merge.errNoImages'), true);
     trackResult('error', { code: 'wrongType' });
     skipped = limited = 0;
     return;
@@ -283,7 +283,7 @@ async function measureAll() {
   if (!items.length) {
     const notes = inputNote.textContent;
     startOver();
-    showStatus(`${t('merge.errNoImages')} ${notes ?? ''}`.trim(), true);
+    showStatus(`${t(root.dataset.source === 'jfif' ? 'jfifPdf.errNoImages' : 'merge.errNoImages')} ${notes ?? ''}`.trim(), true);
     trackResult('error', { code: 'readError' });
     return;
   }
@@ -346,7 +346,7 @@ async function mergeHere(current: MergeOutput, files: File[], sizes: Size[], opt
 function finish(done: MergeResult, current: MergeOutput, firstName: string, trackParams: Record<string, string | number | undefined>) {
   const blob = new Blob([done.data as BlobPart], { type: current === 'pdf' ? 'application/pdf' : 'image/jpeg' });
   merged = { blob, url: URL.createObjectURL(blob), output: current };
-  download.dataset.name = mergedName(firstName, current);
+  download.dataset.name = mergedName(firstName, current, root.dataset.source === 'jfif' && items.length === 1);
   const notes: string[] = [];
   if (current === 'pdf') {
     $('merge-summary').textContent = counted('merge.summaryPdf', done.pages ?? 0, { size: formatBytes(blob.size) });

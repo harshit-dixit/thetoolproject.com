@@ -1,11 +1,11 @@
 ---
 import { t, type TranslationKey } from '../i18n/utils';
 import type { Locale } from '../data/tools';
-import { LIMITS, OUTPUT_FORMATS, QUALITIES, TRACE_COLORS, type OutputFormat } from '../lib/webp-convert';
+import { sourceAccept, LIMITS, OUTPUT_FORMATS, QUALITIES, TRACE_COLORS, type OutputFormat, type SourceFormat } from '../lib/webp-convert';
 
 // Without a format this is the converter hub, with a chip for each output format.
-interface Props { format?: OutputFormat; locale?: Locale }
-const { format, locale = 'en' } = Astro.props;
+interface Props { format?: OutputFormat; source?: SourceFormat; locale?: Locale }
+const { format, source = 'webp', locale = 'en' } = Astro.props;
 const initial: OutputFormat = format ?? 'png';
 
 const clientKeys: TranslationKey[] = [
@@ -21,18 +21,28 @@ const clientKeys: TranslationKey[] = [
   'webp.summary.one', 'webp.summary.other', 'webp.title.one', 'webp.title.other',
   'unit.bytes', 'unit.kb', 'unit.mb'
 ];
-const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const sourceNames = ['fileCount.one', 'fileCount.other', 'noteSkipped.one', 'noteSkipped.other', 'noteLocked.one', 'noteLocked.other', 'errZipLocked', 'noteFirstFrame.one', 'noteFirstFrame.other'];
+const keys = clientKeys.filter(key => source === 'webp' || (!sourceNames.some(name => key === `webp.${name}`) && key !== 'webp.errNoWebp'));
+if (source !== 'webp') {
+  keys.push(`${source}.advicePng` as TranslationKey);
+  keys.push(...sourceNames.filter(name => source !== 'jfif' || !name.startsWith('noteFirstFrame')).map(name => `${source}.${name}` as TranslationKey), `${source}.errNoFiles` as TranslationKey);
+  if (source === 'avif') keys.push('avif.errBrowser');
+  if (source === 'jfif') keys.push('jfif.adviceJpg', 'jfif.noteCopied.one', 'jfif.noteCopied.other', 'jfif.noteReencoded.one', 'jfif.noteReencoded.other');
+}
+if (format === 'webp') keys.push('webp.adviceWebp', 'webp.reasonWebpEncode');
+const sourceKey = (name: 'fileAria' | 'dropTitle' | 'dropHint' | 'chooseButton') => `${source}.${name}` as TranslationKey;
+const strings = Object.fromEntries(keys.map(key => [key, t(key, locale)]));
 const qualityLabels: TranslationKey[] = ['webp.qualityMax', 'webp.qualityHigh', 'webp.qualitySmall'];
 const qualityHints: TranslationKey[] = ['webp.qualityHintMax', 'webp.qualityHintHigh', 'webp.qualityHintSmall'];
 const label = (value: OutputFormat) => value.toUpperCase();
 ---
-<div class="drop webp-drop" id="webp-tool" data-initial-format={initial} data-fixed={format ? 'true' : 'false'} data-strings={JSON.stringify(strings)} data-locale={locale}>
+<div class="drop webp-drop" id="webp-tool" data-source={source} data-initial-format={initial} data-fixed={format ? 'true' : 'false'} data-strings={JSON.stringify(strings)} data-locale={locale}>
   <div class="tool-frame">
-    <input class="visually-hidden" type="file" id="webp-files" accept=".webp,image/webp,.zip,application/zip" multiple tabindex="-1" aria-label={t('webp.fileAria', locale)} />
+    <input class="visually-hidden" type="file" id="webp-files" accept={sourceAccept(source)} multiple tabindex="-1" aria-label={t(sourceKey('fileAria'), locale)} />
     <div class="drop-empty" id="webp-empty">
-      <h2 class="drop-title">{t('webp.dropTitle', locale)}</h2>
-      <p class="drop-hint">{t('webp.dropHint', locale, { files: LIMITS.files, size: LIMITS.fileBytes / 1024 / 1024 })}</p>
-      <button class="btn" type="button" id="webp-choose">{t('webp.chooseButton', locale)}</button>
+      <h2 class="drop-title">{t(sourceKey('dropTitle'), locale)}</h2>
+      <p class="drop-hint">{t(sourceKey('dropHint'), locale, { files: LIMITS.files, size: LIMITS.fileBytes / 1024 / 1024 })}</p>
+      <button class="btn" type="button" id="webp-choose">{t(sourceKey('chooseButton'), locale)}</button>
     </div>
     <div class="webp-panel" id="webp-panel" hidden>
       <div class="file-line"><span class="file-name" id="webp-name"></span><span class="file-size" id="webp-size"></span></div>
@@ -42,15 +52,19 @@ const label = (value: OutputFormat) => value.toUpperCase();
         {!format && <fieldset><legend>{t('webp.formatLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.formatLabel', locale)}>
           {OUTPUT_FORMATS.map(value => <button type="button" data-format={value} aria-pressed={value === initial ? 'true' : 'false'}>{label(value)}</button>)}
         </div></fieldset>}
-        {(!format || format === 'jpg') && <>
-          <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.qualityLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.qualityLabel', locale)} aria-describedby="webp-quality-hint">
+        {(source !== 'jfif' && (!format || format === 'jpg' || format === 'webp')) && <>
+          <fieldset data-show={format === 'webp' ? 'webp' : 'jpg'} hidden={initial !== 'jpg' && initial !== 'webp'}><legend>{t(format === 'webp' ? 'webp.qualityLabelWebp' : 'webp.qualityLabel', locale)}</legend><div class="chips" role="group" aria-label={t(format === 'webp' ? 'webp.qualityLabelWebp' : 'webp.qualityLabel', locale)} aria-describedby="webp-quality-hint">
             {QUALITIES.map((value, i) => <button type="button" data-quality={value} data-hint={t(qualityHints[i], locale)} aria-pressed={i === 1 ? 'true' : 'false'}>{t(qualityLabels[i], locale)}</button>)}
           </div><p class="option-hint" id="webp-quality-hint">{t(qualityHints[1], locale)}</p></fieldset>
-          <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.backgroundLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.backgroundLabel', locale)}>
+          {format !== 'webp' && <fieldset data-show="jpg" hidden={initial !== 'jpg'}><legend>{t('webp.backgroundLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.backgroundLabel', locale)}>
             <button type="button" data-background="white" aria-pressed="true">{t('webp.backgroundWhite', locale)}</button>
             <button type="button" data-background="black" aria-pressed="false">{t('webp.backgroundBlack', locale)}</button>
-          </div></fieldset>
+          </div></fieldset>}
         </>}
+        {source === 'jfif' && format === 'jpg' && <fieldset><legend>{t('jfif.extensionLabel', locale)}</legend><div class="chips" role="group" aria-label={t('jfif.extensionLabel', locale)} aria-describedby="jfif-extension-hint">
+          <button type="button" data-extension="jpg" aria-pressed="true">.jpg</button>
+          <button type="button" data-extension="jpeg" aria-pressed="false">.jpeg</button>
+        </div><p class="option-hint" id="jfif-extension-hint">{t('jfif.extensionHint', locale)}</p></fieldset>}
         {(!format || format === 'svg') && <>
           <fieldset data-show="svg" hidden={initial !== 'svg'}><legend>{t('webp.svgModeLabel', locale)}</legend><div class="chips" role="group" aria-label={t('webp.svgModeLabel', locale)}>
             <button type="button" data-svg-mode="trace" aria-pressed="true">{t('webp.svgTrace', locale)}</button>

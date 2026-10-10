@@ -1,21 +1,25 @@
+import { readAvifInfo, TINY_AVIF_BASE64 } from '../lib/avif';
+import { readImageInfo } from '../lib/merge-jpg';
 import { readWebpInfo } from '../lib/webp';
 import { crc32, readZip, ZipError } from '../lib/zip';
-import { gifDelay, gifRepeat, isWebpEntry, LIMITS, MIME, traceSize, type ConvertOptions } from '../lib/webp-convert';
+import { gifDelay, gifRepeat, isSourceEntry, SOURCES, LIMITS, MIME, traceSize, type ConvertOptions, type SourceFormat } from '../lib/webp-convert';
 import { createGifWriter, embedSvg, traceSvg } from '../lib/webp-encode';
 
 export type WebpRequest =
-  | { type: 'unzip'; id: number; file: Blob }
+  | { type: 'unzip'; id: number; file: Blob; source: SourceFormat }
   | { type: 'convert'; id: number; file: Blob; options: ConvertOptions };
 
 export type ConvertResult = {
   data: Uint8Array; crc: number; width: number; height: number;
-  /** Frames in the source. Only GIF output keeps more than the first. */
+  /** WebP frame count; 2 flags an AVIF sequence whose exact frame count is not parsed. Only GIF preserves animation. */
   frames: number;
   firstFrameOnly: boolean;
   /** Set when the image was scaled down before tracing. */
   tracedAt?: { width: number; height: number };
   /** GIF only: some pixels were partly transparent and became fully opaque or fully transparent. */
   partialAlpha: boolean;
+  copied?: boolean;
+  reencoded?: boolean;
 };
 
 export type WebpResponse =
@@ -38,7 +42,7 @@ async function encode(surface: OffscreenCanvas, type: string, quality?: number) 
   let blob: Blob;
   try { blob = await surface.convertToBlob({ type, quality }); } catch { throw new ConvertError('canvas'); }
   // A browser that can't write the format silently falls back to PNG.
-  if (blob.type !== type) throw new ConvertError('canvas');
+  if (blob.type !== type) throw new ConvertError(type === 'image/webp' ? 'webpEncode' : 'canvas');
   return new Uint8Array(await blob.arrayBuffer());
 }
 
@@ -70,13 +74,34 @@ async function animatedGif(bytes: Uint8Array, width: number, height: number, fra
 
 const canDecodeAnimation = async () => typeof ImageDecoder !== 'undefined' && await ImageDecoder.isTypeSupported('image/webp').catch(() => false);
 
+let avifSupport: Promise<boolean> | undefined;
+function canDecodeAvif() {
+  return avifSupport ??= (async () => {
+    try {
+      const bytes = Uint8Array.from(atob(TINY_AVIF_BASE64), char => char.charCodeAt(0));
+      const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/avif' }));
+      bitmap.close();
+      return true;
+    } catch { return false; }
+  })();
+}
+
 async function convert(file: Blob, options: ConvertOptions): Promise<ConvertResult> {
   if (file.size > LIMITS.fileBytes) throw new ConvertError('tooLarge');
   const bytes = new Uint8Array(await file.arrayBuffer());
   // Undefined for a mislabelled file (often a JPEG or PNG named .webp); the browser still decodes those.
-  const info = readWebpInfo(bytes);
+  const source = options.source;
+  if (source === 'jfif' && options.format === 'jpg' && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    const info = readImageInfo(bytes);
+    // readImageInfo already applies the EXIF orientation to the display dimensions.
+    return { data: bytes, crc: crc32(bytes), width: info?.width ?? 0, height: info?.height ?? 0,
+      frames: 1, firstFrameOnly: false, partialAlpha: false, copied: true };
+  }
+  const avif = source === 'avif' ? readAvifInfo(bytes) : undefined;
+  if (avif?.width && avif.height && avif.width * avif.height > LIMITS.pixels) throw new ConvertError('tooManyPixels');
+  const info = source === 'webp' ? readWebpInfo(bytes) : undefined;
   if (info && info.width * info.height > LIMITS.pixels) throw new ConvertError('tooManyPixels');
-  const frames = info?.animated ? info.frames : 1;
+  const frames = info?.animated ? info.frames : avif?.animated ? 2 : 1;
 
   if (options.format === 'gif' && info?.animated && frames > 1 && await canDecodeAnimation()) {
     const gif = await animatedGif(bytes, info.width, info.height, frames, info.loopCount);
@@ -84,7 +109,10 @@ async function convert(file: Blob, options: ConvertOptions): Promise<ConvertResu
   }
 
   let bitmap: ImageBitmap;
-  try { bitmap = await createImageBitmap(new Blob([bytes as BlobPart], { type: 'image/webp' })); } catch { throw new ConvertError('decode'); }
+  try { bitmap = await createImageBitmap(new Blob([bytes as BlobPart], { type: SOURCES[source].blobType })); } catch {
+    if (source === 'avif' && !await canDecodeAvif()) throw new ConvertError('avifUnsupported');
+    throw new ConvertError('decode');
+  }
   const { width, height } = bitmap;
   try {
     if (!width || !height) throw new ConvertError('decode');
@@ -103,7 +131,7 @@ async function convert(file: Blob, options: ConvertOptions): Promise<ConvertResu
       const { surface, context } = canvas(width, height);
       if (options.format === 'jpg') {
         // JPEG has no transparency, so transparent areas get the chosen background instead of turning black.
-        context.fillStyle = options.background === 'black' ? '#000000' : '#ffffff';
+        context.fillStyle = source !== 'jfif' && options.background === 'black' ? '#000000' : '#ffffff';
         context.fillRect(0, 0, width, height);
       }
       context.drawImage(bitmap, 0, 0);
@@ -114,27 +142,27 @@ async function convert(file: Blob, options: ConvertOptions): Promise<ConvertResu
       } else if (options.format === 'svg') {
         data = new TextEncoder().encode(embedSvg(await encode(surface, MIME.png), width, height));
       } else {
-        data = await encode(surface, MIME[options.format], options.format === 'jpg' ? options.quality : undefined);
+        data = await encode(surface, MIME[options.format], options.format === 'jpg' && source === 'jfif' ? 0.92 : options.format === 'jpg' || options.format === 'webp' ? options.quality : undefined);
       }
     }
-    return { data, crc: crc32(data), width, height, frames, firstFrameOnly, tracedAt, partialAlpha };
+    return { data, crc: crc32(data), width, height, frames, firstFrameOnly, tracedAt, partialAlpha, reencoded: source === 'jfif' && options.format === 'jpg' || undefined };
   } finally { bitmap.close(); }
 }
 
-async function unzip(file: Blob) {
+async function unzip(file: Blob, source: SourceFormat) {
   if (file.size > LIMITS.zipBytes) throw new ConvertError('zipTooLarge');
   let listing;
   try { listing = await readZip(file); } catch (error) { throw new ConvertError(error instanceof ZipError && error.code === 'unsupported' ? 'zipUnsupported' : 'notZip'); }
-  const webp = listing.filter(entry => isWebpEntry(entry.path));
+  const matching = listing.filter(entry => isSourceEntry(source, entry.path));
   const entries: { path: string; blob: Blob }[] = [];
   let locked = 0;
-  for (const entry of webp) {
+  for (const entry of matching) {
     if (!entry.readable) { locked++; continue; }
     // One more than the limit is enough for the page to report the batch as too big.
     if (entries.length > LIMITS.files) break;
     try { entries.push({ path: entry.path, blob: await entry.blob() }); } catch { locked++; }
   }
-  const other = listing.filter(entry => !isWebpEntry(entry.path) && !entry.path.split('/').some(part => part === '__MACOSX' || part.startsWith('.'))).length;
+  const other = listing.filter(entry => !isSourceEntry(source, entry.path) && !entry.path.split('/').some(part => part === '__MACOSX' || part.startsWith('.'))).length;
   return { entries, other, locked };
 }
 
@@ -142,7 +170,7 @@ self.addEventListener('message', async (event: MessageEvent<WebpRequest>) => {
   const request = event.data;
   try {
     if (request.type === 'unzip') {
-      self.postMessage({ id: request.id, ...await unzip(request.file) } satisfies WebpResponse);
+      self.postMessage({ id: request.id, ...await unzip(request.file, request.source) } satisfies WebpResponse);
     } else {
       const result = await convert(request.file, request.options);
       self.postMessage({ id: request.id, result } satisfies WebpResponse, { transfer: [result.data.buffer] });

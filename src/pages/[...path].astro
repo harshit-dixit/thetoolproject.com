@@ -71,10 +71,35 @@ const webpPages: Record<string, { prefix: 'webpConverter' | 'webpPng' | 'webpJpg
   'webp-to-gif': { prefix: 'webpGif', format: 'gif' },
   'webp-to-svg': { prefix: 'webpSvg', format: 'svg' },
 };
+const convertPages: Record<string, { prefix: 'avifJpg' | 'avifPng' | 'avifWebp' | 'jfifJpg' | 'jfifPng' | 'jfifPdf'; source: 'avif' | 'jfif'; format: OutputFormat | 'pdf' }> = {
+  'avif-to-jpg': { prefix: 'avifJpg', source: 'avif', format: 'jpg' },
+  'avif-to-png': { prefix: 'avifPng', source: 'avif', format: 'png' },
+  'avif-to-webp': { prefix: 'avifWebp', source: 'avif', format: 'webp' },
+  'jfif-to-jpg': { prefix: 'jfifJpg', source: 'jfif', format: 'jpg' },
+  'jfif-to-png': { prefix: 'jfifPng', source: 'jfif', format: 'png' },
+  'jfif-to-pdf': { prefix: 'jfifPdf', source: 'jfif', format: 'pdf' },
+};
+const conversion = isTool && tool ? convertPages[tool.id] : undefined;
+const convertLinks = {
+  avifToJpg: getPublishedToolPath('avifToJpg', locale),
+  avifToPng: getPublishedToolPath('avifToPng', locale),
+  avifToWebp: getPublishedToolPath('avifToWebp', locale),
+  jfifToJpg: getPublishedToolPath('jfifToJpg', locale),
+  jfifToPng: getPublishedToolPath('jfifToPng', locale),
+  jfifToPdf: getPublishedToolPath('jfifToPdf', locale),
+  webpToJpg: getPublishedToolPath('webpToJpg', locale),
+  webpToPng: getPublishedToolPath('webpToPng', locale),
+  mergeJpgPdf: getPublishedToolPath('mergeJpgPdf', locale),
+  compressJpg100kb: getPublishedToolPath('compressJpg100kb', locale),
+  compressPdf: getPublishedToolPath('compressPdf', locale),
+  spec: 'https://aomediacodec.github.io/av1-avif/',
+};
+const convertKey = (suffix: string) => `${conversion!.prefix}.${suffix}` as TranslationKey;
+const convertLabels = { button: conversion?.format === 'pdf' ? t('merge.convertPdf', locale) : t('webp.convertButton', locale, { format: (conversion?.format ?? 'png').toUpperCase() }), high: t('webp.qualityHigh', locale), max: t('webp.qualityMax', locale), smallest: t('webp.qualitySmall', locale) };
 const webp = isTool && tool ? webpPages[tool.id] : undefined;
 const webpLinks = {
   hub: getPublishedToolPath('webpConverter', locale), png: getPublishedToolPath('webpToPng', locale), jpg: getPublishedToolPath('webpToJpg', locale),
-  gif: getPublishedToolPath('webpToGif', locale), svg: getPublishedToolPath('webpToSvg', locale),
+  gif: getPublishedToolPath('webpToGif', locale), svg: getPublishedToolPath('webpToSvg', locale), avifToJpg: getPublishedToolPath('avifToJpg', locale),
 };
 const webpButton = t('webp.convertButton', locale, { format: (webp?.format ?? 'png').toUpperCase() });
 const webpFormatRows: [keyof typeof webpLinks, TranslationKey, TranslationKey, TranslationKey][] = [
@@ -370,6 +395,7 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
             <p><RichText text={t('webpJpg.howTransparencyP', locale)} links={webpLinks} /></p>
             <h3>{t('webpJpg.howJpegTitle', locale)}</h3>
             <p><RichText text={t('webpJpg.howJpegP', locale)} links={webpLinks} /></p>
+            <p><RichText text={t('webpJpg.avifLink', locale)} links={webpLinks} /></p>
           </>}
           {webp.prefix === 'webpGif' && <>
             <p><RichText text={t('webpGif.howIntro', locale, { button: webpButton })} /></p>
@@ -390,6 +416,17 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><strong>{t(`${webp.prefix}.faqQ1`, locale)}</strong> <RichText text={t(`${webp.prefix}.faqA1`, locale)} links={webpLinks} params={{ trace: t('webp.svgTrace', locale), embed: t('webp.svgEmbed', locale) }} /></p>
           <p><strong>{t(`${webp.prefix}.faqQ2`, locale)}</strong> <RichText text={t(`${webp.prefix}.faqA2`, locale)} links={webpLinks} /></p>
           <p><strong>{t('webp.faqUploadQ', locale)}</strong> {t('webp.faqUploadA', locale)}</p>
+        </div></section>
+      </>}
+      {conversion && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t(convertKey('leadStrong'), locale)}</strong> {t(convertKey('lead'), locale)}</p><p class="caption">{t(convertKey('caption'), locale)}</p></div></div>
+        {conversion.format === 'pdf' ? <MergeJpgTool locale={locale} output="pdf" source="jfif" /> : <WebpConverterTool locale={locale} source={conversion.source} format={conversion.format} />}
+        <section aria-labelledby="convert-how-title"><div class="sec-head"><h2 id="convert-how-title">{t(convertKey('howTitle'), locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t(convertKey('howIntro'), locale)} params={convertLabels} links={convertLinks} /></p>
+          {[1, 2, 3].map(index => <><h3><RichText text={t(convertKey(`howH${index}`), locale)} links={convertLinks} /></h3><p><RichText text={t(convertKey(`howP${index}`), locale)} params={convertLabels} links={convertLinks} /></p></>)}
+          <h3>{t('webp.faqTitle', locale)}</h3>
+          {[1, 2, 3].map(index => <p><strong>{t(convertKey(`faqQ${index}`), locale)}</strong> <RichText text={t(convertKey(`faqA${index}`), locale)} params={convertLabels} links={convertLinks} /></p>)}
+          <p><strong>{t(conversion.format === 'pdf' ? 'merge.faqUploadQ' : 'webp.faqUploadQ', locale)}</strong> {t(conversion.format === 'pdf' ? 'merge.faqUploadA' : 'webp.faqUploadA', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'merge-jpg' && <>

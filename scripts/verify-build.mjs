@@ -139,6 +139,33 @@ assert.match(webpPages['webp-to-png'], /href="\/webp-converter\/"/);
 assert.match(webpPages['webp-converter'], /data-format="svg"/);
 assert.doesNotMatch(webpPages['webp-to-png'], /data-quality=|data-svg-mode=/);
 assert.match(webpPages['webp-to-svg'], /data-svg-mode="trace" aria-pressed="true"/);
+// AVIF and JFIF: shared engines, distinct options, canonical and localized sibling links.
+const convertSpecs = [
+  ['avif-to-jpg', 'AVIF to JPG (JPEG)', 'avif-a-jpg', 'avif-to-png'],
+  ['avif-to-png', 'AVIF to PNG', 'avif-a-png', 'avif-to-webp'],
+  ['avif-to-webp', 'AVIF to WebP', 'avif-a-webp', 'avif-to-jpg'],
+  ['jfif-to-jpg', 'JFIF to JPG (JPEG)', 'jfif-a-jpg', 'jfif-to-png'],
+  ['jfif-to-png', 'JFIF to PNG', 'jfif-a-png', 'jfif-to-pdf'],
+  ['jfif-to-pdf', 'JFIF to PDF', 'jfif-a-pdf', 'jfif-to-jpg'],
+];
+const convertPages = {};
+for (const [id, h1, es, sibling] of convertSpecs) {
+  const html = convertPages[id] = read(`${id}/index.html`);
+  assert.ok(html.includes(`<h1 class="page-title">${h1}</h1>`), `${id} H1`);
+  assert.ok(html.includes(`rel="canonical" href="https://thetoolproject.com/${id}/"`), `${id} canonical`);
+  assert.ok(html.includes(`hreflang="es" href="https://thetoolproject.com/es/${es}/"`), `${id} Spanish alternate`);
+  assert.ok(html.includes(`hreflang="ja" href="https://thetoolproject.com/ja/${id}/"`), `${id} Japanese alternate`);
+  assert.ok(html.includes(`href="/${sibling}/"`), `${id} sibling link`);
+  assert.ok(home.includes(`href="/${id}/"`), `${id} homepage link`);
+}
+assert.match(convertPages['jfif-to-jpg'], /data-extension="jpg" aria-pressed="true"/);
+assert.doesNotMatch(convertPages['jfif-to-jpg'], /data-quality=|data-background=/);
+assert.doesNotMatch(convertPages['avif-to-png'], /data-quality=|data-background=/);
+assert.match(convertPages['avif-to-webp'], /data-quality=/);
+assert.doesNotMatch(convertPages['avif-to-webp'], /data-background=/);
+assert.match(convertPages['jfif-to-pdf'], /data-source="jfif"/);
+assert.match(convertPages['jfif-to-pdf'], /data-page-size="letter" aria-pressed="true"/);
+assert.doesNotMatch(convertPages['jfif-to-pdf'], /data-layout=/);
 // Merge JPG: one image or a PDF from the hub, a PDF only on its own page, with translated URLs.
 assert.match(home, /href="\/merge-jpg\/"/);
 assert.match(home, /href="\/merge-jpg-to-pdf\/"/);
@@ -453,6 +480,7 @@ for (const locale of ['es', 'pt', 'de', 'fr', 'ja']) {
 }
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]).sort();
 const englishUrls = [
+  ...convertSpecs.map(([id]) => `https://thetoolproject.com/${id}/`),
   'https://thetoolproject.com/',
   'https://thetoolproject.com/about/',
   'https://thetoolproject.com/contact/',
@@ -524,7 +552,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries(['json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'overtime-calculator', 'no-tax-on-overtime-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'video-to-gif', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'merge-jpg', 'merge-jpg-to-pdf', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries([...convertSpecs.map(([id]) => id), 'json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'overtime-calculator', 'no-tax-on-overtime-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'video-to-gif', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'merge-jpg', 'merge-jpg-to-pdf', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

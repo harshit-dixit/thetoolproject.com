@@ -4,8 +4,8 @@ import type { Locale } from '../data/tools';
 import { COLUMNS, GAPS, LAYOUTS, LIMITS, MARGINS, ORIENTATIONS, PAGE_SIZES, QUALITIES, type MergeOutput } from '../lib/merge-jpg';
 
 // Without an output this is the Merge JPG page, with chips for one JPG image or a PDF.
-interface Props { output?: MergeOutput; locale?: Locale }
-const { output, locale = 'en' } = Astro.props;
+interface Props { output?: MergeOutput; source?: 'jfif'; locale?: Locale }
+const { output, source, locale = 'en' } = Astro.props;
 const initial: MergeOutput = output ?? 'image';
 // Letter on the English page, A4 elsewhere, as for the other PDF tools.
 const paper = t('eml.defaultPageSize', locale) === 'a4' ? 'a4' : 'letter';
@@ -21,6 +21,8 @@ const clientKeys: TranslationKey[] = [
   'merge.titleImage.one', 'merge.titleImage.other', 'merge.titlePdf.one', 'merge.titlePdf.other',
   'unit.bytes', 'unit.kb', 'unit.mb'
 ];
+if (source === 'jfif') clientKeys.splice(clientKeys.indexOf('merge.errNoImages'), 1, 'jfifPdf.errNoImages');
+const sourceKey = (name: 'fileAria' | 'dropTitle' | 'dropHint' | 'chooseButton') => `${source === 'jfif' ? 'jfifPdf' : 'merge'}.${name}` as TranslationKey;
 const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
 const layoutLabels: Record<string, TranslationKey> = { vertical: 'merge.layoutVertical', horizontal: 'merge.layoutHorizontal', grid: 'merge.layoutGrid' };
 const gapLabels: TranslationKey[] = ['merge.gapNone', 'merge.gapSmall', 'merge.gapLarge'];
@@ -29,13 +31,13 @@ const pageLabels: Record<string, TranslationKey> = { fit: 'merge.pageFit', a4: '
 const orientationLabels: Record<string, TranslationKey> = { auto: 'merge.orientationAuto', portrait: 'merge.orientationPortrait', landscape: 'merge.orientationLandscape' };
 const marginLabels: Record<string, TranslationKey> = { none: 'merge.marginNone', small: 'merge.marginSmall', large: 'merge.marginLarge' };
 ---
-<div class="drop merge-drop" id="merge-tool" data-initial-output={initial} data-fixed={output ? 'true' : 'false'} data-paper={paper} data-strings={JSON.stringify(strings)} data-locale={locale}>
+<div class="drop merge-drop" id="merge-tool" data-source={source} data-initial-output={initial} data-fixed={output ? 'true' : 'false'} data-paper={paper} data-strings={JSON.stringify(strings)} data-locale={locale}>
   <div class="tool-frame">
-    <input class="visually-hidden" type="file" id="merge-files" accept=".jpg,.jpeg,.jfif,.png,.webp,image/jpeg,image/png,image/webp" multiple tabindex="-1" aria-label={t('merge.fileAria', locale)} />
+    <input class="visually-hidden" type="file" id="merge-files" accept=".jpg,.jpeg,.jfif,.jfi,.jif,.jpe,.png,.webp,image/jpeg,image/png,image/webp" multiple tabindex="-1" aria-label={t(sourceKey('fileAria'), locale)} />
     <div class="drop-empty" id="merge-empty">
-      <h2 class="drop-title">{t('merge.dropTitle', locale)}</h2>
-      <p class="drop-hint">{t('merge.dropHint', locale, { files: LIMITS.files, size: LIMITS.fileBytes / 1024 / 1024 })}</p>
-      <button class="btn" type="button" id="merge-choose">{t('merge.chooseButton', locale)}</button>
+      <h2 class="drop-title">{t(sourceKey('dropTitle'), locale)}</h2>
+      <p class="drop-hint">{t(sourceKey('dropHint'), locale, { files: LIMITS.files, size: LIMITS.fileBytes / 1024 / 1024 })}</p>
+      <button class="btn" type="button" id="merge-choose">{t(sourceKey('chooseButton'), locale)}</button>
     </div>
     <div class="merge-panel" id="merge-panel" hidden>
       <div class="file-line"><span class="file-name" id="merge-name"></span><span class="file-size" id="merge-size"></span></div>

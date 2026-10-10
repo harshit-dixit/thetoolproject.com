@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gifDelay, gifRepeat, isWebpEntry, outputPath, traceSize, uniquePaths } from './webp-convert';
+import { sourceAccept, isSourceFile, isSourceEntry, gifDelay, gifRepeat, isWebpEntry, outputPath, traceSize, uniquePaths } from './webp-convert';
 import { createGifWriter, embedSvg, traceSvg } from './webp-encode';
 
 /** A test image: a red square on a transparent background, with a blue bar along the bottom. */
@@ -91,5 +91,30 @@ describe('SVG', () => {
   it('embeds a PNG as a data URI at the image size', () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
     expect(embedSvg(png, 12, 34)).toBe('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="12" height="34" viewBox="0 0 12 34"><image width="12" height="34" xlink:href="data:image/png;base64,iVBORw=="/></svg>');
+  });
+});
+
+
+describe('source formats', () => {
+  it('names WebP output and the chosen JPEG extension', () => {
+    expect(outputPath('pic.avif', 'webp')).toBe('pic.webp');
+    expect(outputPath('photo.jfif', 'jpg', 'jpeg')).toBe('photo.jpeg');
+  });
+  it('accepts each source by MIME or extension and excludes hidden ZIP entries', () => {
+    for (const source of ['webp', 'avif', 'jfif'] as const) {
+      expect(isSourceFile(source, { name: `x.${source.toUpperCase()}`, type: '' })).toBe(true);
+      expect(isSourceEntry(source, `folder/x.${source}`)).toBe(true);
+      expect(isSourceEntry(source, `__MACOSX/._x.${source}`)).toBe(false);
+      expect(isSourceEntry(source, `folder/.x.${source}`)).toBe(false);
+      expect(isSourceEntry(source, 'notes.txt')).toBe(false);
+    }
+    for (const extension of ['jif', 'jfi', 'jpe', 'jpeg', 'jpg']) expect(isSourceFile('jfif', { name: `x.${extension}`, type: '' })).toBe(true);
+    expect(isSourceFile('avif', { name: 'x', type: 'image/avif' })).toBe(true);
+    expect(isSourceFile('jfif', { name: 'x', type: 'image/pjpeg' })).toBe(true);
+    expect(isSourceFile('webp', { name: 'x', type: 'image/webp' })).toBe(true);
+    expect(isSourceFile('avif', { name: 'x.png', type: 'image/png' })).toBe(false);
+    expect(sourceAccept('webp')).toBe('.webp,image/webp,.zip,application/zip');
+    expect(sourceAccept('avif')).toBe('.avif,image/avif,.zip,application/zip');
+    expect(sourceAccept('jfif')).toBe('.jfif,.jfi,.jif,.jpe,.jpg,.jpeg,image/jpeg,image/pjpeg,.zip,application/zip');
   });
 });

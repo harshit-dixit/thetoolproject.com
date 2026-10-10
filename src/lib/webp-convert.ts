@@ -1,13 +1,28 @@
 // WebP converter settings, limits and output names, shared by the page and the worker. Kept free of libraries so the
 // page's first load stays small; the encoders are in webp-encode.ts, which only the worker loads.
 
-export type OutputFormat = 'png' | 'jpg' | 'gif' | 'svg';
+export type SourceFormat = 'webp' | 'avif' | 'jfif';
+export type OutputFormat = 'png' | 'jpg' | 'gif' | 'svg' | 'webp';
 export type SvgMode = 'trace' | 'embed';
 export type Background = 'white' | 'black';
-export type ConvertOptions = { format: OutputFormat; quality: number; background: Background; svgMode: SvgMode; colors: number };
+export type ConvertOptions = { source: SourceFormat; extension: 'jpg' | 'jpeg'; format: OutputFormat; quality: number; background: Background; svgMode: SvgMode; colors: number };
 
 export const OUTPUT_FORMATS: OutputFormat[] = ['png', 'jpg', 'gif', 'svg'];
-export const MIME: Record<OutputFormat, string> = { png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', svg: 'image/svg+xml' };
+export const MIME: Record<OutputFormat, string> = { png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', svg: 'image/svg+xml', webp: 'image/webp' };
+export const SOURCES: Record<SourceFormat, { extensions: string[]; mimes: string[]; blobType: string }> = {
+  webp: { extensions: ['webp'], mimes: ['image/webp'], blobType: 'image/webp' },
+  avif: { extensions: ['avif'], mimes: ['image/avif'], blobType: 'image/avif' },
+  jfif: { extensions: ['jfif', 'jfi', 'jif', 'jpe', 'jpg', 'jpeg'], mimes: ['image/jpeg', 'image/pjpeg'], blobType: 'image/jpeg' },
+};
+export function isSourceFile(source: SourceFormat, file: { name: string; type: string }) {
+  return (file.name.includes('.') && SOURCES[source].extensions.includes(file.name.split('.').pop()!.toLowerCase())) || SOURCES[source].mimes.includes(file.type.toLowerCase());
+}
+export function isSourceEntry(source: SourceFormat, path: string) {
+  return path.includes('.') && SOURCES[source].extensions.includes(path.split('.').pop()!.toLowerCase()) && !path.split('/').some(part => part === '__MACOSX' || part.startsWith('.'));
+}
+export function sourceAccept(source: SourceFormat) {
+  return [...SOURCES[source].extensions.map(ext => `.${ext}`), ...SOURCES[source].mimes, '.zip', 'application/zip'].join(',');
+}
 export const QUALITIES = [0.95, 0.9, 0.75];
 export const TRACE_COLORS = [2, 8, 16, 32];
 
@@ -26,12 +41,12 @@ export const LIMITS = {
 export type ImagePixels = { width: number; height: number; data: Uint8ClampedArray };
 
 /** "photos/cat.webp" → "photos/cat.png". Folders from a ZIP are kept; characters file systems reject are replaced. */
-export function outputPath(inputPath: string, format: OutputFormat) {
+export function outputPath(inputPath: string, format: OutputFormat, extension: 'jpg' | 'jpeg' = 'jpg') {
   const parts = inputPath.split('/').filter(part => part && part !== '.' && part !== '..');
   const file = parts.pop() ?? '';
   const base = file.replace(/\.[^.]*$/, '').replace(/[<>:"|?*\u0000-\u001f]/g, '_').trim() || 'image';
   const folders = parts.map(part => part.replace(/[<>:"|?*\u0000-\u001f]/g, '_'));
-  return [...folders, `${base}.${format}`].join('/');
+  return [...folders, `${base}.${format === 'jpg' ? extension : format}`].join('/');
 }
 
 /** Adds -2, -3 … before the extension to paths that would otherwise overwrite each other. Case-insensitive, like Windows and macOS. */
@@ -49,7 +64,7 @@ export function baseName(path: string) { return path.slice(path.lastIndexOf('/')
 
 /** A ZIP entry worth converting: a .webp file that isn't macOS metadata (__MACOSX/, ._name) or hidden. */
 export function isWebpEntry(path: string) {
-  return /\.webp$/i.test(path) && !path.split('/').some(part => part === '__MACOSX' || part.startsWith('.'));
+  return isSourceEntry('webp', path);
 }
 
 /** The size an image is traced at: its own size, or scaled down to LIMITS.tracePixels. */

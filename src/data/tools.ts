@@ -99,6 +99,67 @@ export const tools: Record<string, Tool> = {
     category: 'UtilitiesApplication',
     locales: createToolLocales('webp-to-svg', 'webpSvg'),
   },
+  // AVIF and JFIF conversion pages reuse the WebP engine and Merge JPG PDF mode.
+  avifToJpg: {
+    id: 'avif-to-jpg',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('avif-to-jpg', 'avifJpg', {
+      es: { path: '/es/avif-a-jpg/' },
+      pt: { path: '/pt/avif-para-jpg/' },
+      de: { path: '/de/avif-in-jpg/' },
+      fr: { path: '/fr/avif-en-jpg/' },
+    }),
+  },
+  avifToPng: {
+    id: 'avif-to-png',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('avif-to-png', 'avifPng', {
+      es: { path: '/es/avif-a-png/' },
+      pt: { path: '/pt/avif-para-png/' },
+      de: { path: '/de/avif-in-png/' },
+      fr: { path: '/fr/avif-en-png/' },
+    }),
+  },
+  avifToWebp: {
+    id: 'avif-to-webp',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('avif-to-webp', 'avifWebp', {
+      es: { path: '/es/avif-a-webp/' },
+      pt: { path: '/pt/avif-para-webp/' },
+      de: { path: '/de/avif-in-webp/' },
+      fr: { path: '/fr/avif-en-webp/' },
+    }),
+  },
+  jfifToJpg: {
+    id: 'jfif-to-jpg',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('jfif-to-jpg', 'jfifJpg', {
+      es: { path: '/es/jfif-a-jpg/' },
+      pt: { path: '/pt/jfif-para-jpg/' },
+      de: { path: '/de/jfif-in-jpg/' },
+      fr: { path: '/fr/jfif-en-jpg/' },
+    }),
+  },
+  jfifToPng: {
+    id: 'jfif-to-png',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('jfif-to-png', 'jfifPng', {
+      es: { path: '/es/jfif-a-png/' },
+      pt: { path: '/pt/jfif-para-png/' },
+      de: { path: '/de/jfif-in-png/' },
+      fr: { path: '/fr/jfif-en-png/' },
+    }),
+  },
+  jfifToPdf: {
+    id: 'jfif-to-pdf',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('jfif-to-pdf', 'jfifPdf', {
+      es: { path: '/es/jfif-a-pdf/' },
+      pt: { path: '/pt/jfif-para-pdf/' },
+      de: { path: '/de/jfif-in-pdf/' },
+      fr: { path: '/fr/jfif-en-pdf/' },
+    }),
+  },
   // One page for JPG and JPEG, as for WebP to JPG. Merging into one image and merging into a PDF are different
   // searches, so the PDF has its own page; both share one tool. Published after the localized URL migration, so
   // they start at their translated URLs and have no old paths to redirect.

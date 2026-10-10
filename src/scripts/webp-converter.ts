@@ -1,4 +1,4 @@
-import { baseName, LIMITS, MIME, outputPath, uniquePaths, type Background, type ConvertOptions, type OutputFormat, type SvgMode } from '../lib/webp-convert';
+import { baseName, isSourceFile, LIMITS, MIME, outputPath, uniquePaths, type Background, type ConvertOptions, type OutputFormat, type SvgMode, type SourceFormat } from '../lib/webp-convert';
 import type { ConvertResult, WebpRequest, WebpResponse } from '../workers/webp-converter';
 import { createZipBlob } from '../lib/zip';
 import { i18nFrom } from '../i18n/client';
@@ -6,6 +6,9 @@ import { sizeBucket, trackResult } from '../lib/analytics';
 
 const root = document.querySelector<HTMLElement>('#webp-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
+const source = (root.dataset.source ?? 'webp') as SourceFormat;
+const sourceKeys = new Set(['fileCount', 'noteSkipped', 'noteLocked', 'noteFirstFrame', 'errZipLocked']);
+const key = (name: string) => `${sourceKeys.has(name) ? source : 'webp'}.${name}`;
 const fixed = root.dataset.fixed === 'true';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -21,7 +24,7 @@ const download = $<HTMLButtonElement>('webp-download');
 const CONVERT_TIMEOUT_MS = 120_000;
 const UNZIP_TIMEOUT_MS = 300_000;
 const REASON_KEYS: Record<string, string> = {
-  decode: 'webp.reasonDecode', tooLarge: 'webp.reasonTooLarge', tooManyPixels: 'webp.reasonTooManyPixels',
+  webpEncode: 'webp.reasonWebpEncode', decode: 'webp.reasonDecode', tooLarge: 'webp.reasonTooLarge', tooManyPixels: 'webp.reasonTooManyPixels',
   animationTooLong: 'webp.reasonAnimationTooLong', canvas: 'webp.reasonCanvas', timeout: 'webp.reasonTimeout', worker: 'webp.reasonWorker',
 };
 const BATCH_ERROR_KEYS: Record<string, string> = {
@@ -31,7 +34,7 @@ const BATCH_ERROR_KEYS: Record<string, string> = {
 type Item = { path: string; blob: Blob };
 type Output = ConvertResult & { path: string; blob: Blob; url: string };
 
-let options: ConvertOptions = { format: root.dataset.initialFormat as OutputFormat, quality: 0.9, background: 'white', svgMode: 'trace', colors: 16 };
+let options: ConvertOptions = { source, extension: 'jpg', format: root.dataset.initialFormat as OutputFormat, quality: 0.9, background: 'white', svgMode: 'trace', colors: 16 };
 let items: Item[] = [];
 let outputs: Output[] = [];
 let skipped = 0;
@@ -89,7 +92,6 @@ function ask(request: Outgoing, timeout: number): Promise<WebpResponse> {
 // --- Choosing files
 
 const isZip = (file: File) => /\.zip$/i.test(file.name) || /^application\/(x-)?zip(-compressed)?$/.test(file.type);
-const isWebpFile = (file: File) => /\.webp$/i.test(file.name) || file.type === 'image/webp';
 const stripExtension = (name: string) => name.replace(/\.[^.]*$/, '') || 'images';
 
 function clearOutputs() {
@@ -127,7 +129,7 @@ async function choose(files: File[]) {
   const run = generation;
   const zips = files.filter(isZip);
   const images = files.filter(file => !isZip(file));
-  const direct = images.filter(isWebpFile);
+  const direct = images.filter(file => isSourceFile(source, file));
   skipped = images.length - direct.length;
   const found: Item[] = direct.map(file => ({ path: file.name, blob: file }));
   // Open the panel right away so the frame doesn't jump when the list arrives.
@@ -135,13 +137,13 @@ async function choose(files: File[]) {
   panel.hidden = false;
   showPanel(found);
   if (zips.length) {
-    $('webp-name').textContent = files.length === 1 ? files[0].name : counted('webp.fileCount', files.length);
+    $('webp-name').textContent = files.length === 1 ? files[0].name : counted(key('fileCount'), files.length);
     $('webp-size').textContent = formatBytes(files.reduce((sum, file) => sum + file.size, 0));
   }
   for (const zip of zips) {
     showStatus(t('webp.reading'));
     convertButton.disabled = true;
-    const response = await ask({ type: 'unzip', file: zip }, UNZIP_TIMEOUT_MS);
+    const response = await ask({ type: 'unzip', file: zip, source }, UNZIP_TIMEOUT_MS);
     if (run !== generation) return;
     if ('error' in response) {
       failBatch(response.error.code, t(BATCH_ERROR_KEYS[response.error.code] ?? 'webp.errNotZip'));
@@ -155,7 +157,7 @@ async function choose(files: File[]) {
     locked += response.locked;
   }
   if (zips.length === 1 && !images.length) zipName = stripExtension(zips[0].name);
-  if (!found.length) { failBatch(locked ? 'zipLocked' : 'noWebp', t(locked ? 'webp.errZipLocked' : 'webp.errNoWebp')); return; }
+  if (!found.length) { failBatch(locked ? 'zipLocked' : source === 'webp' ? 'noWebp' : `${source}.noFiles`, t(locked ? key('errZipLocked') : source === 'webp' ? 'webp.errNoWebp' : `${source}.errNoFiles`)); return; }
   if (found.length > LIMITS.files) { failBatch('tooMany', t('webp.errTooMany', { max: formatNumber(LIMITS.files) })); return; }
   items = found;
   showPanel(items);
@@ -164,7 +166,7 @@ async function choose(files: File[]) {
 
 function showPanel(current: Item[]) {
   const total = current.reduce((sum, item) => sum + item.blob.size, 0);
-  $('webp-name').textContent = current.length === 1 ? baseName(current[0].path) : counted('webp.fileCount', current.length);
+  $('webp-name').textContent = current.length === 1 ? baseName(current[0].path) : counted(key('fileCount'), current.length);
   $('webp-size').textContent = current.length ? formatBytes(total) : '';
   updateLabels(current.length);
   convertButton.disabled = !current.length;
@@ -173,8 +175,8 @@ function showPanel(current: Item[]) {
 function updateLabels(count = items.length) {
   $('webp-title').textContent = counted('webp.title', Math.max(count, 1), { format: formatLabel() });
   const advice = options.format === 'svg' ? (options.svgMode === 'trace' ? 'webp.adviceTrace' : 'webp.adviceEmbed')
-    : ({ png: 'webp.advicePng', jpg: 'webp.adviceJpg', gif: 'webp.adviceGif' } as const)[options.format];
-  $('webp-advice').textContent = t(advice);
+    : ({ png: 'webp.advicePng', jpg: 'webp.adviceJpg', gif: 'webp.adviceGif', webp: 'webp.adviceWebp' } as const)[options.format];
+  $('webp-advice').textContent = t(source === 'jfif' && options.format === 'jpg' ? 'jfif.adviceJpg' : source !== 'webp' && options.format === 'png' ? `${source}.advicePng` : advice);
   convertButton.textContent = t('webp.convertButton', { format: formatLabel() });
   root.querySelectorAll<HTMLElement>('[data-show]').forEach(group => {
     const show = group.dataset.show;
@@ -219,7 +221,7 @@ async function convertAll() {
   clearOutputs();
   running = true;
   convertButton.disabled = true;
-  const paths = uniquePaths(items.map(item => outputPath(item.path, current.format)));
+  const paths = uniquePaths(items.map(item => outputPath(item.path, current.format, current.extension)));
   const failures: string[] = [];
   result.hidden = false;
   download.hidden = true;
@@ -236,6 +238,12 @@ async function convertAll() {
       list.append(row(baseName(paths[i]), t('webp.rowMeta', { width: formatNumber(output.width), height: formatNumber(output.height), size: formatBytes(blob.size) }), output));
     } else {
       const code = 'error' in response ? response.error.code : 'general';
+      if (code === 'avifUnsupported') {
+        running = false;
+        clearOutputs();
+        failBatch('avifUnsupported', t('avif.errBrowser'));
+        return;
+      }
       failures.push(code);
       list.append(row(baseName(items[i].path), t(REASON_KEYS[code] ?? 'webp.reasonGeneral')));
     }
@@ -248,18 +256,24 @@ function finish(current: ConvertOptions, failures: string[]) {
   const size = outputs.reduce((sum, output) => sum + output.blob.size, 0);
   const notes: string[] = [];
   const firstFrame = outputs.filter(output => output.firstFrameOnly).length;
-  if (firstFrame) notes.push(counted(current.format === 'gif' ? 'webp.noteNoAnimation' : 'webp.noteFirstFrame', firstFrame, { format: current.format.toUpperCase() }));
+  if (firstFrame) notes.push(counted(current.format === 'gif' ? 'webp.noteNoAnimation' : key('noteFirstFrame'), firstFrame, { format: current.format.toUpperCase() }));
+  const copied = outputs.filter(output => output.copied).length;
+  const reencoded = outputs.filter(output => output.reencoded).length;
+  if (copied) notes.push(counted('jfif.noteCopied', copied));
+  if (reencoded) notes.push(counted('jfif.noteReencoded', reencoded));
   const traced = outputs.filter(output => output.tracedAt).length;
   if (traced) notes.push(counted('webp.noteTraced', traced));
   if (outputs.some(output => output.partialAlpha)) notes.push(t('webp.notePartialAlpha'));
   if (failures.length && outputs.length) notes.push(counted('webp.noteFailed', failures.length));
-  if (skipped) notes.push(counted('webp.noteSkipped', skipped));
-  if (locked) notes.push(counted('webp.noteLocked', locked));
+  if (skipped) notes.push(counted(key('noteSkipped'), skipped));
+  if (locked) notes.push(counted(key('noteLocked'), locked));
   $('webp-note').textContent = notes.join(' ');
   const trackParams = {
     format: current.format, image_count: outputs.length, failed: failures.length || undefined, skipped: skipped + locked || undefined,
     animated: outputs.filter(output => output.frames > 1).length || undefined, zip_input: zipName ? true : undefined,
-    quality: current.format === 'jpg' ? current.quality : undefined, background: current.format === 'jpg' ? current.background : undefined,
+    copied: source === 'jfif' && current.format === 'jpg' ? copied : undefined,
+    extension: source === 'jfif' && current.format === 'jpg' && current.extension === 'jpeg' ? 'jpeg' : undefined,
+    quality: (current.format === 'jpg' && source !== 'jfif') || current.format === 'webp' ? current.quality : undefined, background: current.format === 'jpg' && source !== 'jfif' ? current.background : undefined,
     svg_mode: current.format === 'svg' ? current.svgMode : undefined, colors: current.format === 'svg' && current.svgMode === 'trace' ? current.colors : undefined,
   };
   if (!outputs.length) {
@@ -290,7 +304,7 @@ download.addEventListener('click', () => {
   if (!outputs.length) return;
   if (outputs.length === 1) { save(outputs[0].blob, baseName(outputs[0].path)); return; }
   const format = outputs[0].path.slice(outputs[0].path.lastIndexOf('.') + 1);
-  save(createZipBlob(outputs.map(output => ({ name: output.path, blob: output.blob, crc: output.crc }))), `${zipName ?? 'webp'}-${format}.zip`);
+  save(createZipBlob(outputs.map(output => ({ name: output.path, blob: output.blob, crc: output.crc }))), `${zipName ?? source}-${format}.zip`);
 });
 
 // --- Options: changing one clears finished results, since they no longer match.
@@ -312,6 +326,7 @@ chipGroup('quality', value => {
   const hint = document.getElementById('webp-quality-hint');
   if (hint) hint.textContent = root.querySelector<HTMLElement>(`[data-quality="${value}"]`)?.dataset.hint ?? '';
 });
+chipGroup('extension', value => { options = { ...options, extension: value as 'jpg' | 'jpeg' }; });
 chipGroup('background', value => { options = { ...options, background: value as Background }; });
 chipGroup('svg-mode', value => { options = { ...options, svgMode: value as SvgMode }; });
 chipGroup('colors', value => { options = { ...options, colors: Number(value) }; });

@@ -247,12 +247,12 @@ export function byName<T extends { name: string }>(items: T[]) {
 }
 
 /** "holiday.jpg" → "holiday-merged.jpg" or "holiday-merged.pdf", named after the first image. */
-export function mergedName(firstName: string, output: MergeOutput) {
+export function mergedName(firstName: string, output: MergeOutput, single = false) {
   const base = firstName.replace(/\.[^.]*$/, '').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim() || 'images';
-  return `${base}-merged.${output === 'pdf' ? 'pdf' : 'jpg'}`;
+  return `${base}${single ? '' : '-merged'}.${output === 'pdf' ? 'pdf' : 'jpg'}`;
 }
 
 /** Files the tool tries to read: images by type or extension. Anything else is left out and counted. */
 export function isImageFile(file: { name: string; type: string }) {
-  return /^image\//.test(file.type) || /\.(jpe?g|jfif|pjpeg|pjp|png|webp)$/i.test(file.name);
+  return /^image\//.test(file.type) || /\.(jpe?g|jfif|jfi|jif|jpe|pjpeg|pjp|png|webp)$/i.test(file.name);
 }

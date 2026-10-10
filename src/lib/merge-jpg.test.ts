@@ -176,3 +176,10 @@ describe('names', () => {
     expect(isImageFile({ name: 'notes.txt', type: 'text/plain' })).toBe(false);
   });
 });
+
+
+it('accepts JPEG interchange extensions and optionally names a single PDF', () => {
+  for (const extension of ['jfi', 'jif', 'jpe', 'JFIF']) expect(isImageFile({ name: `scan.${extension}`, type: '' })).toBe(true);
+  expect(mergedName('scan.jfif', 'pdf', true)).toBe('scan.pdf');
+  expect(mergedName('scan.jfif', 'pdf')).toBe('scan-merged.pdf');
+});

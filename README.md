@@ -95,6 +95,12 @@
 | **[WebP to JPG (JPEG)](https://thetoolproject.com/webp-to-jpg/)** | WebP to JPG with a quality choice and a white or black fill for transparent areas. |
 | **[WebP to GIF](https://thetoolproject.com/webp-to-gif/)** | Animated WebP to animated GIF with every frame, its timing and the loop setting (ImageDecoder + gifenc). |
 | **[WebP to SVG](https://thetoolproject.com/webp-to-svg/)** | Trace WebP logos and icons into real vector paths (imagetracerjs), or embed the exact pixels in an SVG. |
+| **[AVIF to JPG (JPEG)](https://thetoolproject.com/avif-to-jpg/)** | Convert AVIF to JPG with quality choices and a white or black fill for transparent areas; batches and ZIPs work. |
+| **[AVIF to PNG](https://thetoolproject.com/avif-to-png/)** | Convert AVIF to PNG with transparency kept, one image, a batch or a ZIP at a time. |
+| **[AVIF to WebP](https://thetoolproject.com/avif-to-webp/)** | Convert AVIF to WebP with transparency and quality choices, using the browser encoder. |
+| **[JFIF to JPG (JPEG)](https://thetoolproject.com/jfif-to-jpg/)** | Save JPEG data from .jfif files as .jpg or .jpeg without re-encoding; batches and ZIPs work. |
+| **[JFIF to PNG](https://thetoolproject.com/jfif-to-png/)** | Convert JFIF to PNG, turning phone photos upright from their EXIF orientation. |
+| **[JFIF to PDF](https://thetoolproject.com/jfif-to-pdf/)** | Put JFIF images into one PDF, one image per page, reusing Merge JPG PDF mode with unchanged JPEG data. |
 | **[Merge JPG](https://thetoolproject.com/merge-jpg/)** | Merge JPG and JPEG files into one image, top to bottom, side by side or in a grid, with the images in any order, or into a PDF. Phone photos are turned upright from their EXIF orientation. |
 | **[Merge JPG to PDF](https://thetoolproject.com/merge-jpg-to-pdf/)** | Merge JPG files into one PDF, one image per page, on A4, Letter or image-sized pages. JPGs go into the PDF unchanged, so no quality is lost. |
 | **[Video to GIF](https://thetoolproject.com/video-to-gif/)** | Turn an MP4, MOV or WebM clip into an animated GIF: pick the start and end from the player, the width, frame rate (5–25 fps), speed and loop. Frames are read with the browser's own video player and encoded with gifenc in a Web Worker, so nothing is uploaded. |
