@@ -11,8 +11,9 @@ export type WebpRequest =
 
 export type ConvertResult = {
   data: Uint8Array; crc: number; width: number; height: number;
-  /** WebP frame count; 2 flags an AVIF sequence whose exact frame count is not parsed. Only GIF preserves animation. */
+  /** Frames in a WebP source; 1 for other sources. Only GIF output keeps more than the first. */
   frames: number;
+  /** The source was animated (a WebP or an AVIF sequence) and only its first frame was kept. */
   firstFrameOnly: boolean;
   /** Set when the image was scaled down before tracing. */
   tracedAt?: { width: number; height: number };
@@ -74,16 +75,28 @@ async function animatedGif(bytes: Uint8Array, width: number, height: number, fra
 
 const canDecodeAnimation = async () => typeof ImageDecoder !== 'undefined' && await ImageDecoder.isTypeSupported('image/webp').catch(() => false);
 
-let avifSupport: Promise<boolean> | undefined;
-function canDecodeAvif() {
-  return avifSupport ??= (async () => {
-    try {
-      const bytes = Uint8Array.from(atob(TINY_AVIF_BASE64), char => char.charCodeAt(0));
-      const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/avif' }));
-      bitmap.close();
-      return true;
-    } catch { return false; }
-  })();
+// Only a success is remembered: a probe that fails once (say, under memory pressure) is tried again on the next
+// failed AVIF, so one bad moment can't make every damaged file look like an unsupported browser.
+let avifSupported = false;
+async function canDecodeAvif() {
+  if (avifSupported) return true;
+  try {
+    const bytes = Uint8Array.from(atob(TINY_AVIF_BASE64), char => char.charCodeAt(0));
+    const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/avif' }));
+    bitmap.close();
+    avifSupported = true;
+  } catch { /* not supported, or not this time */ }
+  return avifSupported;
+}
+
+/** The decoded size of a JPEG whose header couldn't be read, so its row never shows 0 × 0. */
+async function measure(bytes: Uint8Array) {
+  let bitmap: ImageBitmap;
+  try { bitmap = await createImageBitmap(new Blob([bytes as BlobPart], { type: 'image/jpeg' })); } catch { throw new ConvertError('decode'); }
+  const size = { width: bitmap.width, height: bitmap.height };
+  bitmap.close();
+  if (!size.width || !size.height) throw new ConvertError('decode');
+  return size;
 }
 
 async function convert(file: Blob, options: ConvertOptions): Promise<ConvertResult> {
@@ -92,16 +105,17 @@ async function convert(file: Blob, options: ConvertOptions): Promise<ConvertResu
   // Undefined for a mislabelled file (often a JPEG or PNG named .webp); the browser still decodes those.
   const source = options.source;
   if (source === 'jfif' && options.format === 'jpg' && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    // readImageInfo already applies the EXIF orientation to the display dimensions. A header it can't read is measured
+    // by decoding; a file the browser can't decode either is reported as damaged rather than renamed.
     const info = readImageInfo(bytes);
-    // readImageInfo already applies the EXIF orientation to the display dimensions.
-    return { data: bytes, crc: crc32(bytes), width: info?.width ?? 0, height: info?.height ?? 0,
-      frames: 1, firstFrameOnly: false, partialAlpha: false, copied: true };
+    const { width, height } = info?.width && info.height ? info : await measure(bytes);
+    return { data: bytes, crc: crc32(bytes), width, height, frames: 1, firstFrameOnly: false, partialAlpha: false, copied: true };
   }
   const avif = source === 'avif' ? readAvifInfo(bytes) : undefined;
   if (avif?.width && avif.height && avif.width * avif.height > LIMITS.pixels) throw new ConvertError('tooManyPixels');
   const info = source === 'webp' ? readWebpInfo(bytes) : undefined;
   if (info && info.width * info.height > LIMITS.pixels) throw new ConvertError('tooManyPixels');
-  const frames = info?.animated ? info.frames : avif?.animated ? 2 : 1;
+  const frames = info?.animated ? info.frames : 1;
 
   if (options.format === 'gif' && info?.animated && frames > 1 && await canDecodeAnimation()) {
     const gif = await animatedGif(bytes, info.width, info.height, frames, info.loopCount);
@@ -117,7 +131,8 @@ async function convert(file: Blob, options: ConvertOptions): Promise<ConvertResu
   try {
     if (!width || !height) throw new ConvertError('decode');
     if (width * height > LIMITS.pixels) throw new ConvertError('tooManyPixels');
-    const firstFrameOnly = frames > 1;
+    // createImageBitmap gives the first frame of an AVIF sequence.
+    const firstFrameOnly = frames > 1 || !!avif?.animated;
     let data: Uint8Array;
     let tracedAt: ConvertResult['tracedAt'];
     let partialAlpha = false;

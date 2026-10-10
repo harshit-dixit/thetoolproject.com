@@ -1,4 +1,4 @@
-import { baseName, isSourceFile, LIMITS, MIME, outputPath, uniquePaths, type Background, type ConvertOptions, type OutputFormat, type SvgMode, type SourceFormat } from '../lib/webp-convert';
+import { baseName, isSourceFile, isSourceString, noFilesError, LIMITS, MIME, outputPath, uniquePaths, type Background, type ConvertOptions, type OutputFormat, type SvgMode, type SourceFormat } from '../lib/webp-convert';
 import type { ConvertResult, WebpRequest, WebpResponse } from '../workers/webp-converter';
 import { createZipBlob } from '../lib/zip';
 import { i18nFrom } from '../i18n/client';
@@ -7,8 +7,7 @@ import { sizeBucket, trackResult } from '../lib/analytics';
 const root = document.querySelector<HTMLElement>('#webp-tool')!;
 const { t, counted, formatNumber, formatBytes } = i18nFrom(root);
 const source = (root.dataset.source ?? 'webp') as SourceFormat;
-const sourceKeys = new Set(['fileCount', 'noteSkipped', 'noteLocked', 'noteFirstFrame', 'errZipLocked']);
-const key = (name: string) => `${sourceKeys.has(name) ? source : 'webp'}.${name}`;
+const key = (name: string) => `${isSourceString(name) ? source : 'webp'}.${name}`;
 const fixed = root.dataset.fixed === 'true';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -157,7 +156,11 @@ async function choose(files: File[]) {
     locked += response.locked;
   }
   if (zips.length === 1 && !images.length) zipName = stripExtension(zips[0].name);
-  if (!found.length) { failBatch(locked ? 'zipLocked' : source === 'webp' ? 'noWebp' : `${source}.noFiles`, t(locked ? key('errZipLocked') : source === 'webp' ? 'webp.errNoWebp' : `${source}.errNoFiles`)); return; }
+  if (!found.length) {
+    const error = locked ? { code: 'zipLocked', key: key('errZipLocked') } : noFilesError(source);
+    failBatch(error.code, t(error.key));
+    return;
+  }
   if (found.length > LIMITS.files) { failBatch('tooMany', t('webp.errTooMany', { max: formatNumber(LIMITS.files) })); return; }
   items = found;
   showPanel(items);
@@ -270,7 +273,7 @@ function finish(current: ConvertOptions, failures: string[]) {
   $('webp-note').textContent = notes.join(' ');
   const trackParams = {
     format: current.format, image_count: outputs.length, failed: failures.length || undefined, skipped: skipped + locked || undefined,
-    animated: outputs.filter(output => output.frames > 1).length || undefined, zip_input: zipName ? true : undefined,
+    animated: outputs.filter(output => output.frames > 1 || output.firstFrameOnly).length || undefined, zip_input: zipName ? true : undefined,
     copied: source === 'jfif' && current.format === 'jpg' ? copied : undefined,
     extension: source === 'jfif' && current.format === 'jpg' && current.extension === 'jpeg' ? 'jpeg' : undefined,
     quality: (current.format === 'jpg' && source !== 'jfif') || current.format === 'webp' ? current.quality : undefined, background: current.format === 'jpg' && source !== 'jfif' ? current.background : undefined,

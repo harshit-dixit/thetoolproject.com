@@ -1,7 +1,7 @@
 ---
 import { t, type TranslationKey } from '../i18n/utils';
 import type { Locale } from '../data/tools';
-import { sourceAccept, LIMITS, OUTPUT_FORMATS, QUALITIES, TRACE_COLORS, type OutputFormat, type SourceFormat } from '../lib/webp-convert';
+import { sourceAccept, sourceStringKeys, LIMITS, OUTPUT_FORMATS, QUALITIES, TRACE_COLORS, type OutputFormat, type SourceFormat } from '../lib/webp-convert';
 
 // Without a format this is the converter hub, with a chip for each output format.
 interface Props { format?: OutputFormat; source?: SourceFormat; locale?: Locale }
@@ -11,21 +11,19 @@ const initial: OutputFormat = format ?? 'png';
 const clientKeys: TranslationKey[] = [
   'webp.adviceEmbed', 'webp.adviceGif', 'webp.adviceJpg', 'webp.advicePng', 'webp.adviceTrace',
   'webp.convertButton', 'webp.converted.one', 'webp.converted.other', 'webp.converting', 'webp.download',
-  'webp.downloadOne', 'webp.downloadZip', 'webp.errNoWebp', 'webp.errNoneConverted', 'webp.errNotZip', 'webp.errTooMany',
-  'webp.errWorker', 'webp.errZipLocked', 'webp.errZipTooLarge', 'webp.errZipUnsupported', 'webp.fileCount.one', 'webp.fileCount.other',
-  'webp.noteFailed.one', 'webp.noteFailed.other', 'webp.noteFirstFrame.one', 'webp.noteFirstFrame.other',
-  'webp.noteLocked.one', 'webp.noteLocked.other', 'webp.noteNoAnimation.one', 'webp.noteNoAnimation.other',
-  'webp.notePartialAlpha', 'webp.noteSkipped.one', 'webp.noteSkipped.other', 'webp.noteTraced.one', 'webp.noteTraced.other',
+  'webp.downloadOne', 'webp.downloadZip', 'webp.errNoneConverted', 'webp.errNotZip', 'webp.errTooMany',
+  'webp.errWorker', 'webp.errZipTooLarge', 'webp.errZipUnsupported',
+  'webp.noteFailed.one', 'webp.noteFailed.other', 'webp.noteNoAnimation.one', 'webp.noteNoAnimation.other',
+  'webp.notePartialAlpha', 'webp.noteTraced.one', 'webp.noteTraced.other',
   'webp.reading', 'webp.reasonAnimationTooLong', 'webp.reasonCanvas', 'webp.reasonDecode', 'webp.reasonGeneral',
   'webp.reasonTimeout', 'webp.reasonTooLarge', 'webp.reasonTooManyPixels', 'webp.reasonWorker', 'webp.rowMeta',
   'webp.summary.one', 'webp.summary.other', 'webp.title.one', 'webp.title.other',
   'unit.bytes', 'unit.kb', 'unit.mb'
 ];
-const sourceNames = ['fileCount.one', 'fileCount.other', 'noteSkipped.one', 'noteSkipped.other', 'noteLocked.one', 'noteLocked.other', 'errZipLocked', 'noteFirstFrame.one', 'noteFirstFrame.other'];
-const keys = clientKeys.filter(key => source === 'webp' || (!sourceNames.some(name => key === `webp.${name}`) && key !== 'webp.errNoWebp'));
+// The strings that name the source (file counts, skipped and locked notes …) come from one list shared with the page script.
+const keys = [...clientKeys, ...sourceStringKeys(source) as TranslationKey[]];
 if (source !== 'webp') {
   keys.push(`${source}.advicePng` as TranslationKey);
-  keys.push(...sourceNames.filter(name => source !== 'jfif' || !name.startsWith('noteFirstFrame')).map(name => `${source}.${name}` as TranslationKey), `${source}.errNoFiles` as TranslationKey);
   if (source === 'avif') keys.push('avif.errBrowser');
   if (source === 'jfif') keys.push('jfif.adviceJpg', 'jfif.noteCopied.one', 'jfif.noteCopied.other', 'jfif.noteReencoded.one', 'jfif.noteReencoded.other');
 }

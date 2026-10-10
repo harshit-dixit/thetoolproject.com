@@ -23,6 +23,29 @@ export function isSourceEntry(source: SourceFormat, path: string) {
 export function sourceAccept(source: SourceFormat) {
   return [...SOURCES[source].extensions.map(ext => `.${ext}`), ...SOURCES[source].mimes, '.zip', 'application/zip'].join(',');
 }
+
+/**
+ * Strings that name the source format, so each source has its own copy under `{source}.{name}` (`webp.fileCount`,
+ * `avif.fileCount` …). The page script picks these by source, and the component ships them; both read this one list.
+ */
+export const SOURCE_STRINGS = { counted: ['fileCount', 'noteSkipped', 'noteLocked', 'noteFirstFrame'], plain: ['errZipLocked'] } as const;
+export type SourceString = (typeof SOURCE_STRINGS)['counted' | 'plain'][number];
+export const isSourceString = (name: string): name is SourceString => (SOURCE_STRINGS.counted as readonly string[]).includes(name) || (SOURCE_STRINGS.plain as readonly string[]).includes(name);
+
+/** The "no matching files" message key and its analytics code. WebP kept its original names. */
+export const noFilesError = (source: SourceFormat) => source === 'webp'
+  ? { key: 'webp.errNoWebp', code: 'noWebp' }
+  : { key: `${source}.errNoFiles`, code: source === 'avif' ? 'noAvif' : 'noJfif' };
+
+/** Every source-specific translation key a page needs. JFIF is never animated, so it has no first-frame note. */
+export function sourceStringKeys(source: SourceFormat) {
+  const counted = SOURCE_STRINGS.counted.filter(name => source !== 'jfif' || name !== 'noteFirstFrame');
+  return [
+    ...counted.flatMap(name => [`${source}.${name}.one`, `${source}.${name}.other`]),
+    ...SOURCE_STRINGS.plain.map(name => `${source}.${name}`),
+    noFilesError(source).key,
+  ];
+}
 export const QUALITIES = [0.95, 0.9, 0.75];
 export const TRACE_COLORS = [2, 8, 16, 32];
 
