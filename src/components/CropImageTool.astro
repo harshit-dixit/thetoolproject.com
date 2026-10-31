@@ -1,0 +1,146 @@
+---
+import { t, type TranslationKey } from '../i18n/utils';
+import type { Locale } from '../data/tools';
+import { BACKGROUNDS, BORDER_COLORS, BORDERS, CIRCLE_FORMATS, CIRCLE_SIZES, FORMATS, HANDLES, LIMITS, QUALITIES, RATIOS, type CropShape } from '../lib/crop-image';
+
+// One tool for the Crop image page (a rectangle, free or to a ratio) and the Circle crop image page (a circle,
+// saved as a transparent PNG by default, with an optional ring).
+interface Props { shape?: CropShape; locale?: Locale }
+const { shape = 'rect', locale = 'en' } = Astro.props;
+const circle = shape === 'circle';
+
+const clientKeys: TranslationKey[] = [
+  circle ? 'circle.advice' : 'crop.advice', circle ? 'circle.convert' : 'crop.convert', circle ? 'circle.download' : 'crop.download',
+  'crop.cropping', 'crop.done', 'crop.summary', 'crop.swap', 'crop.noteScaled', 'crop.noteFirst', 'circle.noteSmaller',
+  'crop.errNoImage', 'crop.errTooLarge', 'crop.errTooManyPixels', 'crop.errDecode', 'crop.errCanvas', 'crop.errEncode',
+  'crop.errWorker', 'crop.errTimeout', 'crop.errGeneral',
+  'unit.bytes', 'unit.kb', 'unit.mb'
+];
+const strings = Object.fromEntries(clientKeys.map(key => [key, t(key, locale)]));
+const ratioLabels: Partial<Record<string, TranslationKey>> = { free: 'crop.ratioFree', original: 'crop.ratioOriginal' };
+const qualityLabels: TranslationKey[] = ['webp.qualityMax', 'webp.qualityHigh', 'webp.qualitySmall'];
+const backgroundLabels: Record<string, TranslationKey> = { transparent: 'circle.backgroundTransparent', white: 'webp.backgroundWhite', black: 'webp.backgroundBlack' };
+const borderLabels: Record<string, TranslationKey> = { none: 'circle.borderNone', thin: 'circle.borderThin', thick: 'circle.borderThick' };
+const formatNames = { jpg: 'JPG', png: 'PNG', webp: 'WebP' };
+const formats = circle ? CIRCLE_FORMATS : FORMATS;
+const fields: [string, TranslationKey][] = circle
+  ? [['width', 'circle.size'], ['x', 'crop.x'], ['y', 'crop.y']]
+  : [['width', 'crop.width'], ['height', 'crop.height'], ['x', 'crop.x'], ['y', 'crop.y']];
+const prefix = circle ? 'circle' : 'crop';
+---
+<div class="drop crop-drop" id="crop-tool" data-shape={shape} data-strings={JSON.stringify(strings)} data-locale={locale}>
+  <div class="tool-frame">
+    <input class="visually-hidden" type="file" id="crop-file" accept=".jpg,.jpeg,.jfif,.png,.webp,.avif,.gif,.bmp,image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp" tabindex="-1" aria-label={t(`${prefix}.fileAria`, locale)} />
+    <div class="drop-empty" id="crop-empty">
+      <h2 class="drop-title">{t(`${prefix}.dropTitle`, locale)}</h2>
+      <p class="drop-hint">{t('crop.dropHint', locale, { size: LIMITS.fileBytes / 1024 / 1024 })}</p>
+      <button class="btn" type="button" id="crop-choose">{t('crop.chooseButton', locale)}</button>
+    </div>
+    <div class="crop-panel" id="crop-panel" hidden>
+      <div class="file-line"><span class="file-name" id="crop-name"></span><span class="file-size" id="crop-size"></span></div>
+      <h2 class="panel-title">{t(`${prefix}.title`, locale)}</h2>
+      <p class="panel-advice" id="crop-advice"></p>
+      <p class="panel-advice crop-animated" id="crop-animated" hidden>{t('crop.noteAnimated', locale)}</p>
+      <div class="crop-stage" id="crop-stage">
+        <img id="crop-image" alt={t('crop.imageAlt', locale)} draggable="false" />
+        <div class={circle ? 'crop-box circle' : 'crop-box'} id="crop-box" tabindex="0" role="group" aria-label={t(`${prefix}.boxAria`, locale)} aria-describedby="crop-advice">
+          {circle && <span class="crop-corners" aria-hidden="true"></span>}
+          {HANDLES.map(handle => <span class={`crop-handle crop-handle-${handle}`} aria-hidden="true"></span>)}
+        </div>
+      </div>
+      <div class="option-row">
+        {!circle && <fieldset><legend>{t('crop.ratioLabel', locale)}</legend><div class="chips" role="group" aria-label={t('crop.ratioLabel', locale)}>
+          {RATIOS.map((value, i) => <button type="button" data-ratio={value} aria-pressed={i === 0 ? 'true' : 'false'}>{ratioLabels[value] ? t(ratioLabels[value]!, locale) : value}</button>)}
+          <button type="button" id="crop-swap" hidden></button>
+        </div></fieldset>}
+        <fieldset><legend>{t(`${prefix}.sizeLabel`, locale)}</legend><div class="crop-fields">
+          {fields.map(([name, label]) => <label><span>{t(label, locale)}</span><input id={`crop-${name}`} type="text" inputmode="numeric" autocomplete="off" spellcheck="false" /></label>)}
+        </div></fieldset>
+        {circle && <>
+          <fieldset><legend>{t('circle.outputSizeLabel', locale)}</legend><div class="chips" role="group" aria-label={t('circle.outputSizeLabel', locale)}>
+            {CIRCLE_SIZES.map((value, i) => <button type="button" data-output-size={value} aria-pressed={i === 0 ? 'true' : 'false'}>{value === 'original' ? t('crop.ratioOriginal', locale) : t('circle.sizePx', locale, { size: value })}</button>)}
+          </div></fieldset>
+          <fieldset><legend>{t('circle.backgroundLabel', locale)}</legend><div class="chips" role="group" aria-label={t('circle.backgroundLabel', locale)}>
+            {BACKGROUNDS.map((value, i) => <button type="button" data-background={value} aria-pressed={i === 0 ? 'true' : 'false'}>{t(backgroundLabels[value], locale)}</button>)}
+          </div></fieldset>
+          <fieldset><legend>{t('circle.borderLabel', locale)}</legend><div class="chips" role="group" aria-label={t('circle.borderLabel', locale)}>
+            {BORDERS.map((value, i) => <button type="button" data-border={value} aria-pressed={i === 0 ? 'true' : 'false'}>{t(borderLabels[value], locale)}</button>)}
+          </div></fieldset>
+          <fieldset id="crop-border-color-group" hidden><legend>{t('circle.borderColorLabel', locale)}</legend><div class="chips" role="group" aria-label={t('circle.borderColorLabel', locale)}>
+            {BORDER_COLORS.map((value, i) => <button type="button" data-border-color={value} aria-pressed={i === 0 ? 'true' : 'false'}>{t(backgroundLabels[value], locale)}</button>)}
+          </div></fieldset>
+        </>}
+        <fieldset><legend>{t('crop.formatLabel', locale)}</legend><div class="chips" role="group" aria-label={t('crop.formatLabel', locale)}>
+          {formats.map((value, i) => <button type="button" data-format={value} aria-pressed={i === 0 ? 'true' : 'false'}>{formatNames[value]}</button>)}
+        </div></fieldset>
+        <fieldset id="crop-quality-group"><legend>{t('crop.qualityLabel', locale)}</legend><div class="chips" role="group" aria-label={t('crop.qualityLabel', locale)}>
+          {QUALITIES.map((value, i) => <button type="button" data-quality={value} aria-pressed={i === 0 ? 'true' : 'false'}>{t(qualityLabels[i], locale)}</button>)}
+        </div></fieldset>
+      </div>
+      <div class="actions input-actions">
+        <button class="btn" type="button" id="crop-convert"></button>
+        <button class="btn alt" type="button" id="crop-reset">{t('crop.resetButton', locale)}</button>
+        <button class="btn alt" type="button" id="crop-change">{t('crop.changeButton', locale)}</button>
+      </div>
+      <div id="crop-result" class="result crop-result" hidden>
+        <p class="result-summary" id="crop-summary"></p>
+        <img class={circle ? 'crop-preview circle' : 'crop-preview'} id="crop-preview" alt={t(`${prefix}.previewAlt`, locale)} />
+        <p class="result-note" id="crop-note"></p>
+        <div class="actions"><button class="btn" type="button" id="crop-download"></button></div>
+      </div>
+    </div>
+    <p id="crop-status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+  </div>
+</div>
+<style>
+  /* Opening an image grows the frame after the file dialog closes, which doesn't count as input.
+     Filling the first screen keeps the section below out of view, so that growth isn't a layout shift. */
+  .crop-drop { display: flex; flex-direction: column; min-height: max(320px, min(calc(100svh - 320px), 800px)); }
+  .crop-drop > .tool-frame { width: 100%; flex: 1; display: flex; flex-direction: column; }
+  .crop-drop .drop-empty { flex: 1; }
+  #crop-status.error { font-weight: 600; }
+  .crop-animated { font-weight: 600; }
+  .crop-stage { position: relative; width: fit-content; max-width: 100%; margin-block-start: 20px; overflow: hidden; background: var(--fog); user-select: none; -webkit-user-select: none; cursor: crosshair; }
+  .crop-stage img { display: block; max-width: 100%; max-height: min(64vh, 600px); width: auto; height: auto; }
+  /* The shade outside the box is an outline on a layer under the box's border, clipped by the stage. */
+  .crop-box { position: absolute; box-sizing: border-box; border: 1.5px solid var(--paper); cursor: move; touch-action: none; }
+  .crop-box::before { content: ''; position: absolute; inset: -1.5px; outline: 200vmax solid var(--shade); pointer-events: none; }
+  /* Circle: outlines follow the border radius, so the shade reaches into the square's corners; a white ring marks the edge. */
+  .crop-box.circle { border-color: transparent; }
+  .crop-box.circle::before { border-radius: 50%; }
+  .crop-box.circle::after { content: ''; position: absolute; inset: -1.5px; border: 1.5px solid var(--paper); border-radius: 50%; pointer-events: none; }
+  /* The chosen ring, drawn inside the circle's edge as it's saved; the script sets its width from the box's shown size. */
+  .crop-box.circle[data-ring]:not([data-ring="none"])::after { border: var(--ring) solid var(--ring-color); }
+  /* The square's corners as they're saved: a checkerboard for transparent, or the chosen colour. */
+  .crop-corners { position: absolute; inset: -1.5px; pointer-events: none; background: var(--corner-fill); -webkit-mask: radial-gradient(circle closest-side, transparent calc(100% - 0.5px), #000 100%); mask: radial-gradient(circle closest-side, transparent calc(100% - 0.5px), #000 100%); }
+  .crop-box[data-corners="transparent"] { --corner-fill: repeating-conic-gradient(#d4d7dc 0% 25%, #ffffff 0% 50%) 0 0 / 12px 12px; }
+  .crop-box[data-corners="white"] { --corner-fill: #ffffff; }
+  .crop-box[data-corners="black"] { --corner-fill: #000000; }
+  .crop-box[data-ring-color="white"] { --ring-color: #ffffff; }
+  .crop-box[data-ring-color="black"] { --ring-color: #000000; }
+  /* A circle's transparent corners, shown as transparent in the result too. */
+  .crop-preview.circle { background: repeating-conic-gradient(#d4d7dc 0% 25%, #ffffff 0% 50%) 0 0 / 16px 16px; }
+  .crop-handle { position: absolute; z-index: 1; width: 14px; height: 14px; margin: -7px 0 0 -7px; background: var(--paper); border: 1.5px solid var(--ink); box-sizing: border-box; touch-action: none; }
+  /* A 40 px target around each 14 px square, for fingers. */
+  .crop-handle::after { content: ''; position: absolute; inset: -13px; }
+  .crop-handle-nw { top: 0; left: 0; cursor: nwse-resize; }
+  .crop-handle-n { top: 0; left: 50%; cursor: ns-resize; }
+  .crop-handle-ne { top: 0; left: 100%; cursor: nesw-resize; }
+  .crop-handle-e { top: 50%; left: 100%; cursor: ew-resize; }
+  .crop-handle-se { top: 100%; left: 100%; cursor: nwse-resize; }
+  .crop-handle-s { top: 100%; left: 50%; cursor: ns-resize; }
+  .crop-handle-sw { top: 100%; left: 0; cursor: nesw-resize; }
+  .crop-handle-w { top: 50%; left: 0; cursor: ew-resize; }
+  /* Edge handles would cover the corners of a small box. */
+  .crop-box.small .crop-handle-n, .crop-box.small .crop-handle-e, .crop-box.small .crop-handle-s, .crop-box.small .crop-handle-w { display: none; }
+  .crop-fields { display: flex; flex-wrap: wrap; gap: 12px; }
+  .crop-fields label { display: grid; gap: 6px; font-size: 14px; font-weight: 500; color: var(--slate); }
+  .crop-fields input { width: 10ch; min-height: 42px; padding: 8px 12px; font: inherit; font-size: 16px; font-weight: 600; font-stretch: 75%; font-variant-numeric: tabular-nums; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px; transition: border-color 0.15s; }
+  .crop-fields input:focus { border-color: var(--cobalt); }
+  .crop-result { margin-block-start: 26px; }
+  .crop-preview { display: block; max-width: 100%; max-height: 480px; margin-block-start: 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--fog); }
+  @media (prefers-reduced-motion: reduce) {
+    .crop-fields input { transition: none; }
+  }
+</style>
+<script src="../scripts/crop-image.ts"></script>

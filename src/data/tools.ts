@@ -183,6 +183,28 @@ export const tools: Record<string, Tool> = {
       fr: { path: '/fr/fusionner-jpg-en-pdf/' },
     }),
   },
+  // One page for every crop search (crop image, photo, JPG): the format doesn't change the task. A circle crop is a
+  // different result (a round, transparent picture), so it has its own page; both share one tool.
+  cropImage: {
+    id: 'crop-image',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('crop-image', 'cropImage', {
+      es: { path: '/es/recortar-imagen/' },
+      pt: { path: '/pt/recortar-imagem/' },
+      de: { path: '/de/bild-zuschneiden/' },
+      fr: { path: '/fr/recadrer-image/' },
+    }),
+  },
+  circleCrop: {
+    id: 'circle-crop-image',
+    category: 'UtilitiesApplication',
+    locales: createToolLocales('circle-crop-image', 'circleCrop', {
+      es: { path: '/es/recortar-imagen-en-circulo/' },
+      pt: { path: '/pt/recortar-imagem-em-circulo/' },
+      de: { path: '/de/bild-rund-zuschneiden/' },
+      fr: { path: '/fr/recadrer-image-en-cercle/' },
+    }),
+  },
   videoToGif: {
     id: 'video-to-gif',
     category: 'UtilitiesApplication',

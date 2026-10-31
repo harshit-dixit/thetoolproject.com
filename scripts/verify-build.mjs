@@ -69,6 +69,8 @@ const harAnalyzer = read('har-analyzer/index.html');
 const videoGif = read('video-to-gif/index.html');
 const mergeJpg = read('merge-jpg/index.html');
 const mergeJpgPdf = read('merge-jpg-to-pdf/index.html');
+const cropImage = read('crop-image/index.html');
+const circleCrop = read('circle-crop-image/index.html');
 const csvJson = read('csv-to-json/index.html');
 const jsonBeautifier = read('json-beautifier/index.html');
 const wordCounter = read('word-counter/index.html');
@@ -166,6 +168,28 @@ assert.doesNotMatch(convertPages['avif-to-webp'], /data-background=/);
 assert.match(convertPages['jfif-to-pdf'], /data-source="jfif"/);
 assert.match(convertPages['jfif-to-pdf'], /data-page-size="letter" aria-pressed="true"/);
 assert.doesNotMatch(convertPages['jfif-to-pdf'], /data-layout=/);
+// Crop image and Circle crop image: one tool, a rectangle with ratio chips or a circle with its own options.
+assert.match(home, /href="\/crop-image\/"/);
+assert.match(home, /href="\/circle-crop-image\/"/);
+assert.match(cropImage, /<title>Crop image online: crop a photo or JPG to any size, free \| thetoolproject<\/title>/);
+assert.match(cropImage, /<h1 class="page-title">Crop image<\/h1>/);
+assert.match(cropImage, /rel="canonical" href="https:\/\/thetoolproject\.com\/crop-image\/"/);
+assert.match(cropImage, /hreflang="de" href="https:\/\/thetoolproject\.com\/de\/bild-zuschneiden\/"/);
+assert.match(cropImage, /hreflang="ja" href="https:\/\/thetoolproject\.com\/ja\/crop-image\/"/);
+assert.match(cropImage, /data-ratio="free" aria-pressed="true"/);
+assert.match(cropImage, /data-format="jpg" aria-pressed="true"/);
+assert.doesNotMatch(cropImage, /data-border=|data-output-size=/);
+assert.match(cropImage, /href="\/image-resizer\/"/);
+assert.match(cropImage, /href="\/circle-crop-image\/"/);
+assert.match(circleCrop, /<h1 class="page-title">Circle crop image<\/h1>/);
+assert.match(circleCrop, /hreflang="fr" href="https:\/\/thetoolproject\.com\/fr\/recadrer-image-en-cercle\/"/);
+assert.match(circleCrop, /class="crop-box circle"/);
+assert.match(circleCrop, /data-format="png" aria-pressed="true"/);
+assert.match(circleCrop, /data-background="transparent" aria-pressed="true"/);
+assert.doesNotMatch(circleCrop, /data-ratio=|id="crop-height"/);
+assert.match(circleCrop, /href="\/crop-image\/"/);
+assert.match(read('es/recortar-imagen/index.html'), /<h1 class="page-title">Recortar imagen<\/h1>/);
+assert.match(read('ja/circle-crop-image/index.html'), /<h1 class="page-title">画像を丸く切り抜き<\/h1>/);
 // Merge JPG: one image or a PDF from the hub, a PDF only on its own page, with translated URLs.
 assert.match(home, /href="\/merge-jpg\/"/);
 assert.match(home, /href="\/merge-jpg-to-pdf\/"/);
@@ -519,6 +543,8 @@ const englishUrls = [
   'https://thetoolproject.com/webp-to-svg/',
   'https://thetoolproject.com/merge-jpg/',
   'https://thetoolproject.com/merge-jpg-to-pdf/',
+  'https://thetoolproject.com/crop-image/',
+  'https://thetoolproject.com/circle-crop-image/',
   'https://thetoolproject.com/compress-jpg-to-100kb/',
   'https://thetoolproject.com/compress-jpg-to-50kb/',
   'https://thetoolproject.com/compress-pdf/',
@@ -552,7 +578,7 @@ const firstLoad = page => {
   const files = [...names].map(name => readFileSync(new URL(name, jsDir)));
   return { raw: files.reduce((sum, file) => sum + file.length, 0), gzip: files.reduce((sum, file) => sum + gzipSync(file).length, 0) };
 };
-const sizes = Object.fromEntries([...convertSpecs.map(([id]) => id), 'json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'overtime-calculator', 'no-tax-on-overtime-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'video-to-gif', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'merge-jpg', 'merge-jpg-to-pdf', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
+const sizes = Object.fromEntries([...convertSpecs.map(([id]) => id), 'json-to-html', 'json-to-excel', 'json-to-csv', 'json-beautifier', 'word-counter', 'tip-calculator', 'auto-loan-calculator', 'overtime-calculator', 'no-tax-on-overtime-calculator', 'age-calculator', 'dice-roller', 'volume-calculator', 'area-calculator', 'high-school-gpa-calculator', 'gpa-calculator', 'xml-to-csv', 'xml-to-json', 'excel-to-csv', 'dbf-to-excel', 'eml-to-pdf', 'mht-to-pdf', 'csv-to-sql', 'csv-viewer', 'har-analyzer', 'video-to-gif', 'csv-to-json', 'qr-code-scanner', 'image-resizer', 'webp-converter', 'webp-to-png', 'webp-to-jpg', 'webp-to-gif', 'webp-to-svg', 'merge-jpg', 'merge-jpg-to-pdf', 'crop-image', 'circle-crop-image', 'compress-jpg-to-100kb', 'compress-jpg-to-50kb', 'compress-pdf', 'compress-pdf-to-100kb', 'compress-pdf-to-200kb', 'compress-pdf-to-500kb'].map(page => [page, firstLoad(`${page}/index.html`)]));
 // The DBF script shares the translation helper chunk, so Astro references it as an external module.
 assert.match(dbfExcel, /<script type="module" src="\/_astro\/[^"]+"/);
 for (const [page, size] of Object.entries(sizes)) assert.ok(size.gzip < 10000, `First-load JavaScript for ${page} is ${size.gzip} bytes gzipped`);

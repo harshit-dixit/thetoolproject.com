@@ -38,6 +38,7 @@ import MhtToPdfTool from '../components/MhtToPdfTool.astro';
 import WebpConverterTool from '../components/WebpConverterTool.astro';
 import VideoToGifTool from '../components/VideoToGifTool.astro';
 import MergeJpgTool from '../components/MergeJpgTool.astro';
+import CropImageTool from '../components/CropImageTool.astro';
 import type { OutputFormat } from '../lib/webp-convert';
 import { tools, publishedToolLocales, getPublishedToolPath } from '../data/tools';
 import { buildStaticPaths, type RouteProps } from '../data/routes';
@@ -47,6 +48,7 @@ import { gradePoints, LETTERS, percentRange } from '../lib/high-school-gpa';
 import { pointsFor } from '../lib/college-gpa';
 import { usAverages, usRates, usRateTiers } from '../data/auto-loan-defaults';
 import { DIE_SIDES, sumDistribution } from '../lib/dice-roller';
+import { RATIOS } from '../lib/crop-image';
 import { overtimeDefaults, overtimeRuleCountries, overtimeRuleSources } from '../data/overtime-defaults';
 
 export function getStaticPaths() {
@@ -109,6 +111,17 @@ const webpFormatRows: [keyof typeof webpLinks, TranslationKey, TranslationKey, T
   ['svg', 'webpSvg.h1', 'webpConverter.svgBest', 'webpConverter.svgKeeps'],
 ];
 
+// Crop image and Circle crop image share one tool; the copy names its chips and buttons.
+const cropLinks = { resize: getPublishedToolPath('imageResizer', locale), compress: getPublishedToolPath('compressJpg100kb', locale), circle: getPublishedToolPath('circleCrop', locale), crop: getPublishedToolPath('cropImage', locale) };
+const cropLabels = {
+  choose: t('crop.chooseButton', locale), ratio: t('crop.ratioLabel', locale), format: t('crop.formatLabel', locale), reset: t('crop.resetButton', locale),
+  free: t('crop.ratioFree', locale), original: t('crop.ratioOriginal', locale), width: t('crop.width', locale), height: t('crop.height', locale),
+  x: t('crop.x', locale), y: t('crop.y', locale), best: t('webp.qualityMax', locale), outputSize: t('circle.outputSizeLabel', locale),
+  transparent: t('circle.backgroundTransparent', locale), border: t('circle.borderLabel', locale), thin: t('circle.borderThin', locale),
+  thick: t('circle.borderThick', locale), diameter: t('circle.size', locale),
+};
+// The ratio table: every ratio chip after Free and Original.
+const cropRatioRows = RATIOS.filter(ratio => ratio.includes(':')).map((ratio, i) => [ratio, `cropImage.use${i + 1}` as TranslationKey] as const);
 // Merge JPG and Merge JPG to PDF share one tool; the copy names its chips and buttons.
 const mergeLinks = { hub: getPublishedToolPath('mergeJpg', locale), pdf: getPublishedToolPath('mergeJpgPdf', locale), compress: getPublishedToolPath('compressPdf', locale) };
 const mergeLabels = {
@@ -350,7 +363,13 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
         <section aria-labelledby="image-how-title"><div class="sec-head"><h2 id="image-how-title">{t('imageResizer.howTitle', locale)}</h2><p>{t('imageResizer.howSubtitle', locale)}</p></div><div class="how-copy">
           <p>{t('imageResizer.howIntro', locale)}</p>
           <h3>{t('imageResizer.howBatchTitle', locale)}</h3>
-          <p><RichText text={t('imageResizer.howBatchP', locale, { lockAspect: t('image.lockAspect', locale), noEnlarge: t('image.noEnlarge', locale), estimate: t('image.estimateButton', locale) })} /></p>
+          <p><RichText
+            text={t('imageResizer.howBatchP', locale, { lockAspect: t('image.lockAspect', locale), noEnlarge: t('image.noEnlarge', locale), estimate: t('image.estimateButton', locale), cropLabel: t('cropImage.h1', locale), circleLabel: t('circleCrop.h1', locale) })}
+            links={{
+              crop: getPublishedToolPath('cropImage', locale),
+              circle: getPublishedToolPath('circleCrop', locale)
+            }}
+          /></p>
           <h3>{t('imageResizer.howCmTitle', locale)}</h3>
           <p><RichText text={t('imageResizer.howCmP', locale, { cmMode: t('image.modeCm', locale) })} /></p>
           <h3>{t('imageResizer.howKbTitle', locale)}</h3>
@@ -983,6 +1002,47 @@ const jsonExcelRows: [TranslationKey, TranslationKey][] = [
           <p><strong>{t('emlPdf.faqQ1', locale)}</strong> {t('emlPdf.faqA1', locale)}</p>
           <p><strong>{t('emlPdf.faqQ2', locale)}</strong> {t('emlPdf.faqA2', locale)}</p>
           <p><strong>{t('emlPdf.faqQ3', locale)}</strong> {t('emlPdf.faqA3', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'crop-image' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('cropImage.leadStrong', locale)}</strong> {t('cropImage.lead', locale)}</p><p class="caption">{t('cropImage.caption', locale)}</p></div></div>
+        <CropImageTool locale={locale} />
+        <section aria-labelledby="crop-how-title"><div class="sec-head"><h2 id="crop-how-title">{t('cropImage.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('cropImage.howIntro', locale)} params={cropLabels} /></p>
+          <h3>{t('cropImage.howRatioTitle', locale)}</h3>
+          <p><RichText text={t('cropImage.howRatioP', locale)} params={cropLabels} /></p>
+          <div class="table-scroll"><table class="spec-table"><thead><tr><th scope="col">{t('cropImage.tableRatio', locale)}</th><th scope="col">{t('cropImage.tableUse', locale)}</th></tr></thead><tbody>
+            {cropRatioRows.map(([ratio, use]) => <tr><td class="fmt">{ratio}</td><td>{t(use, locale)}</td></tr>)}
+          </tbody></table></div>
+          <h3>{t('cropImage.howExactTitle', locale)}</h3>
+          <p><RichText text={t('cropImage.howExactP', locale)} params={cropLabels} links={cropLinks} /></p>
+          <h3>{t('cropImage.howFormatsTitle', locale)}</h3>
+          <p>{t('cropImage.howFormatsP', locale)}</p>
+          <h3>{t('cropImage.howPhoneTitle', locale)}</h3>
+          <p>{t('cropImage.howPhoneP', locale)}</p>
+          <h3>{t('webp.faqTitle', locale)}</h3>
+          <p><strong>{t('cropImage.faqQ1', locale)}</strong> {t('cropImage.faqA1', locale)}</p>
+          <p><strong>{t('cropImage.faqQ2', locale)}</strong> <RichText text={t('cropImage.faqA2', locale)} params={cropLabels} links={cropLinks} /></p>
+          <p><strong>{t('cropImage.faqQ3', locale)}</strong> <RichText text={t('cropImage.faqA3', locale)} links={cropLinks} /></p>
+          <p><strong>{t('crop.faqUploadQ', locale)}</strong> {t('crop.faqUploadA', locale)}</p>
+        </div></section>
+      </>}
+      {tool.id === 'circle-crop-image' && <>
+        <div class="hero"><h1 class="page-title">{entry.h1}</h1><div class="hero-row"><p class="lead"><strong>{t('circleCrop.leadStrong', locale)}</strong> {t('circleCrop.lead', locale)}</p><p class="caption">{t('circleCrop.caption', locale)}</p></div></div>
+        <CropImageTool locale={locale} shape="circle" />
+        <section aria-labelledby="circle-how-title"><div class="sec-head"><h2 id="circle-how-title">{t('circleCrop.howTitle', locale)}</h2></div><div class="how-copy">
+          <p><RichText text={t('circleCrop.howIntro', locale)} params={cropLabels} /></p>
+          <h3>{t('circleCrop.howCornersTitle', locale)}</h3>
+          <p><RichText text={t('circleCrop.howCornersP', locale)} params={cropLabels} /></p>
+          <h3>{t('circleCrop.howFrameTitle', locale)}</h3>
+          <p><RichText text={t('circleCrop.howFrameP', locale)} params={cropLabels} /></p>
+          <h3>{t('circleCrop.howSizeTitle', locale)}</h3>
+          <p><RichText text={t('circleCrop.howSizeP', locale)} links={cropLinks} /></p>
+          <h3>{t('webp.faqTitle', locale)}</h3>
+          <p><strong>{t('circleCrop.faqQ1', locale)}</strong> {t('circleCrop.faqA1', locale)}</p>
+          <p><strong>{t('circleCrop.faqQ2', locale)}</strong> {t('circleCrop.faqA2', locale)}</p>
+          <p><strong>{t('circleCrop.faqQ3', locale)}</strong> <RichText text={t('circleCrop.faqA3', locale)} params={cropLabels} /></p>
+          <p><strong>{t('crop.faqUploadQ', locale)}</strong> {t('crop.faqUploadA', locale)}</p>
         </div></section>
       </>}
       {tool.id === 'video-to-gif' && <>

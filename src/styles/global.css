@@ -22,6 +22,8 @@
   --cobalt: #1f3bff;
   --cobalt-wash: #e6e9ff;
   --row-hover: #f7f8fa;
+  /* Only the picture outside a crop box (DESIGN.md §2). */
+  --shade: rgb(21 24 29 / 0.55);
   --font: Archivo, "Archivo Fallback", system-ui, sans-serif;
 }
 
